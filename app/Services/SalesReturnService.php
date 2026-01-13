@@ -148,8 +148,10 @@ class SalesReturnService
                 // Approve the return
                 $return->approve($userId);
 
-                // Create credit note if applicable
-                if ($return->refund_method !== 'cash' || $return->refund_amount > 0) {
+                // V7-CRITICAL-N03 FIX: Only create credit note for store_credit refund method
+                // For cash refunds, we should only process the refund transaction, not create a credit note
+                // Previous condition was wrong: it created credit notes for cash refunds, causing double credit
+                if ($return->refund_method === 'store_credit' || $return->refund_method === 'credit') {
                     $creditNote = $this->createCreditNote($return, $userId);
                     
                     // Auto-apply to customer balance if configured

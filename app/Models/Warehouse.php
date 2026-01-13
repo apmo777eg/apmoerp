@@ -92,9 +92,12 @@ class Warehouse extends BaseModel
         return $query->where('is_default', true);
     }
 
+    // V7-HIGH-N04 FIX: Group OR conditions to prevent branch isolation bypass
+    // Without grouping, SQL becomes: (branch_id = X AND name like ...) OR code like ...
+    // which can match warehouses from other branches via the OR clause
     public function scopeSearch(Builder $query, $t): Builder
     {
-        return $query->where('name', 'like', "%$t%")->orWhere('code', 'like', "%$t%");
+        return $query->where(fn ($q) => $q->where('name', 'like', "%$t%")->orWhere('code', 'like', "%$t%"));
     }
 
     // Backward compatibility accessor

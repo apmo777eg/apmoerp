@@ -8,7 +8,10 @@ use App\Models\BranchModule;
 use App\Models\Module;
 use App\Models\ModuleNavigation;
 use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Observers\BranchModuleObserver;
+use App\Observers\FinancialTransactionObserver;
 use App\Observers\ModuleNavigationObserver;
 use App\Observers\ModuleObserver;
 use App\Observers\PriceAuditObserver;
@@ -76,6 +79,11 @@ class AppServiceProvider extends ServiceProvider
         Module::observe(ModuleObserver::class);
         BranchModule::observe(BranchModuleObserver::class);
         ModuleNavigation::observe(ModuleNavigationObserver::class);
+
+        // V7-MEDIUM-N09 FIX: Register FinancialTransactionObserver for Sale and Purchase models
+        // This enables auto-updating customer/supplier balances and payment status tracking
+        Sale::observe(FinancialTransactionObserver::class);
+        Purchase::observe(FinancialTransactionObserver::class);
 
         // Configure rate limiting (moved from RouteServiceProvider for Laravel 11/12 compatibility)
         $this->configureRateLimiting();

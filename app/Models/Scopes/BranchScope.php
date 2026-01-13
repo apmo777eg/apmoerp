@@ -88,8 +88,17 @@ class BranchScope implements Scope
         // Get current user safely through BranchContextManager
         $user = BranchContextManager::getCurrentUser();
 
-        // Skip if no authenticated user
+        // V7-CRITICAL-U01 FIX: Fail closed for non-console contexts when no user
+        // Previously, this returned early and applied NO branch filter, causing data leakage
+        // Now: return empty result set for non-console contexts without authentication
         if (! $user) {
+            // If we're not in console, not in safe console command, and not unit testing,
+            // then we're in a web/API request without authentication - fail closed
+            if (! app()->runningInConsole() && ! app()->runningUnitTests()) {
+                // Return empty result set by adding an impossible condition
+                $table = $model->getTable();
+                $builder->whereNull("{$table}.id")->whereNotNull("{$table}.id");
+            }
             return;
         }
 

@@ -31,10 +31,12 @@ class FinancialTransactionObserver
         $this->updateRelatedBalance($model, 'add');
         $this->updatePaymentStatus($model);
 
+        // V7-MEDIUM-N09 FIX: Use reference_number or id instead of code
+        // code attribute may not exist on all models and causes errors with preventAccessingMissingAttributes()
         Log::info('Financial transaction created', [
             'type' => get_class($model),
             'id' => $model->id,
-            'code' => $model->code,
+            'reference' => $model->reference_number ?? $model->id,
             'amount' => $model->total_amount,
             'user_id' => auth()->id(),
         ]);
@@ -55,10 +57,11 @@ class FinancialTransactionObserver
             if ($difference != 0) {
                 $this->adjustRelatedBalance($model, $difference);
 
+                // V7-MEDIUM-N09 FIX: Use reference_number or id instead of code
                 Log::warning('Financial transaction amount changed', [
                     'type' => get_class($model),
                     'id' => $model->id,
-                    'code' => $model->code,
+                    'reference' => $model->reference_number ?? $model->id,
                     'old_amount' => $oldTotal,
                     'new_amount' => $newTotal,
                     'difference' => $difference,
@@ -74,10 +77,11 @@ class FinancialTransactionObserver
 
         // Track status changes
         if ($model->wasChanged('status')) {
+            // V7-MEDIUM-N09 FIX: Use reference_number or id instead of code
             Log::info('Financial transaction status changed', [
                 'type' => get_class($model),
                 'id' => $model->id,
-                'code' => $model->code,
+                'reference' => $model->reference_number ?? $model->id,
                 'old_status' => $model->getOriginal('status'),
                 'new_status' => $model->status,
                 'user_id' => auth()->id(),
@@ -92,10 +96,11 @@ class FinancialTransactionObserver
     {
         $this->updateRelatedBalance($model, 'subtract');
 
+        // V7-MEDIUM-N09 FIX: Use reference_number or id instead of code
         Log::warning('Financial transaction deleted', [
             'type' => get_class($model),
             'id' => $model->id,
-            'code' => $model->code,
+            'reference' => $model->reference_number ?? $model->id,
             'amount' => $model->total_amount,
             'user_id' => auth()->id(),
         ]);
@@ -110,10 +115,11 @@ class FinancialTransactionObserver
         $this->updateRelatedBalance($model, 'add');
         $this->updatePaymentStatus($model);
 
+        // V7-MEDIUM-N09 FIX: Use reference_number or id instead of code
         Log::info('Financial transaction restored', [
             'type' => get_class($model),
             'id' => $model->id,
-            'code' => $model->code,
+            'reference' => $model->reference_number ?? $model->id,
             'amount' => $model->total_amount,
             'user_id' => auth()->id(),
         ]);

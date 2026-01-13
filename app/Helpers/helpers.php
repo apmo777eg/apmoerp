@@ -370,3 +370,33 @@ if (! function_exists('array_last')) {
         return count($array) > 0 ? end($array) : null;
     }
 }
+
+if (! function_exists('bcround')) {
+    /**
+     * Round a string number using bcmath with proper half-up rounding.
+     * V7-MEDIUM-U10 FIX: Implement proper rounding instead of truncation.
+     *
+     * @param string|null $value The value to round
+     * @param int $precision Number of decimal places
+     * @return string Rounded value
+     */
+    function bcround(?string $value, int $precision = 2): string
+    {
+        // Handle empty/null values
+        if ($value === '' || $value === null) {
+            return '0';
+        }
+        
+        // Determine sign
+        $isNegative = str_starts_with($value, '-');
+        $absValue = $isNegative ? ltrim($value, '-') : $value;
+        
+        // Add 0.5 * 10^(-precision) to achieve half-up rounding
+        // e.g., for precision=2, add 0.005
+        $offset = '0.' . str_repeat('0', $precision) . '5';
+        $rounded = bcadd($absValue, $offset, $precision);
+        
+        // Restore sign if negative
+        return $isNegative ? '-' . $rounded : $rounded;
+    }
+}

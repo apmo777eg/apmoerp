@@ -283,10 +283,15 @@ class OrdersController extends BaseApiController
 
         DB::transaction(function () use ($order, $next) {
             $order->status = $next;
-            // Update payment status based on paid amount
-            $order->payment_status = $order->paid_amount >= $order->total_amount
+            // V7-HIGH-N05 FIX: Use computed total_paid from payments instead of paid_amount
+            // paid_amount can be stale or manually edited, leading to wrong payment status
+            // Load payments to get accurate total
+            $order->load('payments');
+            $totalPaid = $order->payments->where('status', 'completed')->sum('amount');
+            
+            $order->payment_status = $totalPaid >= $order->total_amount
                 ? 'paid'
-                : ($order->paid_amount > 0 ? 'partial' : 'unpaid');
+                : ($totalPaid > 0 ? 'partial' : 'unpaid');
             $order->save();
         });
 
