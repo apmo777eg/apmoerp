@@ -208,7 +208,7 @@ class SalesReturnService
                 
                 // Calculate already refunded amount from existing completed refunds
                 $alreadyRefunded = $return->refunds
-                    ->where('status', ReturnRefund::STATUS_COMPLETED ?? 'completed')
+                    ->where('status', ReturnRefund::STATUS_COMPLETED)
                     ->sum('amount');
                 
                 $remainingRefundable = (float) $return->refund_amount - (float) $alreadyRefunded;
@@ -419,7 +419,7 @@ class SalesReturnService
             };
             
             // Skip if accounts are not configured
-            if (!$salesReturnsAccount || !$refundAccount) {
+            if (! $salesReturnsAccount || ! $refundAccount) {
                 Log::warning('Cannot create refund accounting entry - accounts not configured', [
                     'return_id' => $return->id,
                     'refund_id' => $refund->id,
