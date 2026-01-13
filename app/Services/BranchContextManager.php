@@ -70,6 +70,7 @@ class BranchContextManager
             // Check if user is authenticated
             if (! auth()->check()) {
                 self::$resolvingAuth = false;
+
                 return null;
             }
 
@@ -80,6 +81,7 @@ class BranchContextManager
             return self::$cachedUser;
         } catch (\Exception) {
             self::$resolvingAuth = false;
+
             return null;
         }
     }
@@ -102,6 +104,7 @@ class BranchContextManager
 
         if (! $user) {
             self::$cachedBranchIds = [];
+
             return [];
         }
 
@@ -110,6 +113,7 @@ class BranchContextManager
             // Super Admins see all branches - return empty array to signal "no filtering"
             // Note: Empty array in this context means "don't apply branch filter" not "no access"
             self::$cachedBranchIds = [];
+
             return [];
         }
 
@@ -140,6 +144,7 @@ class BranchContextManager
         }
 
         self::$cachedBranchIds = array_values(array_filter($branchIds));
+
         return self::$cachedBranchIds;
     }
 
@@ -162,6 +167,32 @@ class BranchContextManager
         }
 
         return false;
+    }
+
+    /**
+     * Get the current branch ID from the authenticated user
+     * Returns the primary branch_id of the current user
+     */
+    public static function getCurrentBranchId(): ?int
+    {
+        $user = self::getCurrentUser();
+
+        if (! $user) {
+            return null;
+        }
+
+        // Return user's primary branch ID if set
+        if (isset($user->branch_id) && $user->branch_id !== null) {
+            return (int) $user->branch_id;
+        }
+
+        // Fallback: try to get from accessible branches
+        $branchIds = self::getAccessibleBranchIds();
+        if (! empty($branchIds)) {
+            return $branchIds[0];
+        }
+
+        return null;
     }
 
     /**

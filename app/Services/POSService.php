@@ -40,8 +40,11 @@ class POSService implements POSServiceInterface
                 abort_if(! $branchId, 422, __('Branch context is required'));
 
                 // Idempotency check: If client_uuid provided and sale exists, return existing sale
+                // FIX U-03: Scope by branch to prevent cross-branch data collision
                 if ($clientUuid) {
-                    $existingSale = Sale::where('client_uuid', $clientUuid)->first();
+                    $existingSale = Sale::where('client_uuid', $clientUuid)
+                        ->where('branch_id', $branchId)
+                        ->first();
                     if ($existingSale) {
                         return $existingSale->load(['items.product', 'payments', 'customer']);
                     }
@@ -106,15 +109,15 @@ class POSService implements POSServiceInterface
 
                     // Check if product exists and is not soft-deleted (prevent zombie products in cart)
                     $product = $products->get($it['product_id']);
-                    
+
                     if (! $product) {
                         abort(422, __('Product not found.'));
                     }
-                    
+
                     if ($product->trashed()) {
                         abort(422, __('Product ":product" is no longer available for sale.', ['product' => $product->name]));
                     }
-                    
+
                     $price = isset($it['price']) ? (float) $it['price'] : (float) ($product->default_price ?? 0);
 
                     // Check stock availability for physical products (not services)

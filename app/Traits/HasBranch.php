@@ -6,6 +6,7 @@ namespace App\Traits;
 
 use App\Models\Branch;
 use App\Models\Scopes\BranchScope;
+use App\Services\BranchContextManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,8 +29,22 @@ trait HasBranch
         static::addGlobalScope(new BranchScope);
 
         static::creating(function (Model $model): void {
-            if (! $model->getAttribute('branch_id') && method_exists($model, 'currentBranchId')) {
-                $branchId = $model->currentBranchId();
+            // Only auto-assign branch_id if:
+            // 1. The model doesn't already have a branch_id
+            // 2. The model has branch_id in its fillable attributes (table has the column)
+            if (! $model->getAttribute('branch_id') && in_array('branch_id', $model->getFillable(), true)) {
+                // First try the model's own currentBranchId method
+                if (method_exists($model, 'currentBranchId')) {
+                    $branchId = $model->currentBranchId();
+                    if ($branchId) {
+                        $model->setAttribute('branch_id', $branchId);
+
+                        return;
+                    }
+                }
+
+                // Fallback to BranchContextManager for the current branch
+                $branchId = BranchContextManager::getCurrentBranchId();
                 if ($branchId) {
                     $model->setAttribute('branch_id', $branchId);
                 }

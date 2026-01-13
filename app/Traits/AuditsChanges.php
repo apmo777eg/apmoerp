@@ -28,12 +28,17 @@ trait AuditsChanges
 
     protected function writeAudit(string $action, array $old, array $new): void
     {
-        // Skip auditing during seeding
+        // FIX U-06: Removed time-window skipping that disabled audit logging for
+        // the first 5 minutes in console. Now only skip for specific safe operations
+        // like migrations and seeders where auditing is not needed.
         if (app()->runningInConsole() && ! app()->runningUnitTests()) {
-            // Check if we're in seeding mode
-            if (defined('LARAVEL_START') && (time() - LARAVEL_START) < 300) {
-                // Likely seeding, skip auditing for the first 5 minutes after app start
-                return;
+            // Skip auditing only for specific artisan commands that shouldn't be audited
+            $command = request()->server('argv')[1] ?? '';
+            $skipCommands = ['migrate', 'db:seed', 'make:', 'key:generate', 'config:', 'route:', 'view:'];
+            foreach ($skipCommands as $skipCommand) {
+                if (str_starts_with($command, $skipCommand)) {
+                    return;
+                }
             }
         }
 

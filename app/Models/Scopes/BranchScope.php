@@ -107,21 +107,19 @@ class BranchScope implements Scope
 
     /**
      * Check if the model has a branch_id column.
+     *
+     * IMPORTANT: Only check fillable attributes, NOT the existence of branch() method.
+     * The HasBranch trait adds branch() method to ALL models via BaseModel,
+     * but many tables don't actually have a branch_id column (e.g., sale_items,
+     * purchase_items, stock_movements). Using method_exists() would cause SQL errors
+     * like "Unknown column X.branch_id" for those models.
      */
     protected function hasBranchIdColumn(Model $model): bool
     {
-        // Check if the model has branch_id in fillable attributes
+        // Only check if the model has branch_id in fillable attributes
+        // This is the reliable indicator that the table has a branch_id column
         $fillable = $model->getFillable();
-        if (in_array('branch_id', $fillable, true)) {
-            return true;
-        }
 
-        // Check if model has a 'branch' relationship method
-        // This is a good indicator that the model has branch_id
-        if (method_exists($model, 'branch')) {
-            return true;
-        }
-
-        return false;
+        return in_array('branch_id', $fillable, true);
     }
 }

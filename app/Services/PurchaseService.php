@@ -58,6 +58,8 @@ class PurchaseService implements PurchaseServiceInterface
                 ]);
 
                 $subtotal = '0';
+                $totalTax = '0';
+                $totalDiscount = '0';
 
                 foreach ($payload['items'] ?? [] as $it) {
                     // Skip invalid items without required fields
@@ -79,8 +81,29 @@ class PurchaseService implements PurchaseServiceInterface
                     }
 
                     // Use bcmath for precise calculation
-                    $lineTotal = bcmul((string) $qty, (string) $unitPrice, 2);
-                    $subtotal = bcadd($subtotal, $lineTotal, 2);
+                    $lineSub = bcmul((string) $qty, (string) $unitPrice, 4);
+
+                    // Calculate line discount
+                    $discountPercent = (float) ($it['discount_percent'] ?? 0);
+                    $lineDiscount = '0';
+                    if ($discountPercent > 0) {
+                        $lineDiscount = bcmul($lineSub, bcdiv((string) $discountPercent, '100', 6), 4);
+                    }
+
+                    // Calculate line tax (on discounted amount)
+                    $taxPercent = (float) ($it['tax_percent'] ?? 0);
+                    $lineTax = (float) ($it['tax_amount'] ?? 0);
+                    if ($lineTax <= 0 && $taxPercent > 0) {
+                        $taxableAmount = bcsub($lineSub, $lineDiscount, 4);
+                        $lineTax = (float) bcmul($taxableAmount, bcdiv((string) $taxPercent, '100', 6), 2);
+                    }
+
+                    // Calculate line total: (qty * price) - discount + tax
+                    $lineTotal = bcadd(bcsub($lineSub, $lineDiscount, 4), (string) $lineTax, 2);
+
+                    $subtotal = bcadd($subtotal, $lineSub, 4);
+                    $totalTax = bcadd($totalTax, (string) $lineTax, 2);
+                    $totalDiscount = bcadd($totalDiscount, $lineDiscount, 4);
 
                     // Get product name and SKU
                     $product = \App\Models\Product::find($it['product_id']);
@@ -93,16 +116,30 @@ class PurchaseService implements PurchaseServiceInterface
                         'quantity' => $qty,
                         'received_quantity' => 0,
                         'unit_price' => $unitPrice,
-                        'discount_percent' => (float) ($it['discount_percent'] ?? 0),
-                        'tax_percent' => (float) ($it['tax_percent'] ?? 0),
-                        'tax_amount' => (float) ($it['tax_amount'] ?? 0),
+                        'discount_percent' => $discountPercent,
+                        'tax_percent' => $taxPercent,
+                        'tax_amount' => $lineTax,
                         'line_total' => (float) $lineTotal,
                     ]);
                 }
 
-                // Use correct migration column names
-                $p->subtotal = (float) $subtotal;
-                $p->total_amount = $p->subtotal;
+                // FIX U-04: Compute total_amount correctly with tax/shipping/discount
+                // Get header-level shipping if provided
+                $shippingAmount = (float) ($payload['shipping_amount'] ?? 0);
+
+                $p->subtotal = (float) bcdiv($subtotal, '1', 2);
+                $p->tax_amount = (float) bcdiv($totalTax, '1', 2);
+                $p->discount_amount = (float) bcdiv($totalDiscount, '1', 2);
+                // total_amount = subtotal + tax + shipping - discount
+                $p->total_amount = (float) bcdiv(
+                    bcadd(
+                        bcsub(bcadd($subtotal, $totalTax, 4), $totalDiscount, 4),
+                        (string) $shippingAmount,
+                        4
+                    ),
+                    '1',
+                    2
+                );
 
                 // Critical ERP: Validate supplier minimum order value
                 if ($p->supplier_id) {

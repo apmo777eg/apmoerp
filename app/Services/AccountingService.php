@@ -48,6 +48,8 @@ class AccountingService
 
             // BUG FIX #3: Handle split payments - create separate debit entries for each payment method
             $sale->load('payments');
+            $totalPaymentReceived = '0';
+
             if ($sale->payments->isNotEmpty()) {
                 foreach ($sale->payments as $payment) {
                     $accountKey = match ($payment->payment_method) {
@@ -65,6 +67,22 @@ class AccountingService
                             'debit' => $payment->amount,
                             'credit' => 0,
                             'description' => "Payment received via {$payment->payment_method}",
+                        ];
+                        $totalPaymentReceived = bcadd($totalPaymentReceived, (string) $payment->amount, 2);
+                    }
+                }
+
+                // FIX U-05: Add Accounts Receivable line for unpaid remainder (partial payments)
+                $unpaidAmount = bcsub((string) $sale->total_amount, $totalPaymentReceived, 2);
+                if ((float) $unpaidAmount > 0) {
+                    $receivableAccount = AccountMapping::getAccount('sales', 'accounts_receivable', $sale->branch_id);
+                    if ($receivableAccount) {
+                        $lines[] = [
+                            'journal_entry_id' => $entry->id,
+                            'account_id' => $receivableAccount->id,
+                            'debit' => (float) $unpaidAmount,
+                            'credit' => 0,
+                            'description' => "Account receivable (partial payment) - Customer #{$sale->customer_id}",
                         ];
                     }
                 }

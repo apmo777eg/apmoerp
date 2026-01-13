@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
-use App\Models\Sale;
-use App\Models\Product;
 use App\Models\Customer;
-use App\Models\Branch;
-use Illuminate\Support\Facades\DB;
+use App\Models\Product;
+use App\Models\Sale;
 use Illuminate\Support\Facades\Cache;
-use Carbon\Carbon;
 
 /**
  * Advanced Analytics Service with AI-powered predictions
@@ -40,6 +37,7 @@ class AdvancedAnalyticsService
 
     /**
      * Get sales metrics with advanced calculations
+     * FIX N-03: Use total_amount instead of total
      */
     protected function getSalesMetrics(?int $branchId, array $dateRange): array
     {
@@ -54,7 +52,7 @@ class AdvancedAnalyticsService
         $sales = $query->get();
         $previousPeriod = $this->getPreviousPeriodSales($branchId, $dateRange);
 
-        $total = $sales->sum('total');
+        $total = $sales->sum('total_amount');
         $count = $sales->count();
         $avgTicket = $count > 0 ? $total / $count : 0;
 
@@ -144,7 +142,7 @@ class AdvancedAnalyticsService
     protected function forecastRevenue(?int $branchId, string $period): array
     {
         $historical = $this->getHistoricalRevenue($branchId, 12); // Last 12 periods
-        
+
         if (count($historical) < 3) {
             return ['forecast' => 0, 'confidence' => 0, 'range' => ['low' => 0, 'high' => 0]];
         }
@@ -205,8 +203,8 @@ class AdvancedAnalyticsService
         $recommendations = [];
         foreach ($products as $product) {
             $salesVelocity = $this->calculateSalesVelocity($product->id, $branchId);
-            $daysOfStock = $product->stock_quantity > 0 && $salesVelocity > 0 
-                ? $product->stock_quantity / $salesVelocity 
+            $daysOfStock = $product->stock_quantity > 0 && $salesVelocity > 0
+                ? $product->stock_quantity / $salesVelocity
                 : 999;
 
             if ($daysOfStock < 7) {
@@ -277,6 +275,7 @@ class AdvancedAnalyticsService
 
     /**
      * Predict customer churn risk
+     * FIX N-03: Use total_amount instead of total
      */
     protected function predictChurnRisk(?int $branchId): array
     {
@@ -292,7 +291,7 @@ class AdvancedAnalyticsService
 
         $atRisk = [];
         foreach ($customers as $customer) {
-            $daysSinceLastPurchase = $customer->sales->first() 
+            $daysSinceLastPurchase = $customer->sales->first()
                 ? now()->diffInDays($customer->sales->first()->created_at)
                 : 999;
 
@@ -303,7 +302,7 @@ class AdvancedAnalyticsService
                     'customer_id' => $customer->id,
                     'customer_name' => $customer->name,
                     'days_since_purchase' => $daysSinceLastPurchase,
-                    'lifetime_value' => $customer->sales->sum('total'),
+                    'lifetime_value' => $customer->sales->sum('total_amount'),
                     'risk_level' => $daysSinceLastPurchase > ($avgDaysBetweenPurchases * 3) ? 'high' : 'medium',
                     'recommended_action' => 'Send personalized offer',
                 ];

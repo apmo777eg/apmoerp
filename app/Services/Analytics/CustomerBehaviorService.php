@@ -325,7 +325,8 @@ class CustomerBehaviorService
                     })->toArray(),
                     'summary' => [
                         'total_clv' => round($totalCLV, 2),
-                        'avg_clv' => round($customers->avg('sales_sum_grand_total') ?? 0, 2),
+                        // FIX N-04: Use correct withSum alias (sales_sum_total_amount, not sales_sum_grand_total)
+                        'avg_clv' => round($customers->avg('sales_sum_total_amount') ?? 0, 2),
                         'customer_count' => $customers->count(),
                     ],
                 ];

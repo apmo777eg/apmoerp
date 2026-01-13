@@ -96,26 +96,31 @@ class DashboardWidgets extends Component
                     ->where('status', 'completed')
                     ->sum('total_amount') ?? 0,
                 'total_products' => (clone $productsQuery)->count(),
-                'active_products' => (clone $productsQuery)->where('is_active', true)->count(),
+                // FIX N-06: Product model uses 'status' column, not 'is_active' boolean
+                'active_products' => (clone $productsQuery)->where('status', 'active')->count(),
                 'total_customers' => (clone $customersQuery)->count(),
                 // Fix: Add whereYear to prevent counting same month from different years
                 'new_customers_month' => (clone $customersQuery)
                     ->whereYear('created_at', now()->year)
                     ->whereMonth('created_at', now()->month)
                     ->count(),
-                // Use indexed query with proper joins for better performance
-                // quantity is signed: positive = in, negative = out
-                'low_stock_count' => DB::table('products')
-                    ->leftJoin('stock_movements', 'stock_movements.product_id', '=', 'products.id')
-                    ->whereNull('products.deleted_at')
-                    ->whereNotNull('products.min_stock')
-                    ->where('products.min_stock', '>', 0)
-                    ->when(! $isAdmin && $branchId, fn ($q) => $q->where('products.branch_id', $branchId))
-                    ->select('products.id')
-                    ->selectRaw('COALESCE(SUM(stock_movements.quantity), 0) as current_stock')
-                    ->groupBy('products.id', 'products.min_stock')
-                    ->havingRaw('current_stock <= products.min_stock')
-                    ->count(),
+                // FIX U-07: Use subquery to correctly count grouped results
+                // Laravel's count() on a grouped query returns the count of the first group
+                // Use a subquery and count the rows instead
+                'low_stock_count' => DB::table(
+                    DB::table('products')
+                        ->leftJoin('stock_movements', 'stock_movements.product_id', '=', 'products.id')
+                        ->whereNull('products.deleted_at')
+                        ->whereNotNull('products.min_stock')
+                        ->where('products.min_stock', '>', 0)
+                        ->when(! $isAdmin && $branchId, fn ($q) => $q->where('products.branch_id', $branchId))
+                        ->select('products.id')
+                        ->selectRaw('COALESCE(SUM(stock_movements.quantity), 0) as current_stock')
+                        ->selectRaw('products.min_stock')
+                        ->groupBy('products.id', 'products.min_stock')
+                        ->havingRaw('COALESCE(SUM(stock_movements.quantity), 0) <= products.min_stock'),
+                    'low_stock_products'
+                )->count(),
                 'pending_orders' => $salesQuery->where('status', 'pending')->count(),
             ];
         });

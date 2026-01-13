@@ -70,6 +70,7 @@ class Reports extends Component
 
     /**
      * Get sales statistics for the branch
+     * FIX N-02: Use correct column names (total_amount, paid_amount instead of total, paid)
      */
     public function getSalesStats(): array
     {
@@ -78,10 +79,11 @@ class Reports extends Component
 
         return [
             'total_sales' => (clone $query)->count(),
-            'total_amount' => (clone $query)->sum('total'),
-            'average_sale' => (clone $query)->avg('total') ?? 0,
-            'paid_amount' => (clone $query)->sum('paid'),
-            'due_amount' => (clone $query)->sum('due_total'),
+            'total_amount' => (clone $query)->sum('total_amount'),
+            'average_sale' => (clone $query)->avg('total_amount') ?? 0,
+            'paid_amount' => (clone $query)->sum('paid_amount'),
+            // due_total is an accessor, not a DB column - compute it from total_amount - paid_amount
+            'due_amount' => (clone $query)->selectRaw('SUM(total_amount - paid_amount) as due')->value('due') ?? 0,
         ];
     }
 
@@ -124,6 +126,7 @@ class Reports extends Component
 
     /**
      * Get top selling products for the branch
+     * FIX N-02: Use line_total instead of total for sale_items
      */
     public function getTopProducts(): array
     {
@@ -132,7 +135,7 @@ class Reports extends Component
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->where('sales.branch_id', $this->branch->id)
             ->whereBetween('sales.created_at', [$this->fromDate.' 00:00:00', $this->toDate.' 23:59:59'])
-            ->select('products.name', DB::raw('SUM(sale_items.quantity) as total_qty'), DB::raw('SUM(sale_items.total) as total_amount'))
+            ->select('products.name', DB::raw('SUM(sale_items.quantity) as total_qty'), DB::raw('SUM(sale_items.line_total) as total_amount'))
             ->groupBy('sale_items.product_id', 'products.name')
             ->orderByDesc('total_qty')
             ->limit(10)
@@ -142,12 +145,13 @@ class Reports extends Component
 
     /**
      * Get daily sales for chart
+     * FIX N-02: Use total_amount instead of total
      */
     public function getDailySales(): array
     {
         return Sale::where('branch_id', $this->branch->id)
             ->whereBetween('created_at', [$this->fromDate.' 00:00:00', $this->toDate.' 23:59:59'])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as total'))
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
             ->groupBy('date')
             ->orderBy('date')
             ->get()

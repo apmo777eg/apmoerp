@@ -204,11 +204,13 @@ trait LoadsDashboardData
 
     /**
      * Build payment methods distribution data
+     * FIX N-07: Add whereYear to prevent mixing data from different years
      */
     protected function buildPaymentMethodsData(): array
     {
         $raw = DB::table('sale_payments')
             ->join('sales', 'sale_payments.sale_id', '=', 'sales.id')
+            ->whereYear('sales.created_at', now()->year)
             ->whereMonth('sales.created_at', now()->month)
             ->when(! $this->isAdmin && $this->branchId, fn ($q) => $q->where('sales.branch_id', $this->branchId))
             ->whereNull('sales.deleted_at')

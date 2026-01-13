@@ -41,6 +41,23 @@ class StoreOrderToSaleService
                     case 'currency':
                         $data[$field] = $order->currency;
                         break;
+                        // FIX N-05: Add mappings for current Sale schema column names
+                    case 'total_amount':
+                        $data[$field] = $order->total ?? $order->total_amount ?? 0;
+                        break;
+                    case 'discount_amount':
+                        $data[$field] = $order->discount_total ?? $order->discount_amount ?? 0;
+                        break;
+                    case 'shipping_amount':
+                        $data[$field] = $order->shipping_total ?? $order->shipping_amount ?? 0;
+                        break;
+                    case 'tax_amount':
+                        $data[$field] = $order->tax_total ?? $order->tax_amount ?? 0;
+                        break;
+                    case 'subtotal':
+                        $data[$field] = $order->subtotal ?? (($order->total ?? 0) - ($order->tax_total ?? 0) - ($order->shipping_total ?? 0) + ($order->discount_total ?? 0));
+                        break;
+                        // Legacy field names for backward compatibility
                     case 'total':
                         $data[$field] = $order->total;
                         break;
