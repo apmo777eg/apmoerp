@@ -76,7 +76,7 @@ class AccountingService
                         $lines[] = [
                             'journal_entry_id' => $entry->id,
                             'account_id' => $cashAccount->id,
-                            'debit' => $sale->grand_total,
+                            'debit' => $sale->total_amount,
                             'credit' => 0,
                             'description' => 'Cash received from sale',
                         ];
@@ -87,7 +87,7 @@ class AccountingService
                         $lines[] = [
                             'journal_entry_id' => $entry->id,
                             'account_id' => $receivableAccount->id,
-                            'debit' => $sale->grand_total,
+                            'debit' => $sale->total_amount,
                             'credit' => 0,
                             'description' => "Account receivable - Customer #{$sale->customer_id}",
                         ];
@@ -102,33 +102,33 @@ class AccountingService
                     'journal_entry_id' => $entry->id,
                     'account_id' => $revenueAccount->id,
                     'debit' => 0,
-                    'credit' => $sale->sub_total,
+                    'credit' => $sale->subtotal,
                     'description' => 'Sales revenue',
                 ];
             }
 
             // Credit: Tax Payable (if applicable)
-            if ($sale->tax_total > 0) {
+            if ($sale->tax_amount > 0) {
                 $taxAccount = AccountMapping::getAccount('sales', 'tax_payable', $sale->branch_id);
                 if ($taxAccount) {
                     $lines[] = [
                         'journal_entry_id' => $entry->id,
                         'account_id' => $taxAccount->id,
                         'debit' => 0,
-                        'credit' => $sale->tax_total,
+                        'credit' => $sale->tax_amount,
                         'description' => 'Tax payable on sales',
                     ];
                 }
             }
 
             // Credit: Discount (if applicable)
-            if ($sale->discount_total > 0) {
+            if ($sale->discount_amount > 0) {
                 $discountAccount = AccountMapping::getAccount('sales', 'sales_discount', $sale->branch_id);
                 if ($discountAccount) {
                     $lines[] = [
                         'journal_entry_id' => $entry->id,
                         'account_id' => $discountAccount->id,
-                        'debit' => $sale->discount_total,
+                        'debit' => $sale->discount_amount,
                         'credit' => 0,
                         'description' => 'Discount given',
                     ];
@@ -184,20 +184,20 @@ class AccountingService
                 $lines[] = [
                     'journal_entry_id' => $entry->id,
                     'account_id' => $inventoryAccount->id,
-                    'debit' => $purchase->sub_total,
+                    'debit' => $purchase->subtotal,
                     'credit' => 0,
                     'description' => 'Inventory purchased',
                 ];
             }
 
             // Debit: Tax Recoverable
-            if ($purchase->tax_total > 0) {
+            if ($purchase->tax_amount > 0) {
                 $taxAccount = AccountMapping::getAccount('purchases', 'tax_recoverable', $purchase->branch_id);
                 if ($taxAccount) {
                     $lines[] = [
                         'journal_entry_id' => $entry->id,
                         'account_id' => $taxAccount->id,
-                        'debit' => $purchase->tax_total,
+                        'debit' => $purchase->tax_amount,
                         'credit' => 0,
                         'description' => 'Tax recoverable on purchases',
                     ];
@@ -212,7 +212,7 @@ class AccountingService
                         'journal_entry_id' => $entry->id,
                         'account_id' => $cashAccount->id,
                         'debit' => 0,
-                        'credit' => $purchase->grand_total,
+                        'credit' => $purchase->total_amount,
                         'description' => 'Cash paid for purchase',
                     ];
                 }
@@ -223,7 +223,7 @@ class AccountingService
                         'journal_entry_id' => $entry->id,
                         'account_id' => $payableAccount->id,
                         'debit' => 0,
-                        'credit' => $purchase->grand_total,
+                        'credit' => $purchase->total_amount,
                         'description' => "Account payable - Supplier #{$purchase->supplier_id}",
                     ];
                 }
