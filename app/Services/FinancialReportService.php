@@ -263,34 +263,57 @@ class FinancialReportService
 
     /**
      * Generate Accounts Receivable Aging Report
+     *
+     * STILL-V8-HIGH-N06 FIX: Calculate outstanding from payment tables instead of paid_amount field
      */
     public function getAccountsReceivableAging(?int $branchId = null, ?string $asOfDate = null): array
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
-        // Get sales where there's still outstanding amount (due_total > 0 or paid_amount < total_amount)
-        $query = Sale::whereRaw('paid_amount < total_amount');
+        // Get sales (we'll calculate outstanding from payments)
+        $query = Sale::query();
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
         }
 
-        $sales = $query->with('customer')->get();
+        $sales = $query->with(['customer', 'payments'])->get();
+
+        // Pre-fetch all completed refunds for these sales to avoid N+1 queries
+        $saleIds = $sales->pluck('id')->toArray();
+        $refundsBySale = \App\Models\ReturnRefund::whereHas('returnNote', function ($q) use ($saleIds) {
+            $q->whereIn('sale_id', $saleIds);
+        })
+            ->where('status', \App\Models\ReturnRefund::STATUS_COMPLETED)
+            ->get()
+            ->groupBy(fn ($refund) => $refund->returnNote?->sale_id)
+            ->map(fn ($group) => $group->sum('amount'));
 
         $aging = [];
 
         foreach ($sales as $sale) {
+            // STILL-V8-HIGH-N06 FIX: Calculate paid amount from SalePayment ledger
+            // Only count completed/posted payments (already eager loaded)
+            $totalPaid = $sale->payments
+                ->whereIn('status', ['completed', 'posted', 'paid'])
+                ->sum('amount');
+
+            // STILL-V8-HIGH-N06 FIX: Get refund total from pre-fetched data
+            $totalRefunded = $refundsBySale->get($sale->getKey(), 0);
+
+            // Calculate true outstanding: total - payments + refunds (refunds reduce what was paid)
+            $outstandingAmount = (float) $sale->total_amount - (float) $totalPaid + (float) $totalRefunded;
+
+            if ($outstandingAmount <= 0) {
+                continue;
+            }
+
             // Calculate due date: use explicit payment_due_date if set, otherwise calculate from sale date + payment terms
             $saleDate = $sale->posted_at ?? $sale->created_at;
             $paymentTermsDays = (int) setting('sales.payment_terms_days', 30);
             $referenceDate = $sale->payment_due_date ?? $saleDate->copy()->addDays($paymentTermsDays);
             $asOf = \Carbon\Carbon::parse($asOfDate);
             $daysOverdue = $asOf->diffInDays($referenceDate, false);
-            $outstandingAmount = $sale->total_amount - ($sale->paid_amount ?? 0);
-
-            if ($outstandingAmount <= 0) {
-                continue;
-            }
 
             $bucket = $this->getAgingBucket($daysOverdue);
 
@@ -322,34 +345,44 @@ class FinancialReportService
 
     /**
      * Generate Accounts Payable Aging Report
+     *
+     * STILL-V8-HIGH-N06 FIX: Calculate outstanding from payment tables instead of paid_amount field
      */
     public function getAccountsPayableAging(?int $branchId = null, ?string $asOfDate = null): array
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
-        // Get purchases where there's still outstanding amount (paid_amount < total_amount)
-        $query = Purchase::whereRaw('paid_amount < total_amount');
+        // Get purchases (we'll calculate outstanding from payments)
+        $query = Purchase::query();
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
         }
 
-        $purchases = $query->with('supplier')->get();
+        $purchases = $query->with(['supplier', 'payments'])->get();
 
         $aging = [];
 
         foreach ($purchases as $purchase) {
+            // STILL-V8-HIGH-N06 FIX: Calculate paid amount from PurchasePayment ledger
+            // Only count completed/posted payments (already eager loaded)
+            $totalPaid = $purchase->payments
+                ->whereIn('status', ['completed', 'posted', 'paid'])
+                ->sum('amount');
+
+            // Calculate true outstanding: total - payments
+            $outstandingAmount = (float) $purchase->total_amount - (float) $totalPaid;
+
+            if ($outstandingAmount <= 0) {
+                continue;
+            }
+
             // Calculate due date: use explicit payment_due_date if set, otherwise calculate from purchase date + payment terms
             $purchaseDate = $purchase->posted_at ?? $purchase->created_at;
             $paymentTermsDays = (int) setting('purchases.payment_terms_days', 30);
             $referenceDate = $purchase->payment_due_date ?? $purchaseDate->copy()->addDays($paymentTermsDays);
             $asOf = \Carbon\Carbon::parse($asOfDate);
             $daysOverdue = $asOf->diffInDays($referenceDate, false);
-            $outstandingAmount = $purchase->total_amount - ($purchase->paid_amount ?? 0);
-
-            if ($outstandingAmount <= 0) {
-                continue;
-            }
 
             $bucket = $this->getAgingBucket($daysOverdue);
 

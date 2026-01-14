@@ -267,35 +267,44 @@ class Product extends BaseModel
      * Scope to filter products with low stock levels
      * Returns products where current stock is at or below the alert threshold
      *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      *
      * @example Product::lowStock()->get()
      */
     public function scopeLowStock(Builder $query): Builder
     {
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
         return $query->whereNotNull('stock_alert_threshold')
-            ->whereRaw('stock_quantity <= stock_alert_threshold');
+            ->whereRaw("({$stockSubquery}) <= stock_alert_threshold");
     }
 
     /**
      * Scope to filter products that are out of stock
      *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      *
      * @example Product::outOfStock()->count()
      */
     public function scopeOutOfStock(Builder $query): Builder
     {
-        return $query->where('stock_quantity', '<=', 0);
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
+        return $query->whereRaw("({$stockSubquery}) <= 0");
     }
 
     /**
      * Scope to filter products that are in stock
      *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      *
      * @example Product::inStock()->get()
      */
     public function scopeInStock(Builder $query): Builder
     {
-        return $query->where('stock_quantity', '>', 0);
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
+        return $query->whereRaw("({$stockSubquery}) > 0");
     }
 
     /**
@@ -325,25 +334,41 @@ class Product extends BaseModel
     }
 
     // Business logic methods
+    /**
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for stock status checks
+     */
     public function isLowStock(): bool
     {
+        $currentStock = \App\Services\StockService::getCurrentStock($this->id);
+
         return $this->stock_alert_threshold &&
-            $this->stock_quantity <= $this->stock_alert_threshold;
+            $currentStock <= $this->stock_alert_threshold;
     }
 
+    /**
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for stock status checks
+     */
     public function isOutOfStock(): bool
     {
-        return $this->stock_quantity <= 0;
+        return \App\Services\StockService::getCurrentStock($this->id) <= 0;
     }
 
+    /**
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for stock status checks
+     */
     public function isInStock(float $quantity = 1): bool
     {
         return $this->getAvailableQuantity() >= $quantity;
     }
 
+    /**
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for available quantity
+     */
     public function getAvailableQuantity(): float
     {
-        return max(0, $this->stock_quantity - $this->reserved_quantity);
+        $currentStock = \App\Services\StockService::getCurrentStock($this->id);
+
+        return max(0, $currentStock - ($this->reserved_quantity ?? 0));
     }
 
     public function reserveStock(float $quantity): bool
@@ -446,12 +471,23 @@ class Product extends BaseModel
             $this->expiry_date->isBetween(now(), now()->addDays($days));
     }
 
+    /**
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for reorder logic
+     */
     public function needsReorder(): bool
     {
-        return $this->reorder_point &&
-            $this->stock_quantity <= $this->reorder_point;
+        if (! $this->reorder_point) {
+            return false;
+        }
+
+        $currentStock = \App\Services\StockService::getCurrentStock($this->id);
+
+        return $currentStock <= $this->reorder_point;
     }
 
+    /**
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for reorder suggestions
+     */
     public function getReorderSuggestion(): ?float
     {
         if (! $this->needsReorder()) {

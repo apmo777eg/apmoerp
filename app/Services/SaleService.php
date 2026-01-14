@@ -123,8 +123,10 @@ class SaleService implements SaleServiceInterface
                         $refundSeq = $lastRefund ? ($lastRefund->id % 100000) + 1 : 1;
                         $refundRefNumber = 'REF-'.date('Ymd').'-'.str_pad((string) $refundSeq, 5, '0', STR_PAD_LEFT);
 
+                        // V9-CRITICAL-02 FIX: Use return_note_id instead of sales_return_id
+                        // ReturnNote is a different entity from SalesReturn
                         ReturnRefund::create([
-                            'sales_return_id' => $note->getKey(),
+                            'return_note_id' => $note->getKey(),  // V9-CRITICAL-02 FIX
                             'branch_id' => $sale->branch_id,
                             'refund_method' => ReturnRefund::METHOD_ORIGINAL,
                             'amount' => (float) $refund,
@@ -137,11 +139,13 @@ class SaleService implements SaleServiceInterface
                     }
 
                     $sale->status = 'returned';
-                    // STILL-V7-CRITICAL-U04 FIX: Update paid_amount based on refund record
-                    // The paid_amount is updated to reflect the pending refund
-                    // In future, this should be computed from payment records instead of direct mutation
-                    $newPaidAmount = bcsub((string) $sale->paid_amount, $refund, 2);
-                    $sale->paid_amount = max(0.0, (float) $newPaidAmount);
+                    // V9-HIGH-03 FIX: Do NOT update paid_amount when refund is pending
+                    // The paid_amount should only be updated when refund is actually completed
+                    // This maintains accurate financial reporting and prevents incorrect balance calculations
+                    // Note: paid_amount will be updated by the refund completion workflow
+                    // OLD CODE (removed):
+                    // $newPaidAmount = bcsub((string) $sale->paid_amount, $refund, 2);
+                    // $sale->paid_amount = max(0.0, (float) $newPaidAmount);
                     $sale->save();
 
                     $this->logServiceInfo('handleReturn', 'Sale return processed with refund record', [

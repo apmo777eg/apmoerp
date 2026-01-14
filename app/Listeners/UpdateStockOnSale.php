@@ -27,6 +27,23 @@ class UpdateStockOnSale implements ShouldQueue
             // Load the unit relation to get conversion factor
             $item->load('unit');
             $conversionFactor = $item->unit?->conversion_factor ?? 1.0;
+
+            // V9-MEDIUM-05 FIX: Validate conversion factor is positive
+            // A zero or negative factor would break stock calculations
+            if ($conversionFactor <= 0) {
+                Log::error('Invalid conversion factor for sale item', [
+                    'sale_id' => $sale->getKey(),
+                    'product_id' => $item->product_id,
+                    'item_id' => $item->getKey(),
+                    'conversion_factor' => $conversionFactor,
+                    'unit_name' => $item->unit?->name,
+                ]);
+
+                throw new InvalidArgumentException(
+                    "Invalid unit conversion factor ({$conversionFactor}) for product {$item->product_id}. " .
+                    "Conversion factor must be greater than 0."
+                );
+            }
             
             // Calculate actual quantity to deduct in base units
             $baseQuantity = (float) $item->quantity * (float) $conversionFactor;
@@ -56,34 +73,36 @@ class UpdateStockOnSale implements ShouldQueue
                 }
             }
 
-            // STILL-V7-HIGH-U06 FIX: More precise duplicate check
-            // Include warehouse_id, exact quantity (base units), and sale_item_id for uniqueness
-            $existing = StockMovement::where('reference_type', 'sale')
-                ->where('reference_id', $sale->getKey())
+            // STILL-V8-HIGH-U06 FIX: Use sale_item as reference for uniqueness
+            // This ensures each sale line item gets exactly one stock movement,
+            // even if multiple lines have the same product and quantity
+            $saleItemId = $item->getKey();
+            $existing = StockMovement::where('reference_type', 'sale_item')
+                ->where('reference_id', $saleItemId)
                 ->where('product_id', $item->product_id)
                 ->where('warehouse_id', $warehouseId)
-                ->where('quantity', -$baseQuantity) // Exact quantity including sign
                 ->exists();
 
             if ($existing) {
-                Log::info('Stock movement already recorded for sale', [
+                Log::info('Stock movement already recorded for sale item', [
                     'sale_id' => $sale->getKey(),
+                    'sale_item_id' => $saleItemId,
                     'product_id' => $item->product_id,
                 ]);
 
                 continue;
             }
 
-            // Use repository for proper schema mapping with base quantity
+            // STILL-V8-HIGH-U06 FIX: Use sale_item as reference_type for proper line-item uniqueness
             $this->stockMovementRepo->create([
                 'warehouse_id' => $warehouseId,
                 'product_id' => $item->product_id,
                 'movement_type' => 'sale',
-                'reference_type' => 'sale',
-                'reference_id' => $sale->getKey(),
+                'reference_type' => 'sale_item',
+                'reference_id' => $saleItemId,
                 'qty' => abs($baseQuantity),
                 'direction' => 'out',
-                'notes' => sprintf('Sale completed (UoM: %s, Factor: %s)', $item->unit?->name ?? 'base', $conversionFactor),
+                'notes' => sprintf('Sale #%s completed (UoM: %s, Factor: %s)', $sale->reference_number ?? $sale->getKey(), $item->unit?->name ?? 'base', $conversionFactor),
                 'created_by' => $sale->created_by,
             ]);
         }

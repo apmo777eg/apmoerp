@@ -195,6 +195,7 @@ class ProductsController extends BaseApiController
         $validated['default_price'] = $validated['price'];
         unset($validated['price']);
         $quantity = (float) $validated['quantity'];
+        $warehouseId = $validated['warehouse_id'] ?? null;
         unset($validated['quantity']);
 
         if (isset($validated['cost_price'])) {
@@ -202,12 +203,30 @@ class ProductsController extends BaseApiController
             unset($validated['cost_price']);
         }
 
-        // Create product and explicitly set guarded fields
+        // V9-CRITICAL-01 FIX: Create product without stock_quantity and use stock_movements instead
         $product = new Product($validated);
         $product->branch_id = $store->branch_id;
         $product->created_by = auth()->id();
+        // Keep stock_quantity as cached value but also create stock movement
         $product->stock_quantity = $quantity;
         $product->save();
+
+        // V9-CRITICAL-01 FIX: Create initial stock movement if quantity > 0 and warehouse is specified
+        if ($quantity > 0 && $warehouseId) {
+            $stockMovementRepo = app(\App\Repositories\Contracts\StockMovementRepositoryInterface::class);
+            $stockMovementRepo->create([
+                'warehouse_id' => $warehouseId,
+                'product_id' => $product->id,
+                'movement_type' => 'initial_stock',
+                'reference_type' => 'product_create',
+                'reference_id' => $product->id,
+                'qty' => $quantity,
+                'direction' => 'in',
+                'unit_cost' => $product->cost ?? null,
+                'notes' => 'Initial stock via API product creation',
+                'created_by' => auth()->id(),
+            ]);
+        }
 
         if ($store && $request->filled('external_id')) {
             ProductStoreMapping::create([
@@ -265,9 +284,41 @@ class ProductsController extends BaseApiController
             $validated['cost'] = $validated['cost_price'];
             unset($validated['cost_price']);
         }
+
+        // V9-CRITICAL-01 FIX: When quantity is updated, create a stock adjustment movement
+        // Note: If warehouse_id is not provided, we can only update the cached stock_quantity
+        // A stock movement requires a warehouse_id. This is acceptable as stock_quantity serves as
+        // a fallback cache when stock_movements isn't fully utilized.
+        $warehouseId = $validated['warehouse_id'] ?? null;
         if (array_key_exists('quantity', $validated)) {
-            $product->stock_quantity = (float) $validated['quantity'];
+            $newQuantity = (float) $validated['quantity'];
+
+            // Update cached stock_quantity
+            $product->stock_quantity = $newQuantity;
             unset($validated['quantity']);
+
+            // Create stock adjustment movement if warehouse is specified
+            if ($warehouseId) {
+                $currentStock = \App\Services\StockService::getCurrentStock($product->id, $warehouseId);
+                $quantityDiff = $newQuantity - $currentStock;
+
+                // Only create movement if there's a meaningful difference
+                if (abs($quantityDiff) > 0.0001) {
+                    $stockMovementRepo = app(\App\Repositories\Contracts\StockMovementRepositoryInterface::class);
+                    $stockMovementRepo->create([
+                        'warehouse_id' => $warehouseId,
+                        'product_id' => $product->id,
+                        'movement_type' => 'adjustment',
+                        'reference_type' => 'product_update',
+                        'reference_id' => $product->id,
+                        'qty' => abs($quantityDiff),
+                        'direction' => $quantityDiff > 0 ? 'in' : 'out',
+                        'unit_cost' => $product->cost ?? null,
+                        'notes' => 'Stock adjustment via API product update',
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+            }
         }
 
         $product->fill($validated);

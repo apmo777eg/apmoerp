@@ -26,12 +26,16 @@ class StockReorderService
 {
     /**
      * Get all products that need reordering.
+     *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      */
     public function getProductsNeedingReorder(?int $branchId = null): Collection
     {
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
         $query = Product::query()
             ->whereNotNull('reorder_point')
-            ->whereRaw('stock_quantity <= reorder_point')
+            ->whereRaw("({$stockSubquery}) <= reorder_point")
             ->where('status', 'active')
             ->where('type', '!=', 'service')
             ->with(['branch', 'module', 'unit']);
@@ -45,13 +49,17 @@ class StockReorderService
 
     /**
      * Get products with low stock (above reorder point but below alert threshold).
+     *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      */
     public function getLowStockProducts(?int $branchId = null): Collection
     {
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
         $query = Product::query()
             ->whereNotNull('stock_alert_threshold')
-            ->whereRaw('stock_quantity <= stock_alert_threshold')
-            ->whereRaw('stock_quantity > COALESCE(reorder_point, 0)')
+            ->whereRaw("({$stockSubquery}) <= stock_alert_threshold")
+            ->whereRaw("({$stockSubquery}) > COALESCE(reorder_point, 0)")
             ->where('status', 'active')
             ->where('type', '!=', 'service')
             ->with(['branch', 'module', 'unit']);
@@ -115,6 +123,8 @@ class StockReorderService
 
     /**
      * Generate reorder suggestions with details.
+     *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for stock values
      */
     public function generateReorderSuggestions(?int $branchId = null): array
     {
@@ -123,8 +133,10 @@ class StockReorderService
         return $products->map(function (Product $product) {
             $reorderQty = $this->calculateReorderQuantity($product);
             $salesVelocity = $this->calculateSalesVelocity($product->id);
+            // V9-CRITICAL-01 FIX: Use stock_movements to get current stock
+            $currentStock = \App\Services\StockService::getCurrentStock($product->id);
             $daysUntilStockout = $salesVelocity > 0
-                ? ceil($product->stock_quantity / $salesVelocity)
+                ? ceil($currentStock / $salesVelocity)
                 : null;
 
             return [
@@ -132,7 +144,7 @@ class StockReorderService
                 'product_name' => $product->name,
                 'product_code' => $product->code,
                 'sku' => $product->sku,
-                'current_stock' => $product->stock_quantity,
+                'current_stock' => $currentStock,
                 'reserved_stock' => $product->reserved_quantity,
                 'available_stock' => $product->getAvailableQuantity(),
                 'reorder_point' => $product->reorder_point,
@@ -149,11 +161,16 @@ class StockReorderService
 
     /**
      * Calculate priority for reordering (1-5, 5 being highest).
+     *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth for stock levels
      */
     private function calculatePriority(Product $product, ?int $daysUntilStockout): int
     {
+        // V9-CRITICAL-01 FIX: Use stock_movements to get current stock
+        $currentStock = \App\Services\StockService::getCurrentStock($product->id);
+
         // Out of stock = highest priority
-        if ($product->stock_quantity <= 0) {
+        if ($currentStock <= 0) {
             return 5;
         }
 
@@ -169,7 +186,7 @@ class StockReorderService
         }
 
         // Below reorder point but not critical
-        if ($product->reorder_point && $product->stock_quantity <= $product->reorder_point) {
+        if ($product->reorder_point && $currentStock <= $product->reorder_point) {
             return 2;
         }
 

@@ -14,23 +14,29 @@ class WorkflowAutomationService
 {
     /**
      * Check for low stock products and create alerts
+     *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      */
     public function checkLowStockProducts(int $limit = 100): array
     {
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
         $lowStockProducts = Product::query()
-            ->whereRaw('stock_quantity <= COALESCE(reorder_point, min_stock, 0)')
+            ->whereRaw("({$stockSubquery}) <= COALESCE(reorder_point, min_stock, 0)")
             ->with(['category'])
             ->limit($limit)
             ->get();
 
         $alerts = [];
         foreach ($lowStockProducts as $product) {
+            // V9-CRITICAL-01 FIX: Use stock_movements to get current stock
+            $currentStock = \App\Services\StockService::getCurrentStock($product->id);
             $alerts[] = [
                 'product_id' => $product->id,
                 'product_name' => $product->name,
-                'current_stock' => $product->stock_quantity ?? 0,
+                'current_stock' => $currentStock,
                 'reorder_point' => $product->reorder_point ?? $product->min_stock,
-                'severity' => $this->calculateStockSeverity($product),
+                'severity' => $this->calculateStockSeverity($product, $currentStock),
             ];
         }
 
@@ -39,10 +45,13 @@ class WorkflowAutomationService
 
     /**
      * Calculate stock severity level
+     *
+     * V9-CRITICAL-01 FIX: Accept calculated stock as parameter instead of using stock_quantity
      */
-    protected function calculateStockSeverity(Product $product): string
+    protected function calculateStockSeverity(Product $product, ?float $currentStock = null): string
     {
-        $currentStock = $product->stock_quantity ?? 0;
+        // V9-CRITICAL-01 FIX: Use provided stock or calculate from stock_movements
+        $currentStock = $currentStock ?? \App\Services\StockService::getCurrentStock($product->id);
         $minStock = $product->min_stock ?? 0;
         $reorderPoint = $product->reorder_point ?? $minStock;
 
@@ -140,32 +149,39 @@ class WorkflowAutomationService
 
     /**
      * Generate reorder suggestions based on stock levels and sales velocity
+     *
+     * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
      */
     public function generateReorderSuggestions(int $limit = 50): array
     {
+        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+
         $products = Product::query()
-            ->whereRaw('stock_quantity <= COALESCE(reorder_point, min_stock, 0)')
+            ->whereRaw("({$stockSubquery}) <= COALESCE(reorder_point, min_stock, 0)")
             ->with(['category'])
-            ->orderByRaw('(COALESCE(reorder_point, min_stock, 0) - stock_quantity) DESC')
+            ->selectRaw("*, ({$stockSubquery}) as calculated_stock")
+            ->orderByRaw("(COALESCE(reorder_point, min_stock, 0) - ({$stockSubquery})) DESC")
             ->limit($limit)
             ->get();
 
         $suggestions = [];
         foreach ($products as $product) {
-            $reorderQuantity = $this->calculateReorderQuantity($product);
+            // V9-CRITICAL-01 FIX: Use stock_movements to get current stock
+            $currentStock = $product->calculated_stock ?? \App\Services\StockService::getCurrentStock($product->id);
+            $reorderQuantity = $this->calculateReorderQuantity($product, $currentStock);
 
             $suggestions[] = [
                 'product_id' => $product->id,
                 'product_name' => $product->name,
                 'sku' => $product->sku,
-                'current_stock' => $product->stock_quantity ?? 0,
+                'current_stock' => $currentStock,
                 'min_stock' => $product->min_stock ?? 0,
                 'max_stock' => $product->max_stock ?? 0,
                 'reorder_point' => $product->reorder_point ?? 0,
                 'suggested_order_quantity' => $reorderQuantity,
                 'estimated_cost' => ($product->cost ?? 0) * $reorderQuantity,
                 'lead_time_days' => $product->lead_time_days ?? 7,
-                'urgency' => $this->calculateUrgency($product),
+                'urgency' => $this->calculateUrgency($product, $currentStock),
             ];
         }
 
@@ -181,13 +197,15 @@ class WorkflowAutomationService
 
     /**
      * Calculate optimal reorder quantity
+     *
+     * V9-CRITICAL-01 FIX: Accept calculated stock as parameter instead of using stock_quantity
      */
-    protected function calculateReorderQuantity(Product $product): float
+    protected function calculateReorderQuantity(Product $product, ?float $currentStock = null): float
     {
-        $currentStock = $product->stock_quantity ?? 0;
-        $maxStock = $product->max_stock ?? ($product->min_stock * 3);
+        // V9-CRITICAL-01 FIX: Use provided stock or calculate from stock_movements
+        $currentStock = $currentStock ?? \App\Services\StockService::getCurrentStock($product->id);
+        $maxStock = $product->max_stock ?? (($product->min_stock ?? 0) * 3);
         $minStock = $product->min_stock ?? 0;
-        $unitCost = $product->cost ?? 0;
 
         // Simple reorder formula: order to max stock level
         $reorderQty = max($maxStock - $currentStock, 0);
@@ -197,10 +215,13 @@ class WorkflowAutomationService
 
     /**
      * Calculate urgency level for reordering
+     *
+     * V9-CRITICAL-01 FIX: Accept calculated stock as parameter instead of using stock_quantity
      */
-    protected function calculateUrgency(Product $product): string
+    protected function calculateUrgency(Product $product, ?float $currentStock = null): string
     {
-        $currentStock = $product->stock_quantity ?? 0;
+        // V9-CRITICAL-01 FIX: Use provided stock or calculate from stock_movements
+        $currentStock = $currentStock ?? \App\Services\StockService::getCurrentStock($product->id);
         $minStock = $product->min_stock ?? 0;
 
         // Calculate days of stock remaining based on average sales

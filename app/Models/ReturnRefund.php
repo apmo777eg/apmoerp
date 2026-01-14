@@ -11,8 +11,14 @@ class ReturnRefund extends Model
 {
     use HasFactory, HasBranch;
 
+    /**
+     * V9-CRITICAL-02 FIX: Added return_note_id to support both SalesReturn and ReturnNote refunds
+     * - sales_return_id: FK to sales_returns table (advanced returns)
+     * - return_note_id: FK to return_notes table (simple/legacy returns)
+     */
     protected $fillable = [
         'sales_return_id',
+        'return_note_id',  // V9-CRITICAL-02 FIX: Added for ReturnNote refunds
         'credit_note_id',
         'branch_id',
         'refund_method',
@@ -55,6 +61,14 @@ class ReturnRefund extends Model
     public function salesReturn(): BelongsTo
     {
         return $this->belongsTo(SalesReturn::class);
+    }
+
+    /**
+     * V9-CRITICAL-02 FIX: Added relationship for ReturnNote refunds
+     */
+    public function returnNote(): BelongsTo
+    {
+        return $this->belongsTo(ReturnNote::class);
     }
 
     public function creditNote(): BelongsTo
