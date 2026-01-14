@@ -120,7 +120,8 @@ class ScheduledReportService
                 // quantity is signed: positive = in, negative = out
                 // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation to prevent cross-branch leakage
                 $stockSubquery = \App\Services\StockService::getBranchStockCalculationExpression('products.id', 'products.branch_id');
-                $query->whereRaw("({$stockSubquery}) <= products.reorder_point");
+                // Use COALESCE to handle null reorder_point values
+                $query->whereRaw("({$stockSubquery}) <= COALESCE(products.reorder_point, 0)");
             }
 
             return $query->orderBy('name')
