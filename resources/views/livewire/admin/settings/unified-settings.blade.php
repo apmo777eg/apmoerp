@@ -224,7 +224,7 @@
                                     :max-size="2048"
                                     field-id="branding-logo"
                                     wire:key="logo-picker-{{ $branding_logo_id ?: 'empty' }}"
-                                />
+                                ></livewire:components.media-picker>
                             </div>
 
                             <div>
@@ -236,7 +236,7 @@
                                     :max-size="1024"
                                     field-id="branding-favicon"
                                     wire:key="favicon-picker-{{ $branding_favicon_id ?: 'empty' }}"
-                                />
+                                ></livewire:components.media-picker>
                             </div>
                         </div>
 

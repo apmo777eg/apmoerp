@@ -13,8 +13,8 @@
         $saleModel = '\\App\\Models\\Sale';
         $salesStats = [
             'count' => class_exists($saleModel) ? $saleModel::count() : 0,
-            'today' => class_exists($saleModel) ? $saleModel::whereDate('created_at', $today)->sum('grand_total') : 0,
-            'total' => class_exists($saleModel) ? $saleModel::sum('grand_total') : 0,
+            'today' => class_exists($saleModel) ? $saleModel::whereDate('created_at', $today)->sum('total_amount') : 0,
+            'total' => class_exists($saleModel) ? $saleModel::sum('total_amount') : 0,
         ];
 
         $employeeModel = '\\App\\Models\\HREmployee';
@@ -39,7 +39,7 @@
         ];
 
         $salesSeries = class_exists($saleModel)
-            ? $saleModel::selectRaw('DATE(created_at) as day, SUM(grand_total) as total')
+            ? $saleModel::selectRaw('DATE(created_at) as day, SUM(total_amount) as total')
                 ->whereDate('created_at', '>=', $from)
                 ->groupBy('day')
                 ->orderBy('day')

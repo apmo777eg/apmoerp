@@ -441,25 +441,14 @@ class Product extends BaseModel
      * @deprecated since v12. Use StockMovementRepository::create() for stock adjustments instead.
      *             This method may cause stock_quantity to drift from stock_movements truth.
      *             Scheduled for removal in v14.
+     *
+     * @throws \RuntimeException Always thrown to prevent usage. Use StockMovementRepository::create() instead.
      */
     public function addStock(float $quantity): void
     {
-        $updated = DB::transaction(function () use ($quantity): bool {
-            $product = self::whereKey($this->getKey())->lockForUpdate()->first();
-
-            if (! $product) {
-                throw new \RuntimeException('Product not found for adjustment.');
-            }
-
-            $product->stock_quantity += $quantity;
-            $product->save();
-
-            return true;
-        }, 3);
-
-        if ($updated) {
-            $this->refresh();
-        }
+        throw new \RuntimeException(
+            'addStock() is disabled. Use StockMovementRepository::create() for stock adjustments to ensure stock_movements is the single source of truth.'
+        );
     }
 
     /**
@@ -480,27 +469,14 @@ class Product extends BaseModel
      * @deprecated since v12. Use StockMovementRepository::create() for stock adjustments instead.
      *             This method may cause stock_quantity to drift from stock_movements truth.
      *             Scheduled for removal in v14.
+     *
+     * @throws \RuntimeException Always thrown to prevent usage. Use StockMovementRepository::create() instead.
      */
     public function subtractStock(float $quantity): void
     {
-        $updated = DB::transaction(function () use ($quantity): bool {
-            $product = self::whereKey($this->getKey())->lockForUpdate()->first();
-
-            if (! $product) {
-                throw new \RuntimeException('Product not found for adjustment.');
-            }
-
-            // STILL-V9-CRITICAL-01 FIX: Do not clamp to 0; allow negative stock
-            // This preserves negative stock visibility for accurate reporting and auditing
-            $product->stock_quantity = $product->stock_quantity - $quantity;
-            $product->save();
-
-            return true;
-        }, 3);
-
-        if ($updated) {
-            $this->refresh();
-        }
+        throw new \RuntimeException(
+            'subtractStock() is disabled. Use StockMovementRepository::create() for stock adjustments to ensure stock_movements is the single source of truth.'
+        );
     }
 
     public function isExpired(): bool
