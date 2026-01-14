@@ -156,7 +156,7 @@
                         :schema="$dynamicSchema"
                         :data="$dynamicData"
                         wire:key="rental-contract-dynamic-form-{{ $contractId ?? 'new' }}"
-                    />
+                    ></livewire:shared.dynamic-form>
                 </div>
             @endif
         </div>

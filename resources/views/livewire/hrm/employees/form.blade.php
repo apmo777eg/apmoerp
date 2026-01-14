@@ -119,7 +119,7 @@
                         :schema="$dynamicSchema"
                         :data="$dynamicData"
                         wire:key="employee-dynamic-form-{{ $employeeId ?? 'new' }}"
-                    />
+                    ></livewire:shared.dynamic-form>
                 </div>
             @endif
         </div>

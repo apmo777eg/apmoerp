@@ -62,7 +62,7 @@
                     :max-size="5120"
                     field-id="income-attachment"
                     wire:key="income-attachment-{{ $attachment ?: 'empty' }}"
-                />
+                ></livewire:components.media-picker>
                 @error('attachment') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 

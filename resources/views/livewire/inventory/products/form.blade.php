@@ -259,7 +259,7 @@
                         :max-size="2048"
                         field-id="product-thumbnail"
                         wire:key="product-thumbnail-picker-{{ $thumbnail_media_id ?: 'empty' }}"
-                    />
+                    ></livewire:components.media-picker>
                     @error('form.thumbnail')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror

@@ -96,7 +96,7 @@
                         :schema="$dynamicSchema"
                         :data="$dynamicData"
                         wire:key="rental-unit-dynamic-form-{{ $unitId ?? 'new' }}"
-                    />
+                    ></livewire:shared.dynamic-form>
                 </div>
             @endif
         </div>

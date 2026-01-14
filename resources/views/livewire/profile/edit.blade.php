@@ -52,7 +52,7 @@
                             :max-size="2048"
                             field-id="profile-avatar"
                             wire:key="profile-avatar-{{ $currentAvatar ?: 'empty' }}"
-                        />
+                        ></livewire:components.media-picker>
                         @error('avatar') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
