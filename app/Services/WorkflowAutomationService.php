@@ -16,10 +16,12 @@ class WorkflowAutomationService
      * Check for low stock products and create alerts
      *
      * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
+     * V10-CRITICAL-01 FIX: Use branch-scoped stock calculation to prevent cross-branch leakage
      */
     public function checkLowStockProducts(int $limit = 100): array
     {
-        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+        // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+        $stockSubquery = \App\Services\StockService::getBranchStockCalculationExpression('products.id', 'products.branch_id');
 
         $lowStockProducts = Product::query()
             ->whereRaw("({$stockSubquery}) <= COALESCE(reorder_point, min_stock, 0)")
@@ -30,7 +32,8 @@ class WorkflowAutomationService
         $alerts = [];
         foreach ($lowStockProducts as $product) {
             // V9-CRITICAL-01 FIX: Use stock_movements to get current stock
-            $currentStock = \App\Services\StockService::getCurrentStock($product->id);
+            // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+            $currentStock = \App\Services\StockService::getStock($product->id, $product->branch_id);
             $alerts[] = [
                 'product_id' => $product->id,
                 'product_name' => $product->name,
@@ -47,11 +50,13 @@ class WorkflowAutomationService
      * Calculate stock severity level
      *
      * V9-CRITICAL-01 FIX: Accept calculated stock as parameter instead of using stock_quantity
+     * V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
      */
     protected function calculateStockSeverity(Product $product, ?float $currentStock = null): string
     {
         // V9-CRITICAL-01 FIX: Use provided stock or calculate from stock_movements
-        $currentStock = $currentStock ?? \App\Services\StockService::getCurrentStock($product->id);
+        // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+        $currentStock = $currentStock ?? \App\Services\StockService::getStock($product->id, $product->branch_id);
         $minStock = $product->min_stock ?? 0;
         $reorderPoint = $product->reorder_point ?? $minStock;
 
@@ -151,10 +156,12 @@ class WorkflowAutomationService
      * Generate reorder suggestions based on stock levels and sales velocity
      *
      * V9-CRITICAL-01 FIX: Use stock_movements as source of truth instead of stock_quantity
+     * V10-CRITICAL-01 FIX: Use branch-scoped stock calculation to prevent cross-branch leakage
      */
     public function generateReorderSuggestions(int $limit = 50): array
     {
-        $stockSubquery = \App\Services\StockService::getStockCalculationExpression('products.id');
+        // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+        $stockSubquery = \App\Services\StockService::getBranchStockCalculationExpression('products.id', 'products.branch_id');
 
         $products = Product::query()
             ->whereRaw("({$stockSubquery}) <= COALESCE(reorder_point, min_stock, 0)")
@@ -167,7 +174,8 @@ class WorkflowAutomationService
         $suggestions = [];
         foreach ($products as $product) {
             // V9-CRITICAL-01 FIX: Use stock_movements to get current stock
-            $currentStock = $product->calculated_stock ?? \App\Services\StockService::getCurrentStock($product->id);
+            // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+            $currentStock = $product->calculated_stock ?? \App\Services\StockService::getStock($product->id, $product->branch_id);
             $reorderQuantity = $this->calculateReorderQuantity($product, $currentStock);
 
             $suggestions[] = [
@@ -199,11 +207,13 @@ class WorkflowAutomationService
      * Calculate optimal reorder quantity
      *
      * V9-CRITICAL-01 FIX: Accept calculated stock as parameter instead of using stock_quantity
+     * V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
      */
     protected function calculateReorderQuantity(Product $product, ?float $currentStock = null): float
     {
         // V9-CRITICAL-01 FIX: Use provided stock or calculate from stock_movements
-        $currentStock = $currentStock ?? \App\Services\StockService::getCurrentStock($product->id);
+        // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+        $currentStock = $currentStock ?? \App\Services\StockService::getStock($product->id, $product->branch_id);
         $maxStock = $product->max_stock ?? (($product->min_stock ?? 0) * 3);
         $minStock = $product->min_stock ?? 0;
 
@@ -217,11 +227,13 @@ class WorkflowAutomationService
      * Calculate urgency level for reordering
      *
      * V9-CRITICAL-01 FIX: Accept calculated stock as parameter instead of using stock_quantity
+     * V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
      */
     protected function calculateUrgency(Product $product, ?float $currentStock = null): string
     {
         // V9-CRITICAL-01 FIX: Use provided stock or calculate from stock_movements
-        $currentStock = $currentStock ?? \App\Services\StockService::getCurrentStock($product->id);
+        // V10-CRITICAL-01 FIX: Use branch-scoped stock calculation
+        $currentStock = $currentStock ?? \App\Services\StockService::getStock($product->id, $product->branch_id);
         $minStock = $product->min_stock ?? 0;
 
         // Calculate days of stock remaining based on average sales

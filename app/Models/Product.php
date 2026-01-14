@@ -447,6 +447,13 @@ class Product extends BaseModel
         }
     }
 
+    /**
+     * Subtract stock from the product
+     *
+     * STILL-V9-CRITICAL-01 FIX: Remove clamping to 0 to preserve negative stock visibility
+     * for accurate reporting and auditing. This aligns with stock_movements being the
+     * source of truth, where negative quantities are valid for tracking backorders.
+     */
     public function subtractStock(float $quantity): void
     {
         $updated = DB::transaction(function () use ($quantity): bool {
@@ -456,7 +463,9 @@ class Product extends BaseModel
                 throw new \RuntimeException('Product not found for adjustment.');
             }
 
-            $product->stock_quantity = max(0, $product->stock_quantity - $quantity);
+            // STILL-V9-CRITICAL-01 FIX: Do not clamp to 0; allow negative stock
+            // This preserves negative stock visibility for accurate reporting and auditing
+            $product->stock_quantity = $product->stock_quantity - $quantity;
             $product->save();
 
             return true;
