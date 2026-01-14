@@ -139,7 +139,11 @@ class InventoryController extends BaseApiController
             if (! $freshProduct) {
                 throw new \RuntimeException('Product not found during stock update');
             }
-            $calculated = $this->calculateCurrentStock($product->id, null, $product->branch_id);
+            // STILL-V11-CRITICAL-02 FIX: Use the same warehouse_id for recalculating stock
+            // to maintain consistency with the stock_movement just created.
+            // Note: products.stock_quantity is a cached value that represents warehouse-specific
+            // stock when a warehouse_id is provided. For branch-wide totals, use StockService.
+            $calculated = $this->calculateCurrentStock($product->id, $warehouseId, $product->branch_id);
             // NEW-MEDIUM-07 FIX: Store actual calculated value without clamping to 0
             // This preserves negative stock visibility for accurate reporting and auditing
             $freshProduct->forceFill(['stock_quantity' => $calculated])->save();
@@ -242,7 +246,9 @@ class InventoryController extends BaseApiController
                     if (! $freshProduct) {
                         throw new \RuntimeException('Product not found during stock update');
                     }
-                    $calculated = $this->calculateCurrentStock($product->id, null, $product->branch_id);
+                    // STILL-V11-CRITICAL-02 FIX: Use the same warehouse_id for recalculating stock
+                    // to maintain consistency with the stock_movement just created.
+                    $calculated = $this->calculateCurrentStock($product->id, $warehouseId, $product->branch_id);
                     // NEW-MEDIUM-07 FIX: Store actual calculated value without clamping to 0
                     $freshProduct->forceFill(['stock_quantity' => $calculated])->save();
 

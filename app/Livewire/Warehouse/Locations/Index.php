@@ -68,11 +68,19 @@ class Index extends Component
     {
         $user = auth()->user();
 
+        // STILL-V11-CRITICAL-01 FIX: Map status filter to is_active column
+        // Warehouse.status is a computed accessor (getStatusAttribute) that returns
+        // 'active'|'inactive' based on the is_active boolean column
         $warehouses = Warehouse::query()
             ->withCount('stockMovements')
             ->when($user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->when($this->search, fn ($q) => $q->search($this->search))
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))
+            ->when($this->statusFilter, function ($q) {
+                // Translate UI filter values to actual column
+                $isActive = $this->statusFilter === 'active';
+
+                return $q->where('is_active', $isActive);
+            })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(15);
 

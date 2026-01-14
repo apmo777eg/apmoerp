@@ -427,6 +427,21 @@ class Product extends BaseModel
         }
     }
 
+    /**
+     * Add stock to the product's cached stock_quantity.
+     *
+     * STILL-V11-HIGH-02 WARNING: This method ONLY updates the cached stock_quantity field.
+     * It does NOT create a stock_movement record. The source of truth for stock is the
+     * stock_movements table. This method should ONLY be called in conjunction with
+     * creating a corresponding stock_movement in the same transaction.
+     *
+     * For proper stock adjustments, use StockMovementRepository::create() which handles
+     * both the movement record and proper locking.
+     *
+     * @deprecated since v12. Use StockMovementRepository::create() for stock adjustments instead.
+     *             This method may cause stock_quantity to drift from stock_movements truth.
+     *             Scheduled for removal in v14.
+     */
     public function addStock(float $quantity): void
     {
         $updated = DB::transaction(function () use ($quantity): bool {
@@ -448,11 +463,23 @@ class Product extends BaseModel
     }
 
     /**
-     * Subtract stock from the product
+     * Subtract stock from the product's cached stock_quantity.
+     *
+     * STILL-V11-HIGH-02 WARNING: This method ONLY updates the cached stock_quantity field.
+     * It does NOT create a stock_movement record. The source of truth for stock is the
+     * stock_movements table. This method should ONLY be called in conjunction with
+     * creating a corresponding stock_movement in the same transaction.
+     *
+     * For proper stock adjustments, use StockMovementRepository::create() which handles
+     * both the movement record and proper locking.
      *
      * STILL-V9-CRITICAL-01 FIX: Remove clamping to 0 to preserve negative stock visibility
      * for accurate reporting and auditing. This aligns with stock_movements being the
      * source of truth, where negative quantities are valid for tracking backorders.
+     *
+     * @deprecated since v12. Use StockMovementRepository::create() for stock adjustments instead.
+     *             This method may cause stock_quantity to drift from stock_movements truth.
+     *             Scheduled for removal in v14.
      */
     public function subtractStock(float $quantity): void
     {

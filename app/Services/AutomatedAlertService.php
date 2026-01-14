@@ -151,10 +151,17 @@ class AutomatedAlertService
      */
     public function checkCreditLimitAlerts(?int $branchId = null): array
     {
+        // NEW-V12-CRITICAL-01 FIX: Use actual DB columns instead of 'status' accessor
+        // Customer.status is a computed accessor (getStatusAttribute) that returns
+        // 'active'|'inactive'|'blocked' based on is_active/is_blocked columns.
+        // To filter 'active' customers: is_active=true AND is_blocked=false
+        // 'inactive' would be: is_active=false AND is_blocked=false
+        // 'blocked' would be: is_blocked=true (regardless of is_active)
         $customers = Customer::query()
             ->where('credit_limit', '>', 0)
             ->whereRaw('balance >= (credit_limit * 0.8)') // 80% of credit limit
-            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_blocked', false)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with('branch')
             ->get();
