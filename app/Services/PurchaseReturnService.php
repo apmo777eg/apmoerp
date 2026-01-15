@@ -64,6 +64,9 @@ class PurchaseReturnService
             // Validate purchase exists and load its items
             $purchase = Purchase::with('items')->findOrFail($validated['purchase_id']);
 
+            // V25-HIGH-07 FIX: Build an indexed map for efficient lookup
+            $purchaseItemsById = $purchase->items->keyBy('id');
+
             // Create purchase return
             $return = PurchaseReturn::create([
                 'purchase_id' => $validated['purchase_id'],
@@ -81,8 +84,8 @@ class PurchaseReturnService
             // Add return items
             $totalAmount = 0;
             foreach ($validated['items'] as $itemData) {
-                // V25-HIGH-07 FIX: Validate purchase_item belongs to the purchase
-                $purchaseItem = $purchase->items->firstWhere('id', $itemData['purchase_item_id']);
+                // V25-HIGH-07 FIX: Validate purchase_item belongs to the purchase (using efficient lookup)
+                $purchaseItem = $purchaseItemsById->get($itemData['purchase_item_id']);
                 if (! $purchaseItem) {
                     throw new \InvalidArgumentException(
                         "Purchase item ID {$itemData['purchase_item_id']} does not belong to purchase ID {$validated['purchase_id']}"

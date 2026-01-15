@@ -389,8 +389,10 @@ class StoreSyncService
             // V25-HIGH-03 FIX: Get default warehouse for the store's branch
             $warehouseId = $this->getDefaultWarehouseForBranch($store->branch_id);
 
-            // V25-HIGH-03 FIX: Parse order date from Shopify
-            $orderDate = isset($data['created_at']) ? date('Y-m-d', strtotime($data['created_at'])) : now()->toDateString();
+            // V25-HIGH-03 FIX: Parse order date from Shopify using Carbon for better error handling
+            $orderDate = isset($data['created_at'])
+                ? \Carbon\Carbon::parse($data['created_at'])->toDateString()
+                : now()->toDateString();
 
             $status = $this->mapShopifyOrderStatus($data['financial_status'] ?? 'pending');
 
@@ -539,8 +541,10 @@ class StoreSyncService
             // V25-HIGH-03 FIX: Get default warehouse for the store's branch
             $warehouseId = $this->getDefaultWarehouseForBranch($store->branch_id);
 
-            // V25-HIGH-03 FIX: Parse order date from WooCommerce
-            $orderDate = isset($data['date_created']) ? date('Y-m-d', strtotime($data['date_created'])) : now()->toDateString();
+            // V25-HIGH-03 FIX: Parse order date from WooCommerce using Carbon for better error handling
+            $orderDate = isset($data['date_created'])
+                ? \Carbon\Carbon::parse($data['date_created'])->toDateString()
+                : now()->toDateString();
 
             $status = $this->mapWooOrderStatus($data['status'] ?? 'pending');
 
