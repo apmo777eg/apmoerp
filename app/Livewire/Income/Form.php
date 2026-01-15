@@ -143,8 +143,11 @@ class Form extends Component
             }
         }
 
+        // V23-MED-05 FIX: Don't overwrite created_by on updates
         $validated['branch_id'] = $this->income?->branch_id ?? $branchId;
-        $validated['created_by'] = auth()->id();
+        if (! $this->editMode) {
+            $validated['created_by'] = auth()->id();
+        }
 
         return $this->handleOperation(
             operation: function () use ($validated) {

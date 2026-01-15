@@ -119,7 +119,10 @@ class Form extends Component
 
         $validated['branch_id'] = $branchId;
         $validated['reference_number'] = $validated['reference_number'] ?? 'EXP-'.now()->format('YmdHis').'-'.uniqid();
-        $validated['created_by'] = auth()->id();
+        // V23-MED-05 FIX: Don't overwrite created_by on updates
+        if (! $this->editMode) {
+            $validated['created_by'] = auth()->id();
+        }
 
         return $this->handleOperation(
             operation: function () use ($validated) {

@@ -112,13 +112,14 @@ class Form extends Component
                 'branch_id' => $branchId,
                 'warehouse_id' => $warehouse->id,
                 'reason' => $this->reason,
-                'note' => $this->note,
-                'created_by' => $user->id,
             ];
 
             if ($this->adjustment) {
+                // V23-MED-05 FIX: Don't overwrite created_by on updates
                 $this->adjustment->update($data);
             } else {
+                // Only set created_by on create
+                $data['created_by'] = $user->id;
                 $this->adjustment = Adjustment::create($data);
             }
 

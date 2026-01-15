@@ -103,13 +103,15 @@ class Form extends Component
             'planned_start_date' => $this->planned_start_date,
             'planned_end_date' => $this->planned_end_date,
             'notes' => $this->notes,
-            'created_by' => $user->id,
         ];
 
         if ($this->editMode) {
+            // V23-HIGH-08 FIX: Don't overwrite created_by on updates
             $this->productionOrder->update($data);
             session()->flash('success', __('Production Order updated successfully.'));
         } else {
+            // Only set created_by on create
+            $data['created_by'] = $user->id;
             $data['order_number'] = ProductionOrder::generateOrderNumber($branchId);
             ProductionOrder::create($data);
             session()->flash('success', __('Production Order created successfully.'));
@@ -124,17 +126,22 @@ class Form extends Component
         $user = auth()->user();
         $branchId = $user->branch_id ?? null;
 
-        $boms = BillOfMaterial::where('branch_id', $branchId)
+        // V23-HIGH-08 FIX: Handle branch-less users properly
+        // Don't use 'where branch_id = null' which returns nothing
+        $boms = BillOfMaterial::query()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->where('status', 'active')
             ->with('product')
             ->orderBy('name')
             ->get();
 
-        $products = Product::where('branch_id', $branchId)
+        $products = Product::query()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->orderBy('name')
             ->get(['id', 'name', 'sku']);
 
-        $warehouses = Warehouse::where('branch_id', $branchId)
+        $warehouses = Warehouse::query()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->orderBy('name')
             ->get(['id', 'name']);
 

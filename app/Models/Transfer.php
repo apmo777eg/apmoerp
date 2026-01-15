@@ -163,6 +163,8 @@ class Transfer extends BaseModel
 
     /**
      * Mark as shipped
+     * V23-HIGH-05 FIX: Remove created_by update - it should be immutable
+     * The user who ships is not the creator
      */
     public function ship(?int $userId = null): bool
     {
@@ -173,7 +175,6 @@ class Transfer extends BaseModel
         return $this->update([
             'status' => self::STATUS_IN_TRANSIT,
             'shipped_at' => now(),
-            'created_by' => $userId ?? auth()->id(),
         ]);
     }
 

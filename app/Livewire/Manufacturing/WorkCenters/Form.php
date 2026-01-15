@@ -103,12 +103,12 @@ class Form extends Component
                     return Branch::first()?->id;
                 });
             }
-            
+
             $lastWc = WorkCenter::when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()
                 ->orderBy('id', 'desc')
                 ->first();
-            
+
             $seq = $lastWc ? ($lastWc->id % 1000) + 1 : 1;
             $base = sprintf('%03d', $seq);
         }
@@ -127,13 +127,6 @@ class Form extends Component
 
     public function save(): mixed
     {
-        // Auto-generate code if empty
-        if (empty($this->code)) {
-            $this->code = $this->generateCode();
-        }
-
-        $this->validate();
-
         $user = auth()->user();
         $branchId = $user->branch_id ?? Branch::first()?->id;
 
@@ -143,27 +136,38 @@ class Form extends Component
             return null;
         }
 
-        $data = [
-            'branch_id' => $branchId,
-            'code' => $this->code,
-            'name' => $this->name,
-            'name_ar' => $this->name_ar,
-            'description' => $this->description,
-            'type' => $this->type,
-            'capacity_per_hour' => $this->capacity_per_hour,
-            'cost_per_hour' => $this->cost_per_hour,
-            'status' => $this->status,
-        ];
+        // V23-HIGH-09 FIX: Wrap code generation and create in DB transaction
+        // The lockForUpdate() in generateCode() is ineffective without a transaction
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            // Auto-generate code if empty (inside transaction for effective locking)
+            if (empty($this->code)) {
+                $this->code = $this->generateCode();
+            }
 
-        if ($this->editMode) {
-            $this->workCenter->update($data);
-            session()->flash('success', __('Work Center updated successfully.'));
-        } else {
-            WorkCenter::create($data);
-            session()->flash('success', __('Work Center created successfully.'));
-        }
+            $this->validate();
 
-        $this->redirectRoute('app.manufacturing.work-centers.index', navigate: true);
+            $data = [
+                'branch_id' => $branchId,
+                'code' => $this->code,
+                'name' => $this->name,
+                'name_ar' => $this->name_ar,
+                'description' => $this->description,
+                'type' => $this->type,
+                'capacity_per_hour' => $this->capacity_per_hour,
+                'cost_per_hour' => $this->cost_per_hour,
+                'status' => $this->status,
+            ];
+
+            if ($this->editMode) {
+                $this->workCenter->update($data);
+                session()->flash('success', __('Work Center updated successfully.'));
+            } else {
+                WorkCenter::create($data);
+                session()->flash('success', __('Work Center created successfully.'));
+            }
+
+            $this->redirectRoute('app.manufacturing.work-centers.index', navigate: true);
+        });
     }
 
     #[Layout('layouts.app')]
