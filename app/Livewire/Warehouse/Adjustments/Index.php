@@ -80,8 +80,9 @@ class Index extends Component
             ->when($user->branch_id, fn ($q) => $q->where('adjustments.branch_id', $user->branch_id))
             ->when($this->search, function ($q) {
                 $q->where(function ($query) {
-                    $query->where('reason', 'like', "%{$this->search}%")
-                        ->orWhere('note', 'like', "%{$this->search}%");
+                    // V24-CRIT-03 FIX: Remove 'note' column search - Adjustment model only has 'reason'
+                    // The 'note' accessor maps to 'reason', so searching 'reason' is sufficient
+                    $query->where('reason', 'like', "%{$this->search}%");
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection);

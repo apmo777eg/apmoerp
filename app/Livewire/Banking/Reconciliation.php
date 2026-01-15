@@ -253,7 +253,10 @@ class Reconciliation extends Component
         $account = BankAccount::find($this->accountId);
         $this->systemBalance = $account ? ($account->current_balance ?? 0) : 0;
 
-        $this->difference = $this->statementBalance - $matchedTotal;
+        // V24-HIGH-03 FIX: Use correct reconciliation formula
+        // The difference should be between statement balance and system balance
+        // A difference of 0 means the bank statement matches our books
+        $this->difference = $this->statementBalance - $this->systemBalance;
     }
 
     /**

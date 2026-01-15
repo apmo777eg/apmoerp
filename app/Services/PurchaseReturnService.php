@@ -49,6 +49,8 @@ class PurchaseReturnService
             'courier_name' => 'nullable|string|max:100',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|integer|exists:products,id',
+            // V24-CRIT-04 FIX: Add required validation for purchase_item_id
+            'items.*.purchase_item_id' => 'required|integer|exists:purchase_items,id',
             'items.*.qty_returned' => 'required|numeric|min:0.001',
             'items.*.condition' => 'nullable|in:defective,damaged,wrong_item,excess,expired',
             'items.*.unit_cost' => 'nullable|numeric|min:0',
@@ -78,19 +80,23 @@ class PurchaseReturnService
             // Add return items
             $totalAmount = 0;
             foreach ($validated['items'] as $itemData) {
+                // V24-CRIT-04 FIX: Use null coalescing for nullable fields to prevent undefined index
+                $unitCost = $itemData['unit_cost'] ?? 0;
+                $condition = $itemData['condition'] ?? null;
+                
                 $item = PurchaseReturnItem::create([
                     'purchase_return_id' => $return->id,
                     'purchase_item_id' => $itemData['purchase_item_id'],
                     'product_id' => $itemData['product_id'],
                     'qty_returned' => $itemData['qty_returned'],
-                    'unit_cost' => $itemData['unit_cost'],
-                    'condition' => $itemData['condition'],
+                    'unit_cost' => $unitCost,
+                    'condition' => $condition,
                     'batch_number' => $itemData['batch_number'] ?? null,
                     'expiry_date' => $itemData['expiry_date'] ?? null,
                     'notes' => $itemData['notes'] ?? null,
                 ]);
                 
-                $totalAmount += $item->qty_returned * $item->unit_cost;
+                $totalAmount += $item->qty_returned * $unitCost;
             }
             
             // Update expected debit note amount
@@ -132,7 +138,8 @@ class PurchaseReturnService
             }
             
             // Update supplier performance metrics
-            $this->updateSupplierPerformance($return->supplier_id, 'return');
+            // V24-HIGH-07 FIX: Pass branch_id from the return
+            $this->updateSupplierPerformance($return->supplier_id, 'return', $return->branch_id);
             
             return $return->fresh(['items', 'debitNote']);
         });
@@ -272,21 +279,28 @@ class PurchaseReturnService
      *
      * @param int $supplierId Supplier ID
      * @param string $type Metric type (return, delivery, quality)
+     * @param int|null $branchId Branch ID for the metric
      * @return void
      */
-    protected function updateSupplierPerformance(int $supplierId, string $type): void
+    protected function updateSupplierPerformance(int $supplierId, string $type, ?int $branchId = null): void
     {
         $currentPeriod = Carbon::now()->format('Y-m');
         
+        // V24-HIGH-07 FIX: Use correct field names per SupplierPerformanceMetric model
+        // and include branch_id to comply with HasBranch trait
         $metric = SupplierPerformanceMetric::firstOrCreate([
             'supplier_id' => $supplierId,
             'period' => $currentPeriod,
+            'branch_id' => $branchId ?? Auth::user()?->branch_id,
         ], [
             'total_orders' => 0,
             'on_time_deliveries' => 0,
-            'total_items_ordered' => 0,
-            'total_items_returned' => 0,
-            'defect_rate' => 0,
+            'total_ordered_qty' => 0,
+            'total_received_qty' => 0,
+            'total_rejected_qty' => 0,
+            'quality_acceptance_rate' => 100,
+            'total_returns' => 0,
+            'return_rate' => 0,
         ]);
         
         if ($type === 'return') {
@@ -308,9 +322,10 @@ class PurchaseReturnService
                 ->sum('items_sum_quantity');
             
             if ($totalOrders > 0) {
+                // V24-HIGH-07 FIX: Use correct field names per model
                 $metric->update([
-                    'total_items_returned' => $totalReturns,
-                    'total_items_ordered' => $totalOrders,
+                    'total_rejected_qty' => $totalReturns,
+                    'total_ordered_qty' => $totalOrders,
                     'return_rate' => ($totalReturns / $totalOrders) * 100,
                 ]);
             }

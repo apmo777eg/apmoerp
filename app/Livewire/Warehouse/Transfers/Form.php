@@ -130,12 +130,20 @@ class Form extends Component
         $this->transfer->items()->delete();
 
         foreach ($this->items as $item) {
+            // V24-HIGH-01 FIX: Fetch product to get unit_cost for proper transfer value calculation
+            $product = Product::find($item['product_id']);
+            $unitCost = $product ? ($product->cost ?? $product->standard_cost ?? 0) : 0;
+            
             TransferItem::create([
                 'transfer_id' => $this->transfer->id,
                 'product_id' => $item['product_id'],
                 'quantity' => $item['qty'], // Use quantity column per migration
+                'unit_cost' => $unitCost,
             ]);
         }
+        
+        // V24-HIGH-01 FIX: Update transfer total_value after items are saved
+        $this->transfer->updateTotalValue();
 
         session()->flash('success', __('Transfer saved successfully'));
 

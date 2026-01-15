@@ -297,6 +297,12 @@ class Form extends Component
             return $this->handleOperation(
                 operation: function () use ($user, $branchId) {
                     DB::transaction(function () use ($user, $branchId) {
+                        // V24-HIGH-05 FIX: Preserve original purchase_date in edit mode
+                        // Only set to now() when creating a new purchase
+                        $purchaseDate = $this->editMode && $this->purchase?->purchase_date 
+                            ? $this->purchase->purchase_date->toDateString() 
+                            : now()->toDateString();
+
                         $purchaseData = [
                             'branch_id' => $branchId,
                             'supplier_id' => $this->supplier_id,
@@ -306,7 +312,7 @@ class Form extends Component
                             'currency' => $this->currency,
                             'notes' => $this->notes,
                             'expected_date' => $this->expected_delivery_date ?: null,
-                            'purchase_date' => now()->toDateString(),
+                            'purchase_date' => $purchaseDate,
                             // Use correct migration column names
                             'subtotal' => $this->subTotal,
                             'discount_amount' => $this->discount_total,

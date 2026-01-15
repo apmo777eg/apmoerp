@@ -160,6 +160,10 @@ class Form extends Component
 
         $this->validate();
 
+        // V24-MED-01 FIX: Save isNew flag before setting employeeId
+        // This ensures correct message is shown (created vs updated)
+        $isNew = ! $this->employeeId;
+
         if ($this->employeeId) {
             /** @var HREmployee $employee */
             $employee = HREmployee::query()->findOrFail($this->employeeId);
@@ -181,11 +185,12 @@ class Form extends Component
 
         $this->employeeId = $employee->id;
 
+        // V24-MED-01 FIX: Use isNew flag for correct message
         session()->flash(
             'status',
-            $this->employeeId
-                ? __('Employee updated successfully.')
-                : __('Employee created successfully.')
+            $isNew
+                ? __('Employee created successfully.')
+                : __('Employee updated successfully.')
         );
 
         $this->redirectRoute('app.hrm.employees.index', navigate: true);

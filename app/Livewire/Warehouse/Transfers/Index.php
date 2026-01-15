@@ -103,7 +103,8 @@ class Index extends Component
             ->when($user->branch_id, fn ($q) => $q->where('transfers.branch_id', $user->branch_id))
             ->when($this->search, function ($q) {
                 $q->where(function ($query) {
-                    $query->where('note', 'like', "%{$this->search}%")
+                    // V24-CRIT-02 FIX: Use 'notes' column (per migration) instead of 'note'
+                    $query->where('notes', 'like', "%{$this->search}%")
                         ->orWhereHas('fromWarehouse', fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
                         ->orWhereHas('toWarehouse', fn ($q) => $q->where('name', 'like', "%{$this->search}%"));
                 });

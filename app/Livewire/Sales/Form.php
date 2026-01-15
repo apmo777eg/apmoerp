@@ -367,6 +367,12 @@ class Form extends Component
                         // BUG-005 Fix: Ensure due_total is non-negative
                         $dueTotal = max(0, $this->grandTotal - $this->payment_amount);
 
+                        // V24-HIGH-04 FIX: Preserve original sale_date in edit mode
+                        // Only set to now() when creating a new sale
+                        $saleDate = $this->editMode && $this->sale?->sale_date 
+                            ? $this->sale->sale_date->toDateString() 
+                            : now()->toDateString();
+
                         $saleData = [
                             'branch_id' => $branchId,
                             'customer_id' => $this->customer_id ?: null,
@@ -379,7 +385,7 @@ class Form extends Component
                             'delivery_date' => $this->delivery_date ?: null,
                             'shipping_method' => $this->shipping_method,
                             'tracking_number' => $this->tracking_number,
-                            'sale_date' => now()->toDateString(),
+                            'sale_date' => $saleDate,
                             // Use correct migration column names
                             'subtotal' => $this->subTotal,
                             'discount_amount' => $this->discount_total,
