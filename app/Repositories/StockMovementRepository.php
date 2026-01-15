@@ -114,6 +114,8 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
      * proper serialization of concurrent writes for the first movement
      *
      * NEW-V14-MEDIUM-04 FIX: Fail fast if warehouse_id is invalid (row doesn't exist)
+     *
+     * V22-HIGH-08 FIX: Update product.stock_quantity cache after creating movement
      */
     public function create(array $data): StockMovement
     {
@@ -170,7 +172,39 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             $mappedData['stock_after'] = $currentStock + $qty;
             $mappedData['unit_cost'] = $data['unit_cost'] ?? null;
 
-            return StockMovement::create($mappedData);
+            $movement = StockMovement::create($mappedData);
+
+            // V22-HIGH-08 FIX: Update the product's stock_quantity cache
+            // This keeps the denormalized stock_quantity field in sync with stock_movements
+            // The cache is used for quick reads and low_stock alerts
+            $this->updateProductStockCache($data['product_id']);
+
+            return $movement;
         });
+    }
+
+    /**
+     * V22-HIGH-08 FIX: Update the product's stock_quantity cache field
+     * Calculates total stock across all warehouses from stock_movements
+     *
+     * Note: This includes stock from all warehouses for this product.
+     * Branch-specific stock filtering is handled at query time using the BranchScope
+     * and warehouse relationships. The cached value represents the global stock level
+     * for reporting and low-stock alerts across the entire system.
+     */
+    protected function updateProductStockCache(int $productId): void
+    {
+        // Calculate total stock from all warehouses for this product
+        // This represents the global stock level, not branch-specific
+        $totalStock = (float) StockMovement::where('product_id', $productId)
+            ->sum('quantity');
+
+        // Update the product's stock_quantity field (cached/denormalized value)
+        DB::table('products')
+            ->where('id', $productId)
+            ->update([
+                'stock_quantity' => $totalStock,
+                'updated_at' => now(),
+            ]);
     }
 }

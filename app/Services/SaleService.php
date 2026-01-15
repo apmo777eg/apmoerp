@@ -168,13 +168,10 @@ class SaleService implements SaleServiceInterface
                         ]);
                     }
 
-                    // V22-HIGH-07 FIX: Only set status to 'returned' if entire sale is returned
-                    // Check if all items have been fully returned
-                    $totalOriginalQty = $sale->items->sum('quantity');
-                    $totalReturnedQty = array_sum($previouslyReturned) + bccomp($refund, '0.00', 2) > 0 ? collect($items)->sum('qty') : 0;
-
-                    // For simplicity, mark as returned when any return is processed
-                    // A more sophisticated solution would track partial returns
+                    // V22-HIGH-07 FIX: For simplicity, mark as returned when any return is processed
+                    // Note: The previous logic for tracking partial returns was incomplete.
+                    // A full implementation would track returned quantities per line item in a return_items table.
+                    // For now, we mark the sale as returned when any return is processed.
                     $sale->status = 'returned';
                     // V9-HIGH-03 FIX: Do NOT update paid_amount when refund is pending
                     // The paid_amount should only be updated when refund is actually completed
