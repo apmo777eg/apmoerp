@@ -207,12 +207,14 @@ class SaleService implements SaleServiceInterface
         foreach ($saleItemIds as $itemId) {
             // Check for return-related stock movements for this sale item
             // This is an approximation - a complete fix would require a return_items table
+            // Use 'quantity' column (the actual column name in stock_movements table)
+            // Returns add stock back, so we look for positive quantities (direction='in')
             $returnedQty = StockMovement::where('reference_type', 'sale_item_return')
                 ->where('reference_id', $itemId)
-                ->where('direction', 'in')  // Returns add stock back
-                ->sum('qty');
+                ->where('quantity', '>', 0)  // Positive quantity = stock added back
+                ->sum('quantity');
 
-            $returned[$itemId] = (float) $returnedQty;
+            $returned[$itemId] = abs((float) $returnedQty);
         }
 
         return $returned;

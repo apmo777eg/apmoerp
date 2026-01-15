@@ -196,6 +196,10 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
     {
         // Calculate total stock from all warehouses for this product
         // This represents the global stock level, not branch-specific
+        // Note: The quantity column already accounts for direction:
+        // - Positive values = stock added (in)
+        // - Negative values = stock removed (out)
+        // So sum(quantity) gives the correct net stock level
         $totalStock = (float) StockMovement::where('product_id', $productId)
             ->sum('quantity');
 
