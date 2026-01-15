@@ -177,17 +177,20 @@ class SaleService implements SaleServiceInterface
                     $sale->notes = trim(($sale->notes ?? '')."\nVOID: ".$reason);
                     $sale->save();
 
-                    // STILL-V7-HIGH-U07 FIX: Reverse stock movements
-                    // Find existing stock movements for this sale and create reversals
-                    $existingMovements = StockMovement::where('reference_type', 'sale')
-                        ->where('reference_id', $sale->getKey())
+                    // CRIT-04 FIX: Find stock movements by sale_item reference (matching UpdateStockOnSale listener)
+                    // The UpdateStockOnSale listener creates movements with reference_type='sale_item' and reference_id=sale_item_id
+                    $saleItemIds = $sale->items->pluck('id')->toArray();
+                    
+                    $existingMovements = StockMovement::where('reference_type', 'sale_item')
+                        ->whereIn('reference_id', $saleItemIds)
                         ->get();
 
                     foreach ($existingMovements as $movement) {
-                        // Check if reversal already exists
-                        $reversalExists = StockMovement::where('reference_type', 'sale_void')
-                            ->where('reference_id', $sale->getKey())
+                        // Check if reversal already exists for this specific sale_item movement
+                        $reversalExists = StockMovement::where('reference_type', 'sale_item_void')
+                            ->where('reference_id', $movement->reference_id)
                             ->where('product_id', $movement->product_id)
+                            ->where('warehouse_id', $movement->warehouse_id)
                             ->exists();
 
                         if ($reversalExists) {
@@ -199,8 +202,8 @@ class SaleService implements SaleServiceInterface
                             'warehouse_id' => $movement->warehouse_id,
                             'product_id' => $movement->product_id,
                             'movement_type' => 'sale_void',
-                            'reference_type' => 'sale_void',
-                            'reference_id' => $sale->getKey(),
+                            'reference_type' => 'sale_item_void',
+                            'reference_id' => $movement->reference_id, // Keep same reference_id (sale_item_id) for traceability
                             'quantity' => -$movement->quantity, // Reverse the quantity (negative becomes positive)
                             'notes' => "Void reversal for Sale #{$sale->code}",
                             'created_by' => auth()->id(),

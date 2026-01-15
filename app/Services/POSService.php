@@ -408,4 +408,88 @@ class POSService implements POSServiceInterface
     {
         return $discountPercent <= ($user->max_discount_percent ?? 100);
     }
+
+    /**
+     * HIGH-01 FIX: Close POS day for a branch
+     * Finalizes all sales for the given date and generates summary report
+     *
+     * @param Branch $branch The branch to close
+     * @param \Carbon\Carbon $date The date to close
+     * @param bool $force Force close even if there are open sessions
+     * @return array Summary of closed day including sales count and receipts
+     */
+    public function closeDay(\App\Models\Branch $branch, \Carbon\Carbon $date, bool $force = false): array
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($branch, $date, $force) {
+                // Check for open sessions that should be closed first
+                if (! $force) {
+                    $openSessions = PosSession::where('branch_id', $branch->id)
+                        ->where('status', PosSession::STATUS_OPEN)
+                        ->whereDate('opened_at', '<=', $date)
+                        ->count();
+
+                    if ($openSessions > 0) {
+                        throw new \RuntimeException(
+                            __('Cannot close day: :count open POS session(s) exist. Use --force to override.', ['count' => $openSessions])
+                        );
+                    }
+                }
+
+                // Get all sales for the branch on the given date
+                $salesQuery = Sale::where('branch_id', $branch->id)
+                    ->whereDate('created_at', $date)
+                    ->whereNotIn('status', ['cancelled', 'void', 'returned', 'refunded']);
+
+                $salesCount = $salesQuery->count();
+
+                // Use bcmath for precise financial totals
+                $totalAmountString = '0.00';
+                $paidAmountString = '0.00';
+
+                foreach ($salesQuery->cursor() as $sale) {
+                    $totalAmountString = bcadd($totalAmountString, (string) $sale->total_amount, 2);
+                    $paidAmountString = bcadd($paidAmountString, (string) $sale->paid_amount, 2);
+                }
+
+                // Get receipts count from payments
+                $receiptsCount = SalePayment::whereIn('sale_id', 
+                    Sale::where('branch_id', $branch->id)
+                        ->whereDate('created_at', $date)
+                        ->whereNotIn('status', ['cancelled', 'void', 'returned', 'refunded'])
+                        ->pluck('id')
+                )->count();
+
+                // Record the closing if PosClosing model exists
+                if (class_exists(\App\Models\PosClosing::class)) {
+                    \App\Models\PosClosing::updateOrCreate(
+                        [
+                            'branch_id' => $branch->id,
+                            'date' => $date->toDateString(),
+                        ],
+                        [
+                            'gross' => (float) $totalAmountString,
+                            'paid' => (float) $paidAmountString,
+                            'sales_count' => $salesCount,
+                            'receipts_count' => $receiptsCount,
+                            'closed_at' => now(),
+                            'closed_by' => auth()->id(),
+                        ]
+                    );
+                }
+
+                return [
+                    'sales' => $salesCount,
+                    'receipts' => $receiptsCount,
+                    'total_amount' => (float) $totalAmountString,
+                    'paid_amount' => (float) $paidAmountString,
+                    'date' => $date->toDateString(),
+                    'branch_id' => $branch->id,
+                ];
+            },
+            operation: 'closeDay',
+            context: ['branch_id' => $branch->id, 'date' => $date->toDateString(), 'force' => $force],
+            defaultValue: ['sales' => 0, 'receipts' => 0]
+        );
+    }
 }

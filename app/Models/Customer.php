@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -110,9 +111,20 @@ class Customer extends BaseModel
         return $this->hasMany(RentalContract::class);
     }
 
-    public function payments(): HasMany
+    /**
+     * MED-03 FIX: Use hasManyThrough to get payments via Sale relationship
+     * SalePayment doesn't have customer_id column, it relates to Customer through Sale
+     */
+    public function payments(): HasManyThrough
     {
-        return $this->hasMany(SalePayment::class);
+        return $this->hasManyThrough(
+            SalePayment::class,
+            Sale::class,
+            'customer_id', // Foreign key on Sales table
+            'sale_id',     // Foreign key on SalePayments table
+            'id',          // Local key on Customers table
+            'id'           // Local key on Sales table
+        );
     }
 
     public function scopeActive(Builder $query): Builder
@@ -125,9 +137,15 @@ class Customer extends BaseModel
         return $query->where('is_blocked', true);
     }
 
+    /**
+     * MED-04 FIX: Handle NULL credit_limit (no limit = unlimited credit)
+     */
     public function scopeWithinCreditLimit(Builder $query): Builder
     {
-        return $query->whereRaw('balance <= credit_limit');
+        return $query->where(function ($q) {
+            $q->whereNull('credit_limit')
+              ->orWhereRaw('balance <= credit_limit');
+        });
     }
 
     // Business logic methods

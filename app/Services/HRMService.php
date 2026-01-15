@@ -83,13 +83,24 @@ class HRMService implements HRMServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($period) {
+                // CRIT-05 FIX: Parse period (Y-m) into year and month
+                $periodDate = \Carbon\Carbon::createFromFormat('Y-m', $period);
+                if (! $periodDate) {
+                    throw new \InvalidArgumentException("Invalid period format. Expected Y-m, got: {$period}");
+                }
+                $year = (int) $periodDate->year;
+                $month = (int) $periodDate->month;
+
                 $emps = HREmployee::query()->where('is_active', true)->get();
                 $count = 0;
-                DB::transaction(function () use ($emps, $period, &$count) {
+                DB::transaction(function () use ($emps, $year, $month, &$count) {
                     foreach ($emps as $emp) {
+                        // CRIT-05 FIX: Check existence using year/month columns instead of 'period'
                         $exists = Payroll::query()
                             ->where('employee_id', $emp->getKey())
-                            ->where('period', $period)->exists();
+                            ->where('year', $year)
+                            ->where('month', $month)
+                            ->exists();
                         if ($exists) {
                             continue;
                         }
@@ -105,20 +116,30 @@ class HRMService implements HRMServiceInterface
                         $grossSalary = $basic + $totalAllowances;
                         $socialInsurance = $this->calculateSocialInsurance($grossSalary);
                         $tax = $this->calculateTax($grossSalary - $socialInsurance);
-                        $absenceDeduction = $this->calculateAbsenceDeduction($emp, $period);
+                        $absenceDeduction = $this->calculateAbsenceDeduction($emp, "{$year}-{$month}");
                         $loanDeduction = (float) ($extra['loan_deduction'] ?? 0);
                         $totalDeductions = $socialInsurance + $tax + $absenceDeduction + $loanDeduction;
 
                         $net = $grossSalary - $totalDeductions;
 
+                        // CRIT-05 FIX: Use correct Payroll model column names
                         Payroll::create([
+                            'branch_id' => $emp->branch_id,
                             'employee_id' => $emp->getKey(),
-                            'period' => $period,
-                            'basic' => $basic,
-                            'allowances' => $totalAllowances,
-                            'deductions' => $totalDeductions,
-                            'net' => max(0, $net),
-                            'status' => 'pending',
+                            'year' => $year,
+                            'month' => $month,
+                            'basic_salary' => $basic,
+                            'housing_allowance' => $housingAllowance,
+                            'transport_allowance' => $transportAllowance,
+                            'other_allowances' => $otherAllowance,
+                            'gross_salary' => $grossSalary,
+                            'tax_deduction' => $tax,
+                            'insurance_deduction' => $socialInsurance,
+                            'loan_deduction' => $loanDeduction,
+                            'absence_deduction' => $absenceDeduction,
+                            'total_deductions' => $totalDeductions,
+                            'net_salary' => max(0, $net),
+                            'status' => 'draft',
                         ]);
                         $count++;
                     }

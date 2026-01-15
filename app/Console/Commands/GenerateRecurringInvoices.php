@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\Branch;
+use App\Services\BranchContextManager;
 use App\Services\RentalService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -62,16 +63,23 @@ class GenerateRecurringInvoices extends Command
                     'date' => $date->toDateString(),
                 ]);
 
-                $result = $this->rentalService->generateRecurringInvoices($branch, $date);
-                $count = (int) ($result['generated'] ?? 0);
-                $totalInvoices += $count;
+                // HIGH-01 FIX: Call correct method name (generateRecurringInvoicesForMonth)
+                // Also set branch context for BranchScope to work properly
+                BranchContextManager::setBranchContext($branch->id);
+                try {
+                    $result = $this->rentalService->generateRecurringInvoicesForMonth($branch->id, $date);
+                    $count = (int) ($result['success_count'] ?? 0);
+                    $totalInvoices += $count;
 
-                $this->line("✔ Branch={$branch->code} ({$branch->name}) | generated={$count}");
-                Log::info('Recurring invoices generation finished', [
-                    'branch_id' => $branch->id,
-                    'date' => $date->toDateString(),
-                    'generated' => $count,
-                ]);
+                    $this->line("✔ Branch={$branch->code} ({$branch->name}) | generated={$count}");
+                    Log::info('Recurring invoices generation finished', [
+                        'branch_id' => $branch->id,
+                        'date' => $date->toDateString(),
+                        'generated' => $count,
+                    ]);
+                } finally {
+                    BranchContextManager::clearBranchContext();
+                }
             } catch (\Throwable $e) {
                 Log::error('Recurring invoices error', [
                     'branch_id' => $branch->id,

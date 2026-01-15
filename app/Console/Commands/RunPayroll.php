@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\Branch;
+use App\Models\Payroll;
+use App\Services\BranchContextManager;
 use App\Services\HRMService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -75,18 +77,39 @@ class RunPayroll extends Command
                     'period' => $periodInput,
                 ]);
 
-                $result = $this->hrmService->runPayroll($branch, $periodStart);
-                $count = (int) ($result['employees'] ?? 0);
-                $this->line("✔ Branch={$branch->code} ({$branch->name}) | employees={$count}");
-                $totalRuns++;
+                // HIGH-02 FIX: Pass string period (Y-m) instead of Branch + Carbon
+                // Also set branch context for BranchScope to work properly
+                BranchContextManager::setBranchContext($branch->id);
+                try {
+                    // HIGH-02 FIX: runPayroll expects string period only
+                    $count = $this->hrmService->runPayroll($periodInput);
+                    $this->line("✔ Branch={$branch->code} ({$branch->name}) | employees={$count}");
+                    $totalRuns++;
 
-                if ($approve) {
-                    $this->line("→ Approving payroll for branch={$branch->code}");
-                    $this->hrmService->approvePayroll($branch, $periodStart);
-                }
-                if ($pay) {
-                    $this->line("→ Paying payroll for branch={$branch->code}");
-                    $this->hrmService->payPayroll($branch, $periodStart);
+                    // Parse period for approve/pay operations
+                    $year = (int) $periodStart->year;
+                    $month = (int) $periodStart->month;
+
+                    if ($approve) {
+                        $this->line("→ Approving payroll for branch={$branch->code}");
+                        // HIGH-02 FIX: Approve payrolls for this branch and period
+                        Payroll::where('branch_id', $branch->id)
+                            ->where('year', $year)
+                            ->where('month', $month)
+                            ->where('status', 'draft')
+                            ->update(['status' => 'approved']);
+                    }
+                    if ($pay) {
+                        $this->line("→ Paying payroll for branch={$branch->code}");
+                        // HIGH-02 FIX: Pay approved payrolls for this branch and period
+                        Payroll::where('branch_id', $branch->id)
+                            ->where('year', $year)
+                            ->where('month', $month)
+                            ->where('status', 'approved')
+                            ->update(['status' => 'paid', 'payment_date' => now()]);
+                    }
+                } finally {
+                    BranchContextManager::clearBranchContext();
                 }
 
                 Log::info('Payroll run finished', [

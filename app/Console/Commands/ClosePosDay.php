@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\Branch;
+use App\Services\BranchContextManager;
 use App\Services\POSService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -71,24 +72,30 @@ class ClosePosDay extends Command
                     'request_id' => app()->bound('request_id') ? app('request_id') : null,
                 ]);
 
-                $result = $this->posService->closeDay(
-                    branch: $branch,
-                    date: $date,
-                    force: $force
-                );
+                // HIGH-08 FIX: Set branch context for BranchScope to work properly
+                BranchContextManager::setBranchContext($branch->id);
+                try {
+                    $result = $this->posService->closeDay(
+                        branch: $branch,
+                        date: $date,
+                        force: $force
+                    );
 
-                // الحل الآمن: استخراج القيم قبل الطباعة
-                $sales = $result['sales'] ?? 0;
-                $receipts = $result['receipts'] ?? 0;
+                    // Safe extraction of values before printing
+                    $sales = $result['sales'] ?? 0;
+                    $receipts = $result['receipts'] ?? 0;
 
-                $this->line("Closed branch={$branch->code} ({$branch->name}) | sales={$sales} | receipts={$receipts}");
-                $totalClosed++;
+                    $this->line("Closed branch={$branch->code} ({$branch->name}) | sales={$sales} | receipts={$receipts}");
+                    $totalClosed++;
 
-                Log::info('POS close-day finished', [
-                    'branch_id' => $branch->id,
-                    'date' => $date->toDateString(),
-                    'result' => $result,
-                ]);
+                    Log::info('POS close-day finished', [
+                        'branch_id' => $branch->id,
+                        'date' => $date->toDateString(),
+                        'result' => $result,
+                    ]);
+                } finally {
+                    BranchContextManager::clearBranchContext();
+                }
             } catch (\Throwable $e) {
                 Log::error('POS close-day error', [
                     'branch_id' => $branch->id,
