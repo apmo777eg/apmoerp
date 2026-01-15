@@ -96,6 +96,25 @@ class Form extends Component
             $this->form['user_id'] = $employeeModel->user_id ? (int) $employeeModel->user_id : null;
 
             $this->dynamicData = (array) ($employeeModel->extra_attributes ?? []);
+
+            // V23-MED-02 FIX: Recompute schema/users for the employee's branch
+            // when editing an employee from another branch
+            if ($employeeModel->branch_id && $employeeModel->branch_id !== ($user->branch_id ?? 1)) {
+                $this->dynamicSchema = $moduleFields->formSchema('hr', 'employees', $employeeModel->branch_id);
+                $this->availableUsers = User::query()
+                    ->where('branch_id', $employeeModel->branch_id)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'email'])
+                    ->map(function (User $u): array {
+                        $label = $u->name ?: $u->email;
+
+                        return [
+                            'id' => $u->id,
+                            'label' => $label,
+                        ];
+                    })
+                    ->all();
+            }
         } else {
             // Defaults for dynamic fields from schema (if any)
             foreach ($this->dynamicSchema as $field) {

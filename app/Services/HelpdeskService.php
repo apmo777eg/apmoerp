@@ -248,15 +248,17 @@ class HelpdeskService
                 $query->where('assigned_to', $userId);
             }
 
+            // V23-HIGH-06 FIX: Clone the query builder for each metric to prevent
+            // accumulating WHERE conditions that would make later counts incorrect
             return [
-                'total' => $query->count(),
-                'new' => $query->where('status', 'new')->count(),
-                'open' => $query->where('status', 'open')->count(),
-                'pending' => $query->where('status', 'pending')->count(),
-                'resolved' => $query->where('status', 'resolved')->count(),
-                'closed' => $query->where('status', 'closed')->count(),
-                'overdue' => $query->overdue()->count(),
-                'unassigned' => $query->whereNull('assigned_to')->count(),
+                'total' => (clone $query)->count(),
+                'new' => (clone $query)->where('status', 'new')->count(),
+                'open' => (clone $query)->where('status', 'open')->count(),
+                'pending' => (clone $query)->where('status', 'pending')->count(),
+                'resolved' => (clone $query)->where('status', 'resolved')->count(),
+                'closed' => (clone $query)->where('status', 'closed')->count(),
+                'overdue' => (clone $query)->overdue()->count(),
+                'unassigned' => (clone $query)->whereNull('assigned_to')->count(),
                 'avg_response_time' => $this->getAverageResponseTime($branchId, $userId),
                 'avg_resolution_time' => $this->getAverageResolutionTime($branchId, $userId),
             ];

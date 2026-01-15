@@ -37,21 +37,27 @@ class ProductObserver
         $this->audit('created', $product);
     }
 
+    /**
+     * V23-MED-04 FIX: Move rounding logic from updated() to updating()
+     * so changes are persisted to database (updating fires BEFORE save)
+     */
+    public function updating(Product $product): void
+    {
+        // Normalize numeric fields BEFORE save
+        if ($product->isDirty('default_price') && $product->default_price !== null) {
+            $product->default_price = round((float) $product->default_price, 2);
+        }
+        if ($product->isDirty('standard_cost') && $product->standard_cost !== null) {
+            $product->standard_cost = round((float) $product->standard_cost, 2);
+        }
+        if ($product->isDirty('cost') && $product->cost !== null) {
+            $product->cost = round((float) $product->cost, 2);
+        }
+    }
+
     public function updated(Product $product): void
     {
         $changes = $product->getChanges();
-
-        // Normalize numeric fields
-        if (array_key_exists('default_price', $changes)) {
-            $product->default_price = round((float) $product->default_price, 2);
-        }
-        if (array_key_exists('standard_cost', $changes)) {
-            $product->standard_cost = round((float) $product->standard_cost, 2);
-        }
-        if (array_key_exists('cost', $changes)) {
-            $product->cost = round((float) $product->cost, 2);
-        }
-
         $this->audit('updated', $product, $changes);
     }
 

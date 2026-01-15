@@ -6,6 +6,7 @@ namespace App\Livewire\Banking;
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -22,6 +23,9 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Reconciliation extends Component
 {
+    // V23-CRIT-03 FIX: Add AuthorizesRequests trait for $this->authorize() support
+    use AuthorizesRequests;
+
     // Wizard state
     public int $currentStep = 1;
 
@@ -140,13 +144,15 @@ class Reconciliation extends Component
             ->orderBy('transaction_date', 'desc')
             ->get();
 
+        // V23-CRIT-03 FIX: Use 'status' field and 'reconciled' value instead of 'is_reconciled' boolean
+        // Also use 'reference_number' instead of 'reference'
         $this->unmatchedTransactions = $transactions
-            ->where('is_reconciled', false)
+            ->where('status', '!=', 'reconciled')
             ->map(fn ($t) => [
                 'id' => $t->id,
                 'date' => $t->transaction_date->format('Y-m-d'),
                 'description' => $t->description,
-                'reference' => $t->reference,
+                'reference' => $t->reference_number,
                 'amount' => $t->amount,
                 'type' => $t->type,
                 'matched' => false,
@@ -155,12 +161,12 @@ class Reconciliation extends Component
             ->toArray();
 
         $this->matchedTransactions = $transactions
-            ->where('is_reconciled', true)
+            ->where('status', 'reconciled')
             ->map(fn ($t) => [
                 'id' => $t->id,
                 'date' => $t->transaction_date->format('Y-m-d'),
                 'description' => $t->description,
-                'reference' => $t->reference,
+                'reference' => $t->reference_number,
                 'amount' => $t->amount,
                 'type' => $t->type,
                 'matched' => true,
@@ -232,7 +238,17 @@ class Reconciliation extends Component
      */
     protected function calculateSummary(): void
     {
-        $matchedTotal = collect($this->matchedTransactions)->sum('amount');
+        // V23-CRIT-03 FIX: Use signed amounts (deposits = +, withdrawals = -)
+        // instead of raw sum which ignores transaction type
+        $matchedTotal = collect($this->matchedTransactions)->sum(function ($t) {
+            $amount = (float) $t['amount'];
+            // Deposits and interest are positive, all others (withdrawals) are negative
+            if (in_array($t['type'], ['deposit', 'interest'])) {
+                return $amount;
+            }
+
+            return -$amount;
+        });
 
         $account = BankAccount::find($this->accountId);
         $this->systemBalance = $account ? ($account->current_balance ?? 0) : 0;
@@ -251,13 +267,16 @@ class Reconciliation extends Component
             ]));
         }
 
-        // Mark matched transactions as reconciled
+        // V23-CRIT-03 FIX: Use correct field names (status, reconciliation_id)
+        // and ensure transactions belong to the selected bank account
+        // Note: reconciliation_id is left as null since this simple wizard doesn't create
+        // a BankReconciliation record. For full reconciliation with tracking, use BankingService.
         $matchedIds = collect($this->matchedTransactions)->pluck('id');
-        BankTransaction::whereIn('id', $matchedIds)->update([
-            'is_reconciled' => true,
-            'reconciled_at' => now(),
-            'reconciled_by' => auth()->id(),
-        ]);
+        BankTransaction::whereIn('id', $matchedIds)
+            ->where('bank_account_id', $this->accountId) // Ensure transactions belong to this account
+            ->update([
+                'status' => 'reconciled',
+            ]);
 
         // Update account last reconciled date
         BankAccount::where('id', $this->accountId)->update([

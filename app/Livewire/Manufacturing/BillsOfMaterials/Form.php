@@ -114,7 +114,13 @@ class Form extends Component
     #[Layout('layouts.app')]
     public function render()
     {
-        $products = Product::where('branch_id', auth()->user()->branch_id ?? null)
+        // V23-HIGH-07 FIX: Handle branch-less users properly
+        // Don't use 'where branch_id = null' which returns nothing
+        $user = auth()->user();
+        $branchId = $user->branch_id ?? null;
+
+        $products = Product::query()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->orderBy('name')
             ->get(['id', 'name', 'sku']);
 

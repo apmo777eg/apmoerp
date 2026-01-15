@@ -23,7 +23,8 @@ class Index extends Component
 
     public function render()
     {
-        $transactions = BankTransaction::with(['account', 'createdBy'])
+        // V23-CRIT-02 FIX: Use correct relationship name 'bankAccount' instead of 'account'
+        $transactions = BankTransaction::with(['bankAccount', 'createdBy'])
             ->when(auth()->user()?->branch_id, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->latest()
             ->paginate(20);

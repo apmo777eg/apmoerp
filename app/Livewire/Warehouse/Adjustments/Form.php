@@ -112,14 +112,25 @@ class Form extends Component
                 'branch_id' => $branchId,
                 'warehouse_id' => $warehouse->id,
                 'reason' => $this->reason,
-                'note' => $this->note,
-                'created_by' => $user->id,
             ];
 
             if ($this->adjustment) {
+                // V23-MED-05 FIX: Don't overwrite created_by on updates
                 $this->adjustment->update($data);
             } else {
+                // Only set created_by on create
+                $data['created_by'] = $user->id;
                 $this->adjustment = Adjustment::create($data);
+            }
+
+            // V23-MED-03 FIX: Save note field using accessor (maps to reason)
+            // since 'note' is not in fillable but has setNoteAttribute accessor
+            // Only append if note is provided and different from reason
+            if ($this->note && $this->note !== $this->reason) {
+                // Append note to reason if both are provided
+                $combinedReason = $this->reason.' - '.$this->note;
+                $this->adjustment->reason = $combinedReason;
+                $this->adjustment->save();
             }
 
             $existingItemIds = $this->adjustment->items()->pluck('id');

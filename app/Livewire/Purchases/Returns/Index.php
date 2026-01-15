@@ -154,16 +154,22 @@ class Index extends Component
                         continue;
                     }
                     $qty = min((float) $it['qty'], (float) $pi->qty);
-                    $line = $qty * (float) $pi->cost;
+                    // V23-CRIT-01 FIX: Use unit_cost accessor (maps to unit_price) instead of non-existent cost
+                    $line = $qty * (float) $pi->unit_cost;
                     $refund += $line;
                 }
 
+                // V23-CRIT-01 FIX: Use correct ReturnNote fields per model schema
                 ReturnNote::create([
                     'branch_id' => $purchase->branch_id,
                     'purchase_id' => $purchase->id,
+                    'supplier_id' => $purchase->supplier_id,
+                    'type' => ReturnNote::TYPE_PURCHASE,
+                    'status' => ReturnNote::STATUS_PENDING,
+                    'return_date' => now(),
                     'reason' => $this->returnReason ?: null,
-                    'total' => $refund,
-                    'created_by' => $user->id,
+                    'total_amount' => $refund,
+                    'processed_by' => $user->id,
                 ]);
 
                 $purchase->status = 'returned';

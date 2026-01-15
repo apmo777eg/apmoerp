@@ -57,7 +57,8 @@ class Form extends Component
         $this->fromWarehouseId = $this->transfer->from_warehouse_id;
         $this->toWarehouseId = $this->transfer->to_warehouse_id;
         $this->status = $this->transfer->status;
-        $this->note = $this->transfer->note ?? '';
+        // V23-HIGH-05 FIX: Use 'notes' field (with backward compat accessor 'note')
+        $this->note = $this->transfer->notes ?? '';
 
         $this->items = $this->transfer->items->map(function ($item) {
             return [
@@ -106,18 +107,22 @@ class Form extends Component
             return null;
         }
 
+        // V23-HIGH-05 FIX: Use 'notes' column (per migration) instead of 'note'
+        // and don't overwrite created_by on updates
         $data = [
             'branch_id' => $user->branch_id,
             'from_warehouse_id' => $this->fromWarehouseId,
             'to_warehouse_id' => $this->toWarehouseId,
             'status' => $this->status,
-            'note' => $this->note,
-            'created_by' => $user->id,
+            'notes' => $this->note,
         ];
 
         if ($this->transfer) {
+            // Don't overwrite created_by on updates
             $this->transfer->update($data);
         } else {
+            // Only set created_by on create
+            $data['created_by'] = $user->id;
             $this->transfer = Transfer::create($data);
         }
 
