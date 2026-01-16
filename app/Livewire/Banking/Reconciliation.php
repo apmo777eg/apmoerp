@@ -39,7 +39,8 @@ class Reconciliation extends Component
     public string $endDate = '';
 
     // Step 2: Statement balance
-    public float $statementBalance = 0;
+    // V28-MEDIUM-04/05 FIX: Use string for statement balance to avoid float precision loss
+    public string $statementBalance = '0';
 
     public string $statementDate = '';
 
@@ -49,9 +50,10 @@ class Reconciliation extends Component
     public array $unmatchedTransactions = [];
 
     // Step 4: Summary
-    public float $systemBalance = 0;
+    // V28-MEDIUM-04 FIX: Use string for financial values to maintain precision
+    public string $systemBalance = '0';
 
-    public float $difference = 0;
+    public string $difference = '0';
 
     public string $notes = '';
 
@@ -236,12 +238,14 @@ class Reconciliation extends Component
     /**
      * V26-CRIT-01 FIX: Expose matched total for UI display
      * This is calculated using signed amounts (deposits = +, withdrawals = -)
+     * V28-MEDIUM-04 FIX: Use string to maintain precision
      */
-    public float $matchedTotal = 0;
+    public string $matchedTotal = '0';
 
     /**
      * Calculate reconciliation summary
      * V27-CRIT-03 FIX: Calculate difference using matched transactions total instead of system balance
+     * V28-MEDIUM-04 FIX: Use bcmath with scale=4 for consistent precision
      */
     protected function calculateSummary(): void
     {
@@ -249,18 +253,21 @@ class Reconciliation extends Component
         // instead of raw sum which ignores transaction type
         // V26-CRIT-01 FIX: Store matchedTotal as a public property for use in both
         // the difference calculation and the UI display
-        $this->matchedTotal = collect($this->matchedTransactions)->sum(function ($t) {
-            $amount = (float) $t['amount'];
+        // V28-MEDIUM-04 FIX: Use bcmath for precise calculations
+        $matchedTotal = '0';
+        foreach ($this->matchedTransactions as $t) {
+            $amount = (string) $t['amount'];
             // Deposits and interest are positive, all others (withdrawals) are negative
             if (in_array($t['type'], ['deposit', 'interest'])) {
-                return $amount;
+                $matchedTotal = bcadd($matchedTotal, $amount, 4);
+            } else {
+                $matchedTotal = bcsub($matchedTotal, $amount, 4);
             }
-
-            return -$amount;
-        });
+        }
+        $this->matchedTotal = $matchedTotal;
 
         $account = BankAccount::find($this->accountId);
-        $this->systemBalance = $account ? ($account->current_balance ?? 0) : 0;
+        $this->systemBalance = $account ? (string) ($account->current_balance ?? '0') : '0';
 
         // V27-CRIT-03 FIX: Calculate difference using matchedTotal, not systemBalance
         //
@@ -277,17 +284,20 @@ class Reconciliation extends Component
         // Previous implementation used systemBalance which ignores what the user actually selected/matched.
         // That approach was incorrect because the user's selection of matched transactions is the core
         // of the reconciliation process.
-        $this->difference = $this->statementBalance - $this->matchedTotal;
+        // V28-MEDIUM-04 FIX: Use bcmath for precise difference calculation
+        $this->difference = bcsub($this->statementBalance, $this->matchedTotal, 4);
     }
 
     /**
      * Complete the reconciliation
+     * V28-MEDIUM-04 FIX: Use bccomp for string-based comparison
      */
     public function complete(): void
     {
-        if (abs($this->difference) > 0.01) {
+        // V28-MEDIUM-04 FIX: Use bccomp to compare string difference with tolerance threshold
+        if (bccomp($this->difference, '0.01', 4) > 0 || bccomp($this->difference, '-0.01', 4) < 0) {
             session()->flash('warning', __('There is still a difference of :amount. Are you sure you want to complete?', [
-                'amount' => number_format($this->difference, 2),
+                'amount' => number_format((float) $this->difference, 2),
             ]));
         }
 

@@ -45,19 +45,22 @@ class BankingService
 
     /**
      * Start a bank reconciliation
+     * V28-MEDIUM-05 FIX: Accept string instead of float to avoid precision loss
+     * V28-MEDIUM-04 FIX: Use scale=4 consistently for calculations
      */
     public function startReconciliation(
         int $bankAccountId,
         int $branchId,
         Carbon $statementDate,
-        float $statementBalance
+        string $statementBalance
     ): BankReconciliation {
         $bankAccount = BankAccount::findOrFail($bankAccountId);
 
         // Calculate book balance at statement date
         $bookBalance = $this->calculateBookBalanceAt($bankAccountId, $statementDate);
 
-        $difference = bcsub((string) $statementBalance, (string) $bookBalance, 2);
+        // V28-MEDIUM-04 FIX: Use scale=4 for consistency with BankAccount decimal:4 casts
+        $difference = bcsub($statementBalance, $bookBalance, 4);
 
         return BankReconciliation::create([
             'bank_account_id' => $bankAccountId,
@@ -66,7 +69,7 @@ class BankingService
             'reconciliation_date' => now(),
             'statement_balance' => $statementBalance,
             'book_balance' => $bookBalance,
-            'difference' => (float) $difference,
+            'difference' => $difference,
             'status' => 'draft',
             'reconciled_by' => auth()->id(),
         ]);
@@ -84,7 +87,8 @@ class BankingService
                     'reconciliation_id' => $reconciliation->id,
                 ]);
 
-            // Recalculate difference using bcmath
+            // V28-MEDIUM-04 FIX: Use scale=4 consistently for calculations
+            // Recalculate difference using bcmath with proper precision
             $depositsCollection = BankTransaction::where('reconciliation_id', $reconciliation->id)
                 ->whereIn('type', ['deposit', 'interest'])
                 ->get();
@@ -95,19 +99,20 @@ class BankingService
 
             $deposits = '0';
             foreach ($depositsCollection as $txn) {
-                $deposits = bcadd($deposits, (string) $txn->amount, 2);
+                $deposits = bcadd($deposits, (string) $txn->amount, 4);
             }
 
             $withdrawals = '0';
             foreach ($withdrawalsCollection as $txn) {
-                $withdrawals = bcadd($withdrawals, (string) $txn->amount, 2);
+                $withdrawals = bcadd($withdrawals, (string) $txn->amount, 4);
             }
 
-            $reconciledTotal = bcsub($deposits, $withdrawals, 2);
-            $statementMinusBook = bcsub((string) $reconciliation->statement_balance, (string) $reconciliation->book_balance, 2);
-            $newDifference = bcsub($statementMinusBook, $reconciledTotal, 2);
+            $reconciledTotal = bcsub($deposits, $withdrawals, 4);
+            $statementMinusBook = bcsub((string) $reconciliation->statement_balance, (string) $reconciliation->book_balance, 4);
+            $newDifference = bcsub($statementMinusBook, $reconciledTotal, 4);
 
-            $reconciliation->update(['difference' => (float) $newDifference]);
+            // V28-MEDIUM-04 FIX: Store as string to preserve precision (Laravel's decimal cast handles conversion)
+            $reconciliation->update(['difference' => $newDifference]);
         });
     }
 
@@ -129,6 +134,7 @@ class BankingService
     /**
      * Calculate book balance at a specific date
      * STILL-V7-MEDIUM-N08 FIX: Return string for precision, convert to float only at display layer
+     * V28-MEDIUM-04 FIX: Use scale=4 for consistency with BankAccount decimal:4 casts
      */
     protected function calculateBookBalanceAt(int $bankAccountId, Carbon $date): string
     {
@@ -143,9 +149,9 @@ class BankingService
 
         foreach ($transactions as $transaction) {
             if ($transaction->isDeposit() || $transaction->type === 'interest') {
-                $balance = bcadd($balance, (string) $transaction->amount, 2);
+                $balance = bcadd($balance, (string) $transaction->amount, 4);
             } else {
-                $balance = bcsub($balance, (string) $transaction->amount, 2);
+                $balance = bcsub($balance, (string) $transaction->amount, 4);
             }
         }
 

@@ -263,6 +263,7 @@ class StockTransferService
                     // Deduct from source warehouse
                     // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
                     // V27-MED-05 FIX: Pass userId for CLI/queue context support
+                    // V28-HIGH-03 FIX: Add reference_type and reference_id for traceability
                     $this->stockService->adjustStock(
                         productId: $item->product_id,
                         warehouseId: $transfer->from_warehouse_id,
@@ -270,8 +271,8 @@ class StockTransferService
                         type: StockMovement::TYPE_TRANSFER_OUT,
                         reference: "Transfer Out: {$transfer->transfer_number}",
                         notes: 'In transit to '.$transfer->toWarehouse->name,
-                        referenceId: null,
-                        referenceType: null,
+                        referenceId: $transfer->id,
+                        referenceType: StockTransfer::class,
                         unitCost: $unitCost,
                         userId: $userId
                     );
@@ -320,6 +321,7 @@ class StockTransferService
     public function receiveTransfer(int $transferId, array $receivingData, ?int $userId = null): StockTransfer
     {
         // V6-MEDIUM-04 FIX: Explicit validation of payload shape with item IDs
+        // V28-HIGH-02 FIX: Added custom validation to ensure qty_damaged <= qty_received
         $validated = validator($receivingData, [
             'items' => 'required|array',
             'items.*.id' => 'nullable|integer|exists:stock_transfer_items,id',
@@ -327,7 +329,21 @@ class StockTransferService
             'items.*.qty_damaged' => 'nullable|numeric|min:0',
             'items.*.condition' => 'nullable|string|max:50',
             'items.*.damage_report' => 'nullable|string',
-        ])->validate();
+        ])->after(function ($validator) use ($receivingData) {
+            // V28-HIGH-02 FIX: Validate qty_damaged does not exceed qty_received for each item
+            if (isset($receivingData['items']) && is_array($receivingData['items'])) {
+                foreach ($receivingData['items'] as $index => $itemData) {
+                    $qtyReceived = (float) ($itemData['qty_received'] ?? 0);
+                    $qtyDamaged = (float) ($itemData['qty_damaged'] ?? 0);
+                    if ($qtyDamaged > $qtyReceived) {
+                        $validator->errors()->add(
+                            "items.{$index}.qty_damaged",
+                            "Damaged quantity ({$qtyDamaged}) cannot exceed received quantity ({$qtyReceived})."
+                        );
+                    }
+                }
+            }
+        })->validate();
 
         return $this->handleServiceOperation(
             callback: fn () => DB::transaction(function () use ($transferId, $validated, $userId) {
@@ -359,7 +375,7 @@ class StockTransferService
 
                     $qtyReceived = (float) ($itemReceivingData['qty_received'] ?? $item->qty_shipped);
                     $qtyDamaged = (float) ($itemReceivingData['qty_damaged'] ?? 0);
-                    
+
                     // V6-MEDIUM-04 FIX: Enforce qty_received <= qty_shipped
                     if ($qtyReceived > $item->qty_shipped) {
                         abort(
@@ -367,7 +383,16 @@ class StockTransferService
                             "Cannot receive {$qtyReceived} units for item {$item->id}. Maximum shipped: {$item->qty_shipped}"
                         );
                     }
-                    
+
+                    // V28-HIGH-02 FIX: Enforce qty_damaged <= qty_received at processing level
+                    // (Also validated at input level, but double-check here for safety)
+                    if ($qtyDamaged > $qtyReceived) {
+                        abort(
+                            422,
+                            "Damaged quantity ({$qtyDamaged}) cannot exceed received quantity ({$qtyReceived}) for item {$item->id}."
+                        );
+                    }
+
                     $qtyGood = $qtyReceived - $qtyDamaged;
 
                     // Update item
@@ -378,14 +403,51 @@ class StockTransferService
                         'damage_report' => $itemReceivingData['damage_report'] ?? null,
                     ]);
 
-                    // Find and mark transit records as received
+                    // V28-CRITICAL-01 FIX: Handle transit records quantity-aware for partial receipts
+                    // Process transit records in FIFO order (oldest first by shipped_at)
+                    // Only mark as received the quantity that was actually received
                     $transitRecords = InventoryTransit::where('stock_transfer_id', $transfer->id)
                         ->where('product_id', $item->product_id)
                         ->where('status', InventoryTransit::STATUS_IN_TRANSIT)
+                        ->orderBy('shipped_at', 'asc')
+                        ->orderBy('id', 'asc')
                         ->get();
 
+                    $remainingToReceive = $qtyReceived;
                     foreach ($transitRecords as $transitRecord) {
-                        $transitRecord->markAsReceived();
+                        if ($remainingToReceive <= 0) {
+                            // No more to receive - this transit record stays in transit
+                            break;
+                        }
+
+                        if ($transitRecord->quantity <= $remainingToReceive) {
+                            // Fully receive this transit record
+                            $transitRecord->markAsReceived();
+                            $remainingToReceive -= (float) $transitRecord->quantity;
+                        } else {
+                            // Partial receive: split the transit record
+                            // Create a new record for the remaining in-transit quantity
+                            InventoryTransit::create([
+                                'product_id' => $transitRecord->product_id,
+                                'from_warehouse_id' => $transitRecord->from_warehouse_id,
+                                'to_warehouse_id' => $transitRecord->to_warehouse_id,
+                                'stock_transfer_id' => $transitRecord->stock_transfer_id,
+                                'quantity' => $transitRecord->quantity - $remainingToReceive,
+                                'unit_cost' => $transitRecord->unit_cost,
+                                'batch_number' => $transitRecord->batch_number,
+                                'expiry_date' => $transitRecord->expiry_date,
+                                'status' => InventoryTransit::STATUS_IN_TRANSIT,
+                                'shipped_at' => $transitRecord->shipped_at,
+                                'expected_arrival' => $transitRecord->expected_arrival,
+                                'notes' => $transitRecord->notes.' (split from partial receipt)',
+                                'created_by' => $transitRecord->created_by,
+                            ]);
+
+                            // Update the original record with received quantity and mark as received
+                            $transitRecord->update(['quantity' => $remainingToReceive]);
+                            $transitRecord->markAsReceived();
+                            $remainingToReceive = 0;
+                        }
                     }
 
                     // V27-HIGH-02 FIX: Get unit_cost from transfer item for inventory valuation
@@ -395,6 +457,7 @@ class StockTransferService
                     // Add good stock to destination warehouse
                     // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
                     // V27-MED-05 FIX: Pass userId for CLI/queue context support
+                    // V28-HIGH-03 FIX: Add reference_type and reference_id for traceability
                     if ($qtyGood > 0) {
                         $this->stockService->adjustStock(
                             productId: $item->product_id,
@@ -403,8 +466,8 @@ class StockTransferService
                             type: StockMovement::TYPE_TRANSFER_IN,
                             reference: "Transfer In: {$transfer->transfer_number}",
                             notes: 'Received from '.$transfer->fromWarehouse->name,
-                            referenceId: null,
-                            referenceType: null,
+                            referenceId: $transfer->id,
+                            referenceType: StockTransfer::class,
                             unitCost: $unitCost,
                             userId: $userId
                         );
@@ -413,6 +476,7 @@ class StockTransferService
                     // Record damaged items separately if any
                     // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
                     // V27-MED-05 FIX: Pass userId for CLI/queue context support
+                    // V28-HIGH-03 FIX: Add reference_type and reference_id for traceability
                     if ($qtyDamaged > 0) {
                         $this->stockService->adjustStock(
                             productId: $item->product_id,
@@ -421,8 +485,8 @@ class StockTransferService
                             type: StockMovement::TYPE_ADJUSTMENT,
                             reference: "Transfer Damage: {$transfer->transfer_number}",
                             notes: 'Damaged during transfer - '.($itemReceivingData['damage_report'] ?? 'No details'),
-                            referenceId: null,
-                            referenceType: null,
+                            referenceId: $transfer->id,
+                            referenceType: StockTransfer::class,
                             unitCost: $unitCost,
                             userId: $userId
                         );
@@ -516,6 +580,7 @@ class StockTransferService
                         // Return stock to source warehouse
                         // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
                         // V27-MED-05 FIX: Pass userId for CLI/queue context support
+                        // V28-HIGH-03 FIX: Add reference_type and reference_id for traceability
                         $this->stockService->adjustStock(
                             productId: $transitRecord->product_id,
                             warehouseId: $transfer->from_warehouse_id,
@@ -523,8 +588,8 @@ class StockTransferService
                             type: StockMovement::TYPE_ADJUSTMENT,
                             reference: "Transfer Cancelled: {$transfer->transfer_number}",
                             notes: 'Stock returned from transit due to cancellation',
-                            referenceId: null,
-                            referenceType: null,
+                            referenceId: $transfer->id,
+                            referenceType: StockTransfer::class,
                             unitCost: $unitCost,
                             userId: $userId
                         );
