@@ -10,12 +10,15 @@ use App\Models\ProductStoreMapping;
 use App\Models\Sale;
 use App\Models\Store;
 use App\Models\StoreSyncLog;
+use App\Models\User;
 use App\Services\Contracts\InventoryServiceInterface;
 use App\Services\Store\Clients\LaravelClient;
 use App\Services\Store\Clients\ShopifyClient;
 use App\Services\Store\Clients\WooCommerceClient;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class StoreSyncService
 {
@@ -943,7 +946,7 @@ class StoreSyncService
         }
         
         // Try to find existing integration user
-        $user = \App\Models\User::withoutGlobalScopes()
+        $user = User::withoutGlobalScopes()
             ->where('email', 'system-integration@apmoerp.local')
             ->first();
         
@@ -955,10 +958,10 @@ class StoreSyncService
         // Create integration user if it doesn't exist
         // This is a system user for automated processes
         try {
-            $user = \App\Models\User::create([
+            $user = User::create([
                 'name' => 'System Integration',
                 'email' => 'system-integration@apmoerp.local',
-                'password' => bcrypt(\Illuminate\Support\Str::random(32)),
+                'password' => Hash::make(Str::random(32)),
                 'email_verified_at' => now(),
             ]);
             $integrationUserId = $user->id;
