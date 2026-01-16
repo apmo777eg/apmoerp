@@ -933,46 +933,45 @@ class StoreSyncService
      * 
      * This provides a deterministic user ID for audit trails when syncing orders
      * from external stores (Shopify/WooCommerce). The user is created on first use
-     * and cached for subsequent calls.
+     * and cached using Laravel's cache for efficiency.
      * 
      * @return int|null The system user ID, or null if user creation fails
      */
     protected function getIntegrationUserId(): ?int
     {
-        static $integrationUserId = null;
-        
-        if ($integrationUserId !== null) {
-            return $integrationUserId;
-        }
-        
-        // Try to find existing integration user
-        $user = User::withoutGlobalScopes()
-            ->where('email', 'system-integration@apmoerp.local')
-            ->first();
-        
-        if ($user) {
-            $integrationUserId = $user->id;
-            return $integrationUserId;
-        }
-        
-        // Create integration user if it doesn't exist
-        // This is a system user for automated processes
-        try {
-            $user = User::create([
-                'name' => 'System Integration',
-                'email' => 'system-integration@apmoerp.local',
-                'password' => Hash::make(Str::random(32)),
-                'email_verified_at' => now(),
-            ]);
-            $integrationUserId = $user->id;
-        } catch (\Exception $e) {
-            Log::warning('Failed to create integration user for store sync', [
-                'error' => $e->getMessage(),
-            ]);
-            return null;
-        }
-        
-        return $integrationUserId;
+        // Use Laravel's cache with a long TTL (24 hours) for efficiency
+        // This is safe because the integration user email is constant
+        return \Illuminate\Support\Facades\Cache::remember(
+            'store_sync_integration_user_id',
+            now()->addHours(24),
+            function () {
+                // Try to find existing integration user
+                $user = User::withoutGlobalScopes()
+                    ->where('email', 'system-integration@apmoerp.local')
+                    ->first();
+                
+                if ($user) {
+                    return $user->id;
+                }
+                
+                // Create integration user if it doesn't exist
+                // This is a system user for automated processes
+                try {
+                    $user = User::create([
+                        'name' => 'System Integration',
+                        'email' => 'system-integration@apmoerp.local',
+                        'password' => Hash::make(Str::random(64)), // Use 64 chars for better security
+                        'email_verified_at' => now(),
+                    ]);
+                    return $user->id;
+                } catch (\Exception $e) {
+                    Log::warning('Failed to create integration user for store sync', [
+                        'error' => $e->getMessage(),
+                    ]);
+                    return null;
+                }
+            }
+        );
     }
 
     /**
