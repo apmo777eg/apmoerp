@@ -8,6 +8,7 @@
 >
 > It intentionally **does not** list bugs that are already fixed.
 
+
 ---
 
 ## Quick summary (ملخص سريع)
