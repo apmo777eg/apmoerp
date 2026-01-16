@@ -39,9 +39,10 @@ class PurchaseReturnItem extends Model
     protected $casts = [
         'qty_returned' => 'decimal:3',
         'qty_original' => 'decimal:3',
-        'unit_cost' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'line_total' => 'decimal:2',
+        // V27-MED-04 FIX: Align precision with PurchaseItem (decimal:4) to avoid rounding drift
+        'unit_cost' => 'decimal:4',
+        'tax_amount' => 'decimal:4',
+        'line_total' => 'decimal:4',
         'deduct_from_stock' => 'boolean',
         'deducted_at' => 'datetime',
     ];

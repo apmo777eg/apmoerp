@@ -86,6 +86,13 @@ class StockTransferService
                     'created_by' => auth()->id(),
                 ]);
 
+                // V27-HIGH-02 FIX: Pre-load products to avoid N+1 query issue
+                $productIds = array_column($validated['items'], 'product_id');
+                $products = \App\Models\Product::whereIn('id', $productIds)
+                    ->select('id', 'cost', 'standard_cost')
+                    ->get()
+                    ->keyBy('id');
+
                 // Add items
                 foreach ($validated['items'] as $itemData) {
                     // Validate stock availability
@@ -102,6 +109,16 @@ class StockTransferService
                         "Insufficient stock for product ID {$itemData['product_id']}. Available: {$availableStock}, Requested: {$requestedQty}"
                     );
 
+                    // V27-HIGH-02 FIX: Use provided unit_cost, or fetch from pre-loaded product's cost if not provided
+                    // Do NOT default to 0 as that breaks inventory valuation
+                    // Fallback order: explicit unit_cost > product.cost (actual cost) > product.standard_cost (standard cost)
+                    // If both are null, inventory valuation will be skipped for this item (acceptable for non-valued transfers)
+                    $unitCost = $itemData['unit_cost'] ?? null;
+                    if ($unitCost === null) {
+                        $product = $products->get($itemData['product_id']);
+                        $unitCost = $product?->cost ?? $product?->standard_cost ?? null;
+                    }
+
                     StockTransferItem::create([
                         'stock_transfer_id' => $transfer->id,
                         'product_id' => $itemData['product_id'],
@@ -109,7 +126,7 @@ class StockTransferService
                         'qty_approved' => $requestedQty, // Auto-approve quantity initially
                         'batch_number' => $itemData['batch_number'] ?? null,
                         'expiry_date' => $itemData['expiry_date'] ?? null,
-                        'unit_cost' => $itemData['unit_cost'] ?? 0,
+                        'unit_cost' => $unitCost,
                         'condition_on_shipping' => $itemData['condition'] ?? 'good',
                         'notes' => $itemData['notes'] ?? null,
                     ]);
@@ -179,8 +196,9 @@ class StockTransferService
 
     /**
      * Ship/dispatch the transfer
+     * V27-MED-05 FIX: Added optional userId parameter for CLI/queue context support
      */
-    public function shipTransfer(int $transferId, array $shippingData): StockTransfer
+    public function shipTransfer(int $transferId, array $shippingData, ?int $userId = null): StockTransfer
     {
         // V6-MEDIUM-04 FIX: Explicit validation of payload shape with item IDs
         $validated = validator($shippingData, [
@@ -195,9 +213,10 @@ class StockTransferService
         ])->validate();
 
         return $this->handleServiceOperation(
-            callback: fn () => DB::transaction(function () use ($transferId, $validated) {
+            callback: fn () => DB::transaction(function () use ($transferId, $validated, $userId) {
                 $transfer = StockTransfer::with(['items.product'])->findOrFail($transferId);
-                $userId = auth()->id();
+                // V27-MED-05 FIX: Use provided userId or fall back to auth()->id()
+                $userId = $userId ?? auth()->id();
 
                 abort_if(
                     ! $transfer->canBeShipped(),
@@ -237,14 +256,24 @@ class StockTransferService
                     // Update item shipped quantity
                     $item->update(['qty_shipped' => $qtyToShip]);
 
+                    // V27-HIGH-02 FIX: Get unit_cost from transfer item for inventory valuation
+                    // Use ?? to preserve zero values (0 is a valid unit_cost)
+                    $unitCost = $item->unit_cost ?? null;
+
                     // Deduct from source warehouse
+                    // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
+                    // V27-MED-05 FIX: Pass userId for CLI/queue context support
                     $this->stockService->adjustStock(
                         productId: $item->product_id,
                         warehouseId: $transfer->from_warehouse_id,
                         quantity: -$qtyToShip, // Negative for deduction
                         type: StockMovement::TYPE_TRANSFER_OUT,
                         reference: "Transfer Out: {$transfer->transfer_number}",
-                        notes: 'In transit to '.$transfer->toWarehouse->name
+                        notes: 'In transit to '.$transfer->toWarehouse->name,
+                        referenceId: null,
+                        referenceType: null,
+                        unitCost: $unitCost,
+                        userId: $userId
                     );
 
                     // Add to transit table (inventory is now "in-flight")
@@ -261,7 +290,7 @@ class StockTransferService
                         'shipped_at' => now(),
                         'expected_arrival' => $transfer->expected_delivery_date,
                         'notes' => "Transfer: {$transfer->transfer_number}",
-                        'created_by' => auth()->id(),
+                        'created_by' => $userId,
                     ]);
                 }
 
@@ -286,8 +315,9 @@ class StockTransferService
 
     /**
      * Receive the transfer at destination
+     * V27-MED-05 FIX: Added optional userId parameter for CLI/queue context support
      */
-    public function receiveTransfer(int $transferId, array $receivingData): StockTransfer
+    public function receiveTransfer(int $transferId, array $receivingData, ?int $userId = null): StockTransfer
     {
         // V6-MEDIUM-04 FIX: Explicit validation of payload shape with item IDs
         $validated = validator($receivingData, [
@@ -300,9 +330,10 @@ class StockTransferService
         ])->validate();
 
         return $this->handleServiceOperation(
-            callback: fn () => DB::transaction(function () use ($transferId, $validated) {
+            callback: fn () => DB::transaction(function () use ($transferId, $validated, $userId) {
                 $transfer = StockTransfer::with(['items.product'])->findOrFail($transferId);
-                $userId = auth()->id();
+                // V27-MED-05 FIX: Use provided userId or fall back to auth()->id()
+                $userId = $userId ?? auth()->id();
 
                 abort_if(
                     ! $transfer->canBeReceived(),
@@ -357,7 +388,13 @@ class StockTransferService
                         $transitRecord->markAsReceived();
                     }
 
+                    // V27-HIGH-02 FIX: Get unit_cost from transfer item for inventory valuation
+                    // Use ?? to preserve zero values (0 is a valid unit_cost)
+                    $unitCost = $item->unit_cost ?? null;
+
                     // Add good stock to destination warehouse
+                    // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
+                    // V27-MED-05 FIX: Pass userId for CLI/queue context support
                     if ($qtyGood > 0) {
                         $this->stockService->adjustStock(
                             productId: $item->product_id,
@@ -365,11 +402,17 @@ class StockTransferService
                             quantity: $qtyGood,
                             type: StockMovement::TYPE_TRANSFER_IN,
                             reference: "Transfer In: {$transfer->transfer_number}",
-                            notes: 'Received from '.$transfer->fromWarehouse->name
+                            notes: 'Received from '.$transfer->fromWarehouse->name,
+                            referenceId: null,
+                            referenceType: null,
+                            unitCost: $unitCost,
+                            userId: $userId
                         );
                     }
 
                     // Record damaged items separately if any
+                    // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
+                    // V27-MED-05 FIX: Pass userId for CLI/queue context support
                     if ($qtyDamaged > 0) {
                         $this->stockService->adjustStock(
                             productId: $item->product_id,
@@ -377,7 +420,11 @@ class StockTransferService
                             quantity: $qtyDamaged,
                             type: StockMovement::TYPE_ADJUSTMENT,
                             reference: "Transfer Damage: {$transfer->transfer_number}",
-                            notes: 'Damaged during transfer - '.($itemReceivingData['damage_report'] ?? 'No details')
+                            notes: 'Damaged during transfer - '.($itemReceivingData['damage_report'] ?? 'No details'),
+                            referenceId: null,
+                            referenceType: null,
+                            unitCost: $unitCost,
+                            userId: $userId
                         );
                     }
                 }
@@ -442,6 +489,8 @@ class StockTransferService
 
     /**
      * Cancel a transfer
+     * V27-HIGH-02 FIX: Pass unit_cost to adjustStock for inventory valuation
+     * V27-MED-05 FIX: Pass userId to adjustStock for CLI/queue context support
      */
     public function cancelTransfer(int $transferId, ?string $reason = null, ?int $userId = null): StockTransfer
     {
@@ -460,14 +509,24 @@ class StockTransferService
                         ->get();
 
                     foreach ($transitRecords as $transitRecord) {
+                        // V27-HIGH-02 FIX: Get unit_cost from transit record for inventory valuation
+                        // Use ?? to preserve zero values (0 is a valid unit_cost)
+                        $unitCost = $transitRecord->unit_cost ?? null;
+
                         // Return stock to source warehouse
+                        // V27-HIGH-02 FIX: Pass unit_cost for inventory valuation
+                        // V27-MED-05 FIX: Pass userId for CLI/queue context support
                         $this->stockService->adjustStock(
                             productId: $transitRecord->product_id,
                             warehouseId: $transfer->from_warehouse_id,
                             quantity: $transitRecord->quantity,
                             type: StockMovement::TYPE_ADJUSTMENT,
                             reference: "Transfer Cancelled: {$transfer->transfer_number}",
-                            notes: 'Stock returned from transit due to cancellation'
+                            notes: 'Stock returned from transit due to cancellation',
+                            referenceId: null,
+                            referenceType: null,
+                            unitCost: $unitCost,
+                            userId: $userId
                         );
 
                         // Mark transit record as cancelled

@@ -202,7 +202,13 @@ class StockService
 
         // Handle branch ID - either a numeric value or a column reference
         if (is_int($branchIdValueOrColumn)) {
-            $branchCondition = "w.branch_id = {$branchIdValueOrColumn}";
+            // V27-SEC FIX: Validate and cast for defense in depth against SQL injection
+            // Branch IDs should always be positive integers
+            if ($branchIdValueOrColumn < 1) {
+                throw new \InvalidArgumentException('Branch ID must be a positive integer');
+            }
+            $branchIdValue = (int) $branchIdValueOrColumn;
+            $branchCondition = "w.branch_id = {$branchIdValue}";
         } else {
             // Validate branch column name to prevent SQL injection
             if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $branchIdValueOrColumn)) {
@@ -220,6 +226,8 @@ class StockService
      * Adjust stock for a product in a specific warehouse
      *
      * STILL-V7-HIGH-N07 FIX: Uses SELECT FOR UPDATE locking to prevent race conditions
+     * V27-HIGH-02 FIX: Added unit_cost parameter to support inventory valuation
+     * V27-MED-05 FIX: Added userId parameter to support CLI/queue contexts
      *
      * Creates a stock movement record with the specified quantity change.
      * Positive quantity adds stock, negative quantity removes stock.
@@ -232,6 +240,10 @@ class StockService
      * @param  string|null  $notes  Additional notes for the movement
      * @param  int|null  $referenceId  Reference ID for polymorphic relation
      * @param  string|null  $referenceType  Reference type for polymorphic relation
+     * @param  float|null  $unitCost  Unit cost for inventory valuation. Null is acceptable for non-valued movements
+     *                                (e.g., service items, adjustments without cost tracking). Inventory valuation
+     *                                reports should handle null unit_cost by excluding those records or using fallbacks.
+     * @param  int|null  $userId  User ID for created_by field (V27-MED-05 FIX: supports CLI/queue contexts)
      * @return StockMovement The created stock movement record
      *
      * @throws \InvalidArgumentException If warehouseId is null
@@ -244,9 +256,11 @@ class StockService
         ?string $reference = null,
         ?string $notes = null,
         ?int $referenceId = null,
-        ?string $referenceType = null
+        ?string $referenceType = null,
+        ?float $unitCost = null,
+        ?int $userId = null
     ): StockMovement {
-        return DB::transaction(function () use ($productId, $warehouseId, $quantity, $type, $reference, $notes, $referenceId, $referenceType) {
+        return DB::transaction(function () use ($productId, $warehouseId, $quantity, $type, $reference, $notes, $referenceId, $referenceType, $unitCost, $userId) {
             // STILL-V7-HIGH-N07 FIX: Lock the rows for this product+warehouse combination
             // and calculate stock at database level for efficiency
             $stockBefore = (float) DB::table('stock_movements')
@@ -257,18 +271,24 @@ class StockService
 
             $stockAfter = $stockBefore + $quantity;
 
+            // V27-MED-05 FIX: Use provided userId or fall back to auth()->id()
+            // This allows CLI/queue contexts to specify a user ID explicitly
+            $createdBy = $userId ?? auth()->id();
+
             // Create the stock movement record
+            // V27-HIGH-02 FIX: Include unit_cost in the movement record
             $movement = StockMovement::create([
                 'product_id' => $productId,
                 'warehouse_id' => $warehouseId,
                 'movement_type' => $type,
                 'quantity' => $quantity,
+                'unit_cost' => $unitCost,
                 'stock_before' => $stockBefore,
                 'stock_after' => $stockAfter,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'notes' => $notes ?? $reference,
-                'created_by' => auth()->id(),
+                'created_by' => $createdBy,
             ]);
 
             return $movement;

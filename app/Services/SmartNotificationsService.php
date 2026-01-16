@@ -25,13 +25,17 @@ class SmartNotificationsService
     /**
      * Check and send low stock notifications
      * Uses batching to prevent notification floods during bulk operations
+     * V27-CRIT-01 FIX: Use branch-scoped stock calculation instead of global
      */
     public function checkLowStockAlerts(?int $branchId = null): array
     {
         $notified = [];
 
         try {
-            $stockExpr = StockService::getStockCalculationExpression();
+            // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch ID is provided
+            $stockExpr = $branchId
+                ? StockService::getBranchStockCalculationExpression('products.id', $branchId)
+                : StockService::getStockCalculationExpression();
 
             $query = Product::query()
                 ->select('products.*')

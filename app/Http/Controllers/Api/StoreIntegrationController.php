@@ -64,16 +64,22 @@ class StoreIntegrationController extends Controller
 
         $skus = (array) $request->input('skus', []);
 
+        // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch_id is provided
+        $branchId = $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
+        $stockExpr = $branchId
+            ? StockService::getBranchStockCalculationExpression('products.id', $branchId)
+            : StockService::getStockCalculationExpression();
+
         $query = Product::query()
             ->select('products.id', 'products.sku', 'products.name')
-            ->selectRaw(StockService::getStockCalculationExpression().' as current_stock');
+            ->selectRaw($stockExpr.' as current_stock');
 
         if (! empty($skus)) {
             $query->whereIn('sku', $skus);
         }
 
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', (int) $request->input('branch_id'));
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
         }
 
         $rows = $query

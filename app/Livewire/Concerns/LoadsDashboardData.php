@@ -130,10 +130,14 @@ trait LoadsDashboardData
 
     /**
      * Calculate low stock count using optimized query
+     * V27-CRIT-01 FIX: Use branch-scoped stock calculation instead of global
      */
     protected function calculateLowStockCount($productsQuery): int
     {
-        $stockExpr = StockService::getStockCalculationExpression();
+        // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch context is available
+        $stockExpr = $this->branchId
+            ? StockService::getBranchStockCalculationExpression('products.id', $this->branchId)
+            : StockService::getStockCalculationExpression();
 
         return (clone $productsQuery)
             ->whereNotNull('min_stock')
@@ -227,11 +231,16 @@ trait LoadsDashboardData
 
     /**
      * Build inventory status chart data using single optimized query
+     * V27-CRIT-01 FIX: Use branch-scoped stock calculation instead of global
      */
     protected function buildInventoryChartData(): array
     {
-        $stockExpr = StockService::getStockCalculationExpression();
         $branchFilter = (! $this->isAdmin && $this->branchId) ? $this->branchId : null;
+
+        // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch context is available
+        $stockExpr = $branchFilter
+            ? StockService::getBranchStockCalculationExpression('products.id', $branchFilter)
+            : StockService::getStockCalculationExpression();
 
         // Single query with CASE expressions for all inventory stats
         $result = DB::table('products')
@@ -256,13 +265,17 @@ trait LoadsDashboardData
 
     /**
      * Load low stock products
+     * V27-CRIT-01 FIX: Use branch-scoped stock calculation instead of global
      */
     protected function loadLowStockProducts(): void
     {
         $cacheKey = "{$this->getCachePrefix()}:low_stock";
 
         $this->lowStockProducts = Cache::remember($cacheKey, $this->cacheTtl, function () {
-            $stockExpr = StockService::getStockCalculationExpression();
+            // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch context is available
+            $stockExpr = $this->branchId
+                ? StockService::getBranchStockCalculationExpression('products.id', $this->branchId)
+                : StockService::getStockCalculationExpression();
 
             return $this->scopeQueryToBranch(Product::query())
                 ->select('products.*')

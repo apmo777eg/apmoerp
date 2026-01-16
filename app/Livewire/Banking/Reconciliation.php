@@ -241,6 +241,7 @@ class Reconciliation extends Component
 
     /**
      * Calculate reconciliation summary
+     * V27-CRIT-03 FIX: Calculate difference using matched transactions total instead of system balance
      */
     protected function calculateSummary(): void
     {
@@ -261,15 +262,22 @@ class Reconciliation extends Component
         $account = BankAccount::find($this->accountId);
         $this->systemBalance = $account ? ($account->current_balance ?? 0) : 0;
 
-        // V26-CRIT-01 FIX: Calculate difference using matchedTotal
-        // The difference should show how far off the matched transactions are from
-        // what the statement balance expects. When reconciling:
-        // - User enters statement ending balance from bank
-        // - User selects (matches) transactions that occurred during the period
-        // - The matched net should equal: statement_balance - opening_balance
-        // For simplicity, we compare statement balance with system balance adjusted by matched
-        // A difference of 0 means the statement is reconciled with matched transactions
-        $this->difference = $this->statementBalance - $this->systemBalance;
+        // V27-CRIT-03 FIX: Calculate difference using matchedTotal, not systemBalance
+        //
+        // This implements a simple "matched transactions" reconciliation approach:
+        // 1. User enters statement ending balance from bank statement
+        // 2. User matches transactions from the system that appear on the statement
+        // 3. The difference = statementBalance - matchedTotal
+        //
+        // Interpretation of difference:
+        // - If 0: All statement transactions are matched (reconciled)
+        // - If positive: Statement shows more money than matched (missing deposits or extra withdrawals)
+        // - If negative: Statement shows less money than matched (extra deposits or missing withdrawals)
+        //
+        // Previous implementation used systemBalance which ignores what the user actually selected/matched.
+        // That approach was incorrect because the user's selection of matched transactions is the core
+        // of the reconciliation process.
+        $this->difference = $this->statementBalance - $this->matchedTotal;
     }
 
     /**
