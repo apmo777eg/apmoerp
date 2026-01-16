@@ -171,15 +171,17 @@ class BankingService
         $inflows = '0';
         $outflows = '0';
 
+        // V29-MED-06 FIX: Use scale 4 for consistency with balance computation (lines 148-156)
+        // This prevents precision drift between cashflow summary and account reconciliation
         foreach ($transactions as $transaction) {
             if ($transaction->isDeposit() || $transaction->type === 'interest') {
-                $inflows = bcadd($inflows, (string) $transaction->amount, 2);
+                $inflows = bcadd($inflows, (string) $transaction->amount, 4);
             } else {
-                $outflows = bcadd($outflows, (string) $transaction->amount, 2);
+                $outflows = bcadd($outflows, (string) $transaction->amount, 4);
             }
         }
 
-        $netCashflow = bcsub($inflows, $outflows, 2);
+        $netCashflow = bcsub($inflows, $outflows, 4);
 
         // NEW-V15-MEDIUM-01 FIX: Return money as string-decimal to preserve precision
         // Only cast/format at presentation layer to avoid rounding/precision issues

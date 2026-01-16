@@ -34,6 +34,7 @@ class InventoryTransit extends Model
         'status',
         'shipped_at',
         'expected_arrival',
+        'received_at', // V29-LOW-08 FIX: Added for audit/reporting
         'notes',
         'created_by',
     ];
@@ -44,6 +45,7 @@ class InventoryTransit extends Model
         'expiry_date' => 'date',
         'shipped_at' => 'datetime',
         'expected_arrival' => 'datetime',
+        'received_at' => 'datetime', // V29-LOW-08 FIX
     ];
 
     // Status constants
@@ -109,10 +111,15 @@ class InventoryTransit extends Model
 
     /**
      * Mark as received
+     * 
+     * V29-LOW-08 FIX: Set received_at timestamp for audit/reporting (lead times, SLA, transit aging)
      */
     public function markAsReceived(): void
     {
-        $this->update(['status' => self::STATUS_RECEIVED]);
+        $this->update([
+            'status' => self::STATUS_RECEIVED,
+            'received_at' => now(),
+        ]);
     }
 
     /**

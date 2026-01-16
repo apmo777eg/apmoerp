@@ -18,6 +18,7 @@ class SalesReturnItem extends Model
         'qty_returned',
         'qty_original',
         'unit_price',
+        'unit_cost', // V29-HIGH-02 FIX: Added for proper inventory valuation
         'discount',
         'tax_amount',
         'line_total',
@@ -29,13 +30,16 @@ class SalesReturnItem extends Model
         'restocked_at',
     ];
 
+    // V29-HIGH-02 FIX: Aligned decimal precision with core inventory (qty decimal:4, monetary decimal:4)
+    // This ensures consistent precision across SaleItem, StockMovements, and Returns for accurate reconciliation
     protected $casts = [
-        'qty_returned' => 'decimal:3',
-        'qty_original' => 'decimal:3',
-        'unit_price' => 'decimal:2',
-        'discount' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'line_total' => 'decimal:2',
+        'qty_returned' => 'decimal:4',
+        'qty_original' => 'decimal:4',
+        'unit_price' => 'decimal:4',
+        'unit_cost' => 'decimal:4',
+        'discount' => 'decimal:4',
+        'tax_amount' => 'decimal:4',
+        'line_total' => 'decimal:4',
         'restock' => 'boolean',
         'restocked_at' => 'datetime',
     ];
@@ -51,10 +55,11 @@ class SalesReturnItem extends Model
         parent::boot();
 
         // Auto-calculate line total when creating/updating
+        // V29-HIGH-02 FIX: Use scale 4 for consistency with other ERP monetary fields
         static::saving(function ($item) {
-            $subtotal = bcmul((string)$item->qty_returned, (string)$item->unit_price, 2);
-            $total = bcadd($subtotal, (string)$item->tax_amount, 2);
-            $item->line_total = bcsub($total, (string)$item->discount, 2);
+            $subtotal = bcmul((string)$item->qty_returned, (string)$item->unit_price, 4);
+            $total = bcadd($subtotal, (string)$item->tax_amount, 4);
+            $item->line_total = bcsub($total, (string)$item->discount, 4);
         });
     }
 

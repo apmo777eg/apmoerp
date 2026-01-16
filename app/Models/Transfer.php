@@ -180,8 +180,12 @@ class Transfer extends BaseModel
 
     /**
      * Mark as received/completed
+     * 
+     * V29-MED-04 FIX: Require explicit userId parameter instead of falling back to auth()->id().
+     * This prevents potential null values when called from CLI/queue contexts without authentication.
+     * The service/controller layer is responsible for providing the userId.
      */
-    public function receive(?int $userId = null): bool
+    public function receive(int $userId): bool
     {
         if (!$this->canBeReceived()) {
             return false;
@@ -190,7 +194,7 @@ class Transfer extends BaseModel
         return $this->update([
             'status' => self::STATUS_COMPLETED,
             'received_at' => now(),
-            'received_by' => $userId ?? auth()->id(),
+            'received_by' => $userId,
         ]);
     }
 

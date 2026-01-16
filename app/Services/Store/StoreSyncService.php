@@ -398,6 +398,7 @@ class StoreSyncService
 
             // CRITICAL-05 FIX: Use correct schema column names
             // V25-HIGH-03 FIX: Include warehouse_id, sale_date, and created_by
+            // V29-HIGH-03 FIX: Include created_by for audit trail
             $sale = Sale::create([
                 'branch_id' => $store->branch_id,
                 'warehouse_id' => $warehouseId, // V25-HIGH-03 FIX
@@ -410,6 +411,7 @@ class StoreSyncService
                 'status' => $status,
                 'channel' => 'shopify',
                 'external_reference' => $externalId,
+                'created_by' => $this->getIntegrationUserId(), // V29-HIGH-03 FIX
             ]);
 
             foreach ($data['line_items'] ?? [] as $lineItem) {
@@ -445,10 +447,13 @@ class StoreSyncService
                 }
 
                 // CRITICAL-05 FIX: Use correct SaleItem schema column names
+                // V29-HIGH-03 FIX: Include warehouse_id and cost_price for ERP consistency
                 $sale->items()->create([
                     'product_id' => $productId,
+                    'warehouse_id' => $warehouseId, // V29-HIGH-03 FIX
                     'quantity' => (int) ($lineItem['quantity'] ?? 1),
                     'unit_price' => (float) ($lineItem['price'] ?? 0),
+                    'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
                     'discount_amount' => (float) ($lineItem['total_discount'] ?? 0),
                     'line_total' => (float) ($lineItem['quantity'] ?? 1) * (float) ($lineItem['price'] ?? 0) - (float) ($lineItem['total_discount'] ?? 0),
                 ]);
@@ -564,6 +569,7 @@ class StoreSyncService
 
             // CRITICAL-05 FIX: Use correct schema column names
             // V25-HIGH-03 FIX: Include warehouse_id and sale_date
+            // V29-HIGH-03 FIX: Include created_by for audit trail
             $sale = Sale::create([
                 'branch_id' => $store->branch_id,
                 'warehouse_id' => $warehouseId, // V25-HIGH-03 FIX
@@ -576,6 +582,7 @@ class StoreSyncService
                 'status' => $status,
                 'channel' => 'woocommerce',
                 'external_reference' => $externalId,
+                'created_by' => $this->getIntegrationUserId(), // V29-HIGH-03 FIX
             ]);
 
             foreach ($data['line_items'] ?? [] as $lineItem) {
@@ -611,10 +618,13 @@ class StoreSyncService
                 }
 
                 // CRITICAL-05 FIX: Use correct SaleItem schema column names
+                // V29-HIGH-03 FIX: Include warehouse_id and cost_price for ERP consistency
                 $sale->items()->create([
                     'product_id' => $productId,
+                    'warehouse_id' => $warehouseId, // V29-HIGH-03 FIX
                     'quantity' => (int) ($lineItem['quantity'] ?? 1),
                     'unit_price' => (float) ($lineItem['price'] ?? 0),
+                    'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
                     'discount_amount' => 0,
                     'line_total' => (float) ($lineItem['total'] ?? 0),
                 ]);
@@ -913,5 +923,70 @@ class StoreSyncService
             ->first();
 
         return $warehouse?->id;
+    }
+
+    /**
+     * V29-HIGH-03 FIX: Get or create a system user ID for store integrations.
+     * 
+     * This provides a deterministic user ID for audit trails when syncing orders
+     * from external stores (Shopify/WooCommerce). The user is created on first use
+     * and cached for subsequent calls.
+     * 
+     * @return int|null The system user ID, or null if user creation fails
+     */
+    protected function getIntegrationUserId(): ?int
+    {
+        static $integrationUserId = null;
+        
+        if ($integrationUserId !== null) {
+            return $integrationUserId;
+        }
+        
+        // Try to find existing integration user
+        $user = \App\Models\User::withoutGlobalScopes()
+            ->where('email', 'system-integration@apmoerp.local')
+            ->first();
+        
+        if ($user) {
+            $integrationUserId = $user->id;
+            return $integrationUserId;
+        }
+        
+        // Create integration user if it doesn't exist
+        // This is a system user for automated processes
+        try {
+            $user = \App\Models\User::create([
+                'name' => 'System Integration',
+                'email' => 'system-integration@apmoerp.local',
+                'password' => bcrypt(\Illuminate\Support\Str::random(32)),
+                'email_verified_at' => now(),
+            ]);
+            $integrationUserId = $user->id;
+        } catch (\Exception $e) {
+            Log::warning('Failed to create integration user for store sync', [
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+        
+        return $integrationUserId;
+    }
+
+    /**
+     * V29-HIGH-03 FIX: Get the cost price for a product at the time of sale.
+     * 
+     * @param int $productId The product ID
+     * @return float|null The cost price, or null if product not found
+     */
+    protected function getProductCostPrice(int $productId): ?float
+    {
+        $product = Product::withoutGlobalScopes()->find($productId);
+        
+        if (!$product) {
+            return null;
+        }
+        
+        // Use standard_cost if available, otherwise fall back to cost
+        return (float) ($product->standard_cost ?? $product->cost ?? 0);
     }
 }
