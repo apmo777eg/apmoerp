@@ -261,7 +261,7 @@ class CostingService
      *
      * @param  int|null  $branchId  Branch ID to filter by
      * @param  int|null  $warehouseId  Warehouse ID to filter by (null for all)
-     * @param  bool  $includeTransit  Whether to include in-transit inventory in totals
+     * @param  bool  $includeTransit  Whether to include in-transit inventory in totals (default excludes transit)
      * @return array ['warehouse_value' => float, 'warehouse_quantity' => float, 'transit_value' => float, 'transit_quantity' => float, 'total_value' => float, 'total_quantity' => float, 'breakdown' => array]
      */
     public function getTotalInventoryValue(?int $branchId = null, ?int $warehouseId = null, bool $includeTransit = false): array
