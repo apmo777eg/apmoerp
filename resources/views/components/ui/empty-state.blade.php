@@ -16,13 +16,11 @@ $iconMap = [
 ];
 
 $displayIcon = $iconMap[$type] ?? $icon;
-// Check if icon appears to be SVG content - if so, always sanitize it
-// This handles both valid SVG and malicious content that might contain '<svg'
+// Detect SVG-like content using case-insensitive matching
+// This handles valid SVG and any potentially malicious content containing SVG tags
 $isSvg = is_string($displayIcon) && (
-    str_starts_with(trim($displayIcon), '<svg') || 
-    str_starts_with(trim($displayIcon), '<SVG') ||
-    str_contains($displayIcon, '<svg') ||
-    str_contains($displayIcon, '<?xml')
+    stripos($displayIcon, '<svg') !== false || 
+    stripos($displayIcon, '<?xml') !== false
 );
 @endphp
 

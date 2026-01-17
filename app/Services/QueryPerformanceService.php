@@ -168,14 +168,27 @@ class QueryPerformanceService
                 ];
             }
 
-            // Block dangerous patterns that could be used for SQL injection
+            // Block dangerous patterns that could be used for SQL injection or information disclosure
             $dangerousPatterns = [
+                // Statement injection
                 '/;\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)/i',
                 '/UNION\s+(ALL\s+)?SELECT/i',
+                // File operations
                 '/INTO\s+(OUTFILE|DUMPFILE)/i',
                 '/LOAD_FILE\s*\(/i',
+                // Time-based attacks
                 '/BENCHMARK\s*\(/i',
                 '/SLEEP\s*\(/i',
+                // Information disclosure via system tables
+                '/INFORMATION_SCHEMA\./i',
+                '/mysql\./i',
+                '/performance_schema\./i',
+                // SQL comments (can be used to bypass filters)
+                '/--\s/',
+                '/\/\*/',
+                '/\*\//',
+                // Subqueries that might bypass SELECT-only check
+                '/\(\s*(UPDATE|DELETE|INSERT|DROP|ALTER|CREATE)/i',
             ];
 
             foreach ($dangerousPatterns as $pattern) {
