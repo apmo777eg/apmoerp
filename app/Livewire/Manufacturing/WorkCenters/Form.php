@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Livewire\Manufacturing\WorkCenters;
 
 use App\Http\Requests\Traits\HasMultilingualValidation;
-use App\Models\Branch;
 use App\Models\WorkCenter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Str;
@@ -94,17 +93,14 @@ class Form extends Component
         $base = strtoupper(Str::slug(Str::limit($this->name, 10, ''), ''));
 
         if (empty($base)) {
-            // V8-HIGH-N02 FIX: Use lockForUpdate and filter by branch to prevent race condition
-            // Cache branch first to avoid repeated queries
+            // V32-HIGH-A03 FIX: Don't fallback to Branch::first() - use user's assigned branch
             $user = auth()->user();
             $branchId = $user?->branch_id;
-            if (! $branchId) {
-                $branchId = \Illuminate\Support\Facades\Cache::remember('default_branch_id', 3600, function () {
-                    return Branch::first()?->id;
-                });
-            }
 
-            $lastWc = WorkCenter::when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            // If no branch is assigned, the save() method will reject the request anyway
+            // Generate a temporary sequential code based on existing records
+            $lastWc = WorkCenter::query()
+                ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()
                 ->orderBy('id', 'desc')
                 ->first();
@@ -117,6 +113,7 @@ class Form extends Component
         $counter = 1;
         $workCenterId = $this->workCenter?->id;
 
+        // Ensure uniqueness by checking existing codes and incrementing suffix
         while (WorkCenter::where('code', $code)->where('id', '!=', $workCenterId)->exists()) {
             $code = $prefix.'-'.$base.$counter;
             $counter++;
@@ -128,10 +125,12 @@ class Form extends Component
     public function save(): mixed
     {
         $user = auth()->user();
-        $branchId = $user->branch_id ?? Branch::first()?->id;
+        $branchId = $user->branch_id;
 
+        // V32-HIGH-A04 FIX: Don't fallback to Branch::first() as it may assign records to wrong branch
+        // If user has no branch assigned, they should not be able to create records
         if (! $branchId) {
-            session()->flash('error', __('No branch available. Please contact your administrator.'));
+            session()->flash('error', __('No branch assigned to your account. Please contact your administrator.'));
 
             return null;
         }

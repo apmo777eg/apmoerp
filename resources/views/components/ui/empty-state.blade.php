@@ -16,11 +16,24 @@ $iconMap = [
 ];
 
 $displayIcon = $iconMap[$type] ?? $icon;
+// Detect if content contains HTML/SVG markup that needs sanitization
+// If any HTML-like tags are detected, pass through sanitize_svg_icon for safety
+$containsMarkup = is_string($displayIcon) && (
+    stripos($displayIcon, '<svg') !== false || 
+    stripos($displayIcon, '<?xml') !== false ||
+    preg_match('/<[a-z]/i', $displayIcon)  // Any HTML-like tag
+);
 @endphp
 
 <div {{ $attributes->merge(['class' => 'flex flex-col items-center justify-center py-12 px-4']) }}>
     <div class="text-6xl mb-4">
-        {!! $displayIcon !!}
+        @if($containsMarkup)
+            {{-- Always sanitize content containing HTML/SVG markup to prevent XSS --}}
+            {!! sanitize_svg_icon($displayIcon) !!}
+        @else
+            {{-- Safe output for emoji or plain text --}}
+            {{ $displayIcon }}
+        @endif
     </div>
     
     <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">

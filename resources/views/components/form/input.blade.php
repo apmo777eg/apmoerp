@@ -61,7 +61,7 @@ if ($hasIcon && $iconPosition === 'right') {
         @if($hasIcon && $iconPosition === 'left')
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <span class="text-slate-400">
-                {!! $icon !!}
+                {!! sanitize_svg_icon($icon) !!}
             </span>
         </div>
         @endif
@@ -91,7 +91,7 @@ if ($hasIcon && $iconPosition === 'right') {
         @if($hasIcon && $iconPosition === 'right')
         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <span class="text-slate-400">
-                {!! $icon !!}
+                {!! sanitize_svg_icon($icon) !!}
             </span>
         </div>
         @endif

@@ -42,7 +42,7 @@
         <div class="flex items-start gap-3">
             @if($icon)
             <div class="flex-shrink-0 text-4xl">
-                {!! $icon !!}
+                {!! sanitize_svg_icon($icon) !!}
             </div>
             @endif
             

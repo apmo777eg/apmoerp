@@ -14,7 +14,7 @@
         <div class="flex items-center gap-3">
             @if($icon)
             <div class="flex-shrink-0">
-                {!! $icon !!}
+                {!! sanitize_svg_icon($icon) !!}
             </div>
             @endif
             
@@ -35,6 +35,7 @@
         
         @if($actions)
         <div class="flex items-center gap-2">
+            {{-- Actions are developer-controlled slot content (buttons, links), not user input --}}
             {!! $actions !!}
         </div>
         @endif

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Livewire\Manufacturing\ProductionOrders;
 
 use App\Models\BillOfMaterial;
-use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductionOrder;
 use App\Models\Warehouse;
@@ -84,10 +83,12 @@ class Form extends Component
         $this->validate();
 
         $user = auth()->user();
-        $branchId = $user->branch_id ?? Branch::first()?->id;
+        $branchId = $user->branch_id;
 
+        // V32-HIGH-A02 FIX: Don't fallback to Branch::first() as it may assign records to wrong branch
+        // If user has no branch assigned, they should not be able to create records
         if (! $branchId) {
-            session()->flash('error', __('No branch available. Please contact your administrator.'));
+            session()->flash('error', __('No branch assigned to your account. Please contact your administrator.'));
 
             return null;
         }

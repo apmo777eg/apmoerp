@@ -138,12 +138,81 @@ class QueryPerformanceService
     /**
      * Analyze query and suggest optimizations.
      *
-     * @param  string  $sql  SQL query
+     * SECURITY: This method is designed for internal use only with queries from
+     * trusted sources (e.g., query log entries, admin debugging tools).
+     * 
+     * Input validation includes:
+     * - Only SELECT statements are allowed (EXPLAIN requirement)
+     * - Dangerous patterns are blocked (UNION SELECT, INTO OUTFILE, etc.)
+     * 
+     * Note: EXPLAIN FORMAT=JSON syntax requires the query to be concatenated
+     * (not parameterized) as MySQL doesn't support binding the query itself.
+     * The validation above provides defense-in-depth against injection.
+     *
+     * @param  string  $sql  SQL query (must be a SELECT statement from trusted source)
      * @return array<string, mixed>
+     * 
+     * @internal This method should only be called with queries from trusted sources
      */
     public function analyzeQuery(string $sql): array
     {
         try {
+            // Normalize whitespace for validation
+            $normalizedSql = preg_replace('/\s+/', ' ', trim($sql));
+
+            // Only allow SELECT statements for EXPLAIN (security measure)
+            if (! preg_match('/^\s*SELECT\s/i', $normalizedSql)) {
+                return [
+                    'error' => 'Only SELECT queries can be analyzed with EXPLAIN.',
+                    'suggestions' => [],
+                ];
+            }
+
+            // Block dangerous patterns that could be used for SQL injection or information disclosure
+            // Patterns are grouped by type for better error reporting
+            $dangerousPatterns = [
+                'statement_injection' => [
+                    '/;\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)/i',
+                    '/UNION\s+(ALL\s+)?SELECT/i',
+                ],
+                'file_operations' => [
+                    '/INTO\s+(OUTFILE|DUMPFILE)/i',
+                    '/LOAD_FILE\s*\(/i',
+                ],
+                'time_based_attacks' => [
+                    '/BENCHMARK\s*\(/i',
+                    '/SLEEP\s*\(/i',
+                ],
+                'information_disclosure' => [
+                    '/INFORMATION_SCHEMA\./i',
+                    '/mysql\./i',
+                    '/performance_schema\./i',
+                ],
+                'sql_comments' => [
+                    '/--\s/',
+                    '/\/\*/',
+                    '/\*\//',
+                ],
+                'nested_statements' => [
+                    '/\(\s*(UPDATE|DELETE|INSERT|DROP|ALTER|CREATE)/i',
+                ],
+            ];
+
+            foreach ($dangerousPatterns as $category => $patterns) {
+                foreach ($patterns as $pattern) {
+                    if (preg_match($pattern, $normalizedSql)) {
+                        return [
+                            'error' => 'Query analysis blocked: detected disallowed '
+                                .str_replace('_', ' ', $category)
+                                .'. Only simple SELECT queries are allowed.',
+                            'suggestions' => [],
+                        ];
+                    }
+                }
+            }
+
+            // EXPLAIN FORMAT=JSON requires query concatenation (MySQL doesn't support binding)
+            // The validation above ensures only safe SELECT queries reach this point
             $explain = DB::select('EXPLAIN FORMAT=JSON '.$sql);
             $explainData = json_decode($explain[0]->EXPLAIN ?? '{}', true);
 

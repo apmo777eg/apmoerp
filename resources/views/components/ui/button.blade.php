@@ -41,13 +41,13 @@ $classes = "$baseClasses $variantClasses $sizeClasses";
     </svg>
     @else
         @if($icon && $iconPosition === 'left')
-        {!! $icon !!}
+        {!! sanitize_svg_icon($icon) !!}
         @endif
         
         {{ $slot }}
         
         @if($icon && $iconPosition === 'right')
-        {!! $icon !!}
+        {!! sanitize_svg_icon($icon) !!}
         @endif
     @endif
 </a>
@@ -60,13 +60,13 @@ $classes = "$baseClasses $variantClasses $sizeClasses";
     </svg>
     @else
         @if($icon && $iconPosition === 'left')
-        {!! $icon !!}
+        {!! sanitize_svg_icon($icon) !!}
         @endif
         
         {{ $slot }}
         
         @if($icon && $iconPosition === 'right')
-        {!! $icon !!}
+        {!! sanitize_svg_icon($icon) !!}
         @endif
     @endif
 </button>
