@@ -85,9 +85,10 @@ class Form extends Component
             }
         } catch (\Illuminate\Database\QueryException|\PDOException $e) {
             // Log the error for debugging while providing fallback for user
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             Log::warning('Currency table access failed, using default currencies', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             // Fallback if currencies table doesn't exist or has database errors

@@ -109,23 +109,25 @@ trait HasExport
             $downloadName = $filename.'.'.$this->exportFormat;
 
             // Store export info in session for download
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             session()->put('export_file', [
                 'path' => $filepath,
                 'name' => $downloadName,
                 'time' => now()->timestamp,
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             // Ensure the export session data is immediately available to the download request
             session()->save();
 
             // Log export session data for debugging
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             logger()->info('Export prepared', [
                 'entity_type' => $entityType,
                 'format' => $this->exportFormat,
                 'file_path' => $filepath,
                 'download_name' => $downloadName,
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             // Use JavaScript to trigger download via a dedicated route

@@ -59,12 +59,13 @@ class PriceAuditObserver
                 }
             }
 
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             Log::info('Product price change detected', [
                 'product_id' => $product->id,
                 'product_name' => $product->name,
                 'sku' => $product->sku,
                 'changes' => $changes,
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
                 'timestamp' => now()->toIso8601String(),
             ]);
         }

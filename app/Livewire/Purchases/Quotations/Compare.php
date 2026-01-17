@@ -99,18 +99,20 @@ class Compare extends Component
         })->first();
 
         if ($bestQuotation) {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             $bestQuotation->update([
                 'status' => 'accepted',
                 'accepted_at' => now(),
-                'accepted_by' => auth()->id(),
+                'accepted_by' => actual_user_id(),
             ]);
 
             // Reject other quotations
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             $this->quotations->where('id', '!=', $bestQuotation->id)->each(function ($quotation) {
                 $quotation->update([
                     'status' => 'rejected',
                     'rejected_at' => now(),
-                    'rejected_by' => auth()->id(),
+                    'rejected_by' => actual_user_id(),
                     'rejection_reason' => 'Better quotation selected',
                 ]);
             });

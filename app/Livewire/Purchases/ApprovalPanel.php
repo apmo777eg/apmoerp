@@ -120,6 +120,7 @@ class ApprovalPanel extends Component
         }
 
         try {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             $instance = $this->workflowService->initiateWorkflow(
                 moduleName: 'purchases',
                 entityType: 'purchase',
@@ -128,7 +129,7 @@ class ApprovalPanel extends Component
                     'total' => $this->purchase->total,
                     'supplier_id' => $this->purchase->supplier_id,
                 ],
-                userId: auth()->id(),
+                userId: actual_user_id(),
                 branchId: auth()->user()->branch_id
             );
 
@@ -155,9 +156,10 @@ class ApprovalPanel extends Component
         }
 
         try {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             $this->workflowService->approve(
                 $this->pendingApproval,
-                auth()->id(),
+                actual_user_id(),
                 $this->approvalComments ?: null
             );
 
@@ -190,9 +192,10 @@ class ApprovalPanel extends Component
         ]);
 
         try {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             $this->workflowService->reject(
                 $this->pendingApproval,
-                auth()->id(),
+                actual_user_id(),
                 $this->rejectionReason
             );
 
@@ -216,9 +219,10 @@ class ApprovalPanel extends Component
         }
 
         try {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             $this->workflowService->cancel(
                 $this->workflowInstance,
-                auth()->id(),
+                actual_user_id(),
                 __('Cancelled by user')
             );
 

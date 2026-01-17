@@ -28,21 +28,23 @@ trait HandlesErrors
             // This ensures validation errors are displayed to the user
             throw $e;
         } catch (QueryException $e) {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             Log::error('Database error in Livewire component', [
                 'component' => static::class,
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             // Dispatch browser event to hide loading states
             $this->dispatch('operation-failed');
             session()->flash('error', __('A database error occurred. Please try again.'));
         } catch (Throwable $e) {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             Log::error('Error in Livewire component', [
                 'component' => static::class,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             // Dispatch browser event to hide loading states
@@ -67,18 +69,20 @@ trait HandlesErrors
             if (str_contains($e->getMessage(), 'foreign key')) {
                 session()->flash('error', __('Cannot delete this record as it has related data.'));
             } else {
+                // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
                 Log::error('Database error during delete', [
                     'component' => static::class,
                     'error' => $e->getMessage(),
-                    'user_id' => auth()->id(),
+                    'user_id' => actual_user_id(),
                 ]);
                 session()->flash('error', __('A database error occurred. Please try again.'));
             }
         } catch (Throwable $e) {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             Log::error('Error during delete', [
                 'component' => static::class,
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             session()->flash('error', __('An unexpected error occurred. Please try again.'));
@@ -90,10 +94,11 @@ trait HandlesErrors
         try {
             return $callback();
         } catch (Throwable $e) {
+            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             Log::error('Error in Livewire component', [
                 'component' => static::class,
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => actual_user_id(),
             ]);
 
             return $default;

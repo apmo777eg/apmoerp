@@ -151,7 +151,8 @@ class Expenses extends Component
     {
         $this->authorize('projects.expenses.approve');
         $expense = $this->project->expenses()->findOrFail($id);
-        $expense->approve(auth()->id());
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
+        $expense->approve(actual_user_id());
         session()->flash('success', __('Expense approved successfully'));
     }
 
@@ -159,7 +160,8 @@ class Expenses extends Component
     {
         $this->authorize('projects.expenses.approve');
         $expense = $this->project->expenses()->findOrFail($id);
-        $expense->reject(auth()->id(), $reason);
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
+        $expense->reject(actual_user_id(), $reason);
         session()->flash('success', __('Expense rejected'));
     }
 

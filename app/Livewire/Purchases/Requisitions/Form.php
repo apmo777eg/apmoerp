@@ -151,7 +151,8 @@ class Form extends Component
         $this->validate($this->getRules());
 
         $branchId = auth()->user()->branch_id;
-        $userId = auth()->id();
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
+        $userId = actual_user_id();
 
         $data = [
             'branch_id' => $branchId,
@@ -198,7 +199,8 @@ class Form extends Component
         $this->validate($this->getRules());
 
         $branchId = auth()->user()->branch_id;
-        $userId = auth()->id();
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
+        $userId = actual_user_id();
 
         $data = [
             'branch_id' => $branchId,

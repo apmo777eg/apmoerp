@@ -45,6 +45,7 @@ trait HandlesServiceErrors
     {
         $serviceName = class_basename($this);
 
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         Log::error("{$serviceName}::{$operation} failed", array_merge([
             'service' => $serviceName,
             'operation' => $operation,
@@ -53,7 +54,7 @@ trait HandlesServiceErrors
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
             'trace' => $exception->getTraceAsString(),
-            'user_id' => auth()->id(),
+            'user_id' => actual_user_id(),
             'branch_id' => request()->attributes->get('branch_id'),
         ], $context));
     }
@@ -65,10 +66,11 @@ trait HandlesServiceErrors
     {
         $serviceName = class_basename($this);
 
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         Log::warning("{$serviceName}::{$operation} - {$message}", array_merge([
             'service' => $serviceName,
             'operation' => $operation,
-            'user_id' => auth()->id(),
+            'user_id' => actual_user_id(),
             'branch_id' => request()->attributes->get('branch_id'),
         ], $context));
     }
@@ -80,10 +82,11 @@ trait HandlesServiceErrors
     {
         $serviceName = class_basename($this);
 
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         Log::info("{$serviceName}::{$operation} - {$message}", array_merge([
             'service' => $serviceName,
             'operation' => $operation,
-            'user_id' => auth()->id(),
+            'user_id' => actual_user_id(),
             'branch_id' => request()->attributes->get('branch_id'),
         ], $context));
     }

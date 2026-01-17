@@ -143,11 +143,12 @@ class Index extends Component
         $downloadName = $filename.'.'.$this->exportFormat;
 
         // Store export info in session for download
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         session()->put('export_file', [
             'path' => $filepath,
             'name' => $downloadName,
             'time' => now()->timestamp,
-            'user_id' => auth()->id(),
+            'user_id' => actual_user_id(),
         ]);
 
         // Make sure the next request can immediately read the export session data

@@ -83,11 +83,12 @@ class Inspection extends Component
         }
 
         // Update GRN status
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         $this->grn->update([
             'status' => 'approved',
             'inspection_notes' => $this->inspectorNotes,
             'inspected_at' => now(),
-            'inspected_by' => auth()->id(),
+            'inspected_by' => actual_user_id(),
         ]);
 
         // Update item inspection results
@@ -114,11 +115,12 @@ class Inspection extends Component
             'inspectorNotes' => 'required|string|max:1000',
         ]);
 
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         $this->grn->update([
             'status' => 'rejected',
             'rejection_reason' => $this->inspectorNotes,
             'inspected_at' => now(),
-            'inspected_by' => auth()->id(),
+            'inspected_by' => actual_user_id(),
         ]);
 
         session()->flash('success', __('GRN rejected with inspection notes.'));
@@ -154,11 +156,12 @@ class Inspection extends Component
         }
 
         // Update GRN status to partial
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         $this->grn->update([
             'status' => 'partial',
             'inspection_notes' => $this->inspectorNotes,
             'inspected_at' => now(),
-            'inspected_by' => auth()->id(),
+            'inspected_by' => actual_user_id(),
         ]);
 
         // Update individual item results

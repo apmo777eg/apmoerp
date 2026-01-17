@@ -51,10 +51,11 @@ class Index extends Component
             return;
         }
 
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         $quotation->update([
             'status' => 'accepted',
             'accepted_at' => now(),
-            'accepted_by' => auth()->id(),
+            'accepted_by' => actual_user_id(),
         ]);
 
         session()->flash('success', __('Quotation accepted successfully'));
@@ -66,10 +67,11 @@ class Index extends Component
 
         $quotation = SupplierQuotation::findOrFail($id);
 
+        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
         $quotation->update([
             'status' => 'rejected',
             'rejected_at' => now(),
-            'rejected_by' => auth()->id(),
+            'rejected_by' => actual_user_id(),
             'rejection_reason' => $reason,
         ]);
 
