@@ -349,9 +349,16 @@ class SalesAnalytics extends Component
     }
 
     /**
-     * Load hourly distribution
-     * Note: Hourly distribution uses created_at intentionally as it tracks when orders were placed,
-     * not when they were dated. This is for operational insights (peak hours).
+     * Load hourly distribution for operational insights (peak hours analysis).
+     *
+     * Design Note: This method intentionally uses `created_at` for hour extraction
+     * while filtering by `sale_date` range. This is because:
+     * - Hour extraction: Uses when orders were physically placed (created_at) for peak hours analysis
+     * - Period filtering: Uses business transaction date (sale_date) for period consistency
+     *
+     * For example, a sale backdated to yesterday should still count towards today's peak hours
+     * if it was placed during the current session.
+     *
      * V35-MED-06 FIX: Exclude non-revenue statuses
      */
     protected function loadHourlyDistribution(): void
