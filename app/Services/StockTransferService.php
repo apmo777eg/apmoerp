@@ -82,8 +82,9 @@ class StockTransferService
                     'insurance_cost' => $validated['insurance_cost'] ?? 0,
                     'total_cost' => ($validated['shipping_cost'] ?? 0) + ($validated['insurance_cost'] ?? 0),
                     'currency' => $validated['currency'] ?? 'EGP',
-                    'requested_by' => auth()->id(),
-                    'created_by' => auth()->id(),
+                    // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                    'requested_by' => actual_user_id(),
+                    'created_by' => actual_user_id(),
                 ]);
 
                 // V27-HIGH-02 FIX: Pre-load products to avoid N+1 query issue

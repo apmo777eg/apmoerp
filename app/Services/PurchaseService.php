@@ -245,7 +245,8 @@ class PurchaseService implements PurchaseServiceInterface
                         'payment_date' => now()->toDateString(),
                         'currency' => setting('general.default_currency', 'EGP'),
                         'notes' => $notes,
-                        'paid_by' => auth()->id(),
+                        // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                        'paid_by' => actual_user_id(),
                     ]);
 
                     // Critical ERP: Use bcmath for precise money calculations

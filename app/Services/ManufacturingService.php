@@ -149,7 +149,8 @@ class ManufacturingService
                 'priority' => $data['priority'] ?? 'normal',
                 'planned_start_date' => $data['planned_start_date'] ?? null,
                 'planned_end_date' => $data['planned_end_date'] ?? null,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => $data['created_by'] ?? actual_user_id(),
                 'notes' => $data['notes'] ?? null,
                 'estimated_cost' => $bom->calculateTotalCost() * $plannedQuantity,
                 'sale_id' => $data['sale_id'] ?? null,
@@ -228,7 +229,8 @@ class ManufacturingService
                     'reference_type' => ProductionOrder::class,
                     'reference_id' => $order->id,
                     'notes' => "Material issued for production order {$order->reference_number}",
-                    'created_by' => auth()->id(),
+                    // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                    'created_by' => actual_user_id(),
                 ]);
 
                 $item->issue();
@@ -266,7 +268,8 @@ class ManufacturingService
                 'reference_type' => ProductionOrder::class,
                 'reference_id' => $order->id,
                 'notes' => "Production output for order {$order->reference_number}",
-                'created_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
             // Update product cost based on actual manufacturing cost
@@ -348,7 +351,8 @@ class ManufacturingService
                         'reference_type' => ProductionOrder::class,
                         'reference_id' => $order->id,
                         'notes' => "Material return from cancelled order: {$reason}",
-                        'created_by' => auth()->id(),
+                        // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                        'created_by' => actual_user_id(),
                     ]);
                 }
             }

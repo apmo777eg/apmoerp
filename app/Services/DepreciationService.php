@@ -168,7 +168,8 @@ class DepreciationService
                         'accumulated_depreciation' => $calculation['accumulated_depreciation'],
                         'book_value' => $calculation['book_value'],
                         'status' => 'calculated',
-                        'created_by' => auth()->id(),
+                        // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                        'created_by' => actual_user_id(),
                     ]);
 
                     // Update asset

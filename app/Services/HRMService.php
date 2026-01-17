@@ -68,7 +68,8 @@ class HRMService implements HRMServiceInterface
             callback: function () use ($attendanceId) {
                 $att = Attendance::findOrFail($attendanceId);
                 $att->status = 'approved';
-                $att->approved_by = auth()->id();
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                $att->approved_by = actual_user_id();
                 $att->approved_at = now();
                 $att->save();
 

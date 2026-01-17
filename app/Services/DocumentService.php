@@ -119,7 +119,8 @@ class DocumentService
                 'file_path' => $path,
                 'file_size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
-                'uploaded_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'uploaded_by' => actual_user_id(),
                 'change_notes' => 'Initial upload',
                 'metadata' => $data['metadata'] ?? null,
             ]);
@@ -165,7 +166,8 @@ class DocumentService
                 'file_path' => $path,
                 'file_size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
-                'uploaded_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'uploaded_by' => actual_user_id(),
                 'change_notes' => $changeNotes,
             ]);
 
@@ -251,7 +253,8 @@ class DocumentService
                 ['shared_with_user_id' => $userId],
                 [
                     'user_id' => $userId,
-                    'shared_by' => auth()->id(),
+                    // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                    'shared_by' => actual_user_id(),
                     'permission' => $permission,
                     'expires_at' => $expiresAt,
                 ]

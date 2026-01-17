@@ -42,7 +42,8 @@ class AccountingService
                 'fiscal_year' => $fiscalPeriod?->year,
                 'fiscal_period' => $fiscalPeriod?->period,
                 'is_auto_generated' => true,
-                'created_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
             $lines = [];
@@ -212,7 +213,8 @@ class AccountingService
                 'fiscal_year' => $fiscalPeriod?->year,
                 'fiscal_period' => $fiscalPeriod?->period,
                 'is_auto_generated' => true,
-                'created_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
             $lines = [];
@@ -355,10 +357,11 @@ class AccountingService
         }
 
         // Update entry to posted status
+        // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
         $entry->update([
             'status' => 'posted',
             'posted_at' => now(),
-            'approved_by' => auth()->id(),
+            'approved_by' => actual_user_id(),
             'approved_at' => now(),
         ]);
 
@@ -552,7 +555,8 @@ class AccountingService
                 'fiscal_year' => $fiscalPeriod?->year,
                 'fiscal_period' => $fiscalPeriod?->period,
                 'is_auto_generated' => false,
-                'created_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
             foreach ($items as $item) {
@@ -654,7 +658,8 @@ class AccountingService
                 'entry_date' => $data['entry_date'] ?? now(),
                 'description' => $data['description'] ?? '',
                 'status' => 'draft', // Start as draft
-                'created_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
             foreach ($lines as $line) {
@@ -736,7 +741,8 @@ class AccountingService
                 'fiscal_year' => $fiscalPeriod?->year,
                 'fiscal_period' => $fiscalPeriod?->period,
                 'is_auto_generated' => true,
-                'created_by' => auth()->id(),
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
             // Debit: COGS Expense (increases expense)

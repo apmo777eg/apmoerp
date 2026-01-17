@@ -71,7 +71,8 @@ class BankingService
             'book_balance' => $bookBalance,
             'difference' => $difference,
             'status' => 'draft',
-            'reconciled_by' => auth()->id(),
+            // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+            'reconciled_by' => actual_user_id(),
         ]);
     }
 
@@ -225,7 +226,8 @@ class BankingService
                     'description' => $txn['description'] ?? null,
                     'payee_payer' => $txn['payee_payer'] ?? null,
                     'status' => 'cleared',
-                    'created_by' => auth()->id(),
+                    // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                    'created_by' => actual_user_id(),
                 ]);
 
                 $imported++;
@@ -287,7 +289,8 @@ class BankingService
             'amount' => $data['amount'],
             'description' => $data['description'] ?? null,
             'status' => $data['status'] ?? 'cleared',
-            'created_by' => $data['created_by'] ?? auth()->id(),
+            // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+            'created_by' => $data['created_by'] ?? actual_user_id(),
             'reference_number' => $data['reference_number'] ?? null,
             'payee_payer' => $data['payee_payer'] ?? null,
         ]);
@@ -320,7 +323,8 @@ class BankingService
             'amount' => $data['amount'],
             'description' => $data['description'] ?? null,
             'status' => $data['status'] ?? 'cleared',
-            'created_by' => $data['created_by'] ?? auth()->id(),
+            // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+            'created_by' => $data['created_by'] ?? actual_user_id(),
             'reference_number' => $data['reference_number'] ?? null,
             'payee_payer' => $data['payee_payer'] ?? null,
         ]);
