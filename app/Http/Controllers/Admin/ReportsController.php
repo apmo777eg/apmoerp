@@ -275,12 +275,16 @@ class ReportsController extends Controller
 
         if ($type === 'receivables') {
             // V31-HIGH-03 FIX: Use sale_date for aging and filter non-revenue statuses
+            // Explicitly select sale_date to ensure the proper date is used for aging
             $query = DB::table('sales')
+                ->select(['id', 'total_amount', 'paid_amount', 'sale_date'])
                 ->whereRaw('paid_amount < total_amount')
                 ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
         } else {
             // V31-HIGH-03 FIX: Use purchase_date for aging and filter non-relevant statuses
+            // Explicitly select purchase_date to ensure the proper date is used for aging
             $query = DB::table('purchases')
+                ->select(['id', 'total_amount', 'paid_amount', 'purchase_date'])
                 ->whereRaw('paid_amount < total_amount')
                 ->whereNotIn('status', ['draft', 'cancelled']);
         }
@@ -302,8 +306,13 @@ class ReportsController extends Controller
 
         foreach ($items as $item) {
             $outstanding = bcsub((string) ($item->total_amount ?? 0), (string) ($item->paid_amount ?? 0), 2);
-            // V31-HIGH-03 FIX: Use sale_date/purchase_date instead of created_at for aging
-            $dateColumn = $type === 'receivables' ? ($item->sale_date ?? $item->created_at) : ($item->purchase_date ?? $item->created_at);
+            // V31-HIGH-03 FIX: Use sale_date/purchase_date directly (explicitly selected in query)
+            // Skip items with null date as they have no valid aging basis
+            $dateColumn = $type === 'receivables' ? $item->sale_date : $item->purchase_date;
+            if ($dateColumn === null) {
+                // Skip items without a proper date - they shouldn't exist but handle gracefully
+                continue;
+            }
             $itemDate = \Carbon\Carbon::parse($dateColumn);
             $daysOld = $itemDate->diffInDays($today);
 
