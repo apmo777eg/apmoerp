@@ -124,6 +124,10 @@ class InventoryController extends BaseApiController
         $newQuantityPersisted = DB::transaction(function () use ($product, $actualDirection, $actualQty, $validated, $warehouseId) {
             if ($actualQty > 0) {
                 // Use repository for proper schema mapping
+                // V31-CRIT-01 FIX: The repository's create() method already updates products.stock_quantity
+                // with the total stock across ALL warehouses via updateProductStockCache().
+                // We no longer manually update stock_quantity here to avoid overwriting
+                // the correct total with a warehouse-specific value.
                 $this->stockMovementRepo->create([
                     'product_id' => $product->id,
                     'warehouse_id' => $warehouseId,
@@ -135,20 +139,10 @@ class InventoryController extends BaseApiController
                 ]);
             }
 
-            $freshProduct = Product::lockForUpdate()->find($product->id);
-            if (! $freshProduct) {
-                throw new \RuntimeException('Product not found during stock update');
-            }
-            // STILL-V11-CRITICAL-02 FIX: Use the same warehouse_id for recalculating stock
-            // to maintain consistency with the stock_movement just created.
-            // Note: products.stock_quantity is a cached value that represents warehouse-specific
-            // stock when a warehouse_id is provided. For branch-wide totals, use StockService.
-            $calculated = $this->calculateCurrentStock($product->id, $warehouseId, $product->branch_id);
-            // NEW-MEDIUM-07 FIX: Store actual calculated value without clamping to 0
-            // This preserves negative stock visibility for accurate reporting and auditing
-            $freshProduct->forceFill(['stock_quantity' => $calculated])->save();
-
-            return $calculated;
+            // V31-CRIT-01 FIX: Return the warehouse-specific quantity for the API response
+            // without storing it in products.stock_quantity. The stock_quantity field
+            // represents total stock across ALL warehouses (managed by the repository).
+            return $this->calculateCurrentStock($product->id, $warehouseId, $product->branch_id);
         });
 
         return $this->successResponse([
@@ -231,6 +225,10 @@ class InventoryController extends BaseApiController
                 $persistedQuantity = DB::transaction(function () use ($product, $actualDirection, $actualQty, $warehouseId) {
                     if ($actualQty > 0) {
                         // Use repository for proper schema mapping
+                        // V31-CRIT-01 FIX: The repository's create() method already updates products.stock_quantity
+                        // with the total stock across ALL warehouses via updateProductStockCache().
+                        // We no longer manually update stock_quantity here to avoid overwriting
+                        // the correct total with a warehouse-specific value.
                         $this->stockMovementRepo->create([
                             'product_id' => $product->id,
                             'warehouse_id' => $warehouseId,
@@ -242,17 +240,10 @@ class InventoryController extends BaseApiController
                         ]);
                     }
 
-                    $freshProduct = Product::lockForUpdate()->find($product->id);
-                    if (! $freshProduct) {
-                        throw new \RuntimeException('Product not found during stock update');
-                    }
-                    // STILL-V11-CRITICAL-02 FIX: Use the same warehouse_id for recalculating stock
-                    // to maintain consistency with the stock_movement just created.
-                    $calculated = $this->calculateCurrentStock($product->id, $warehouseId, $product->branch_id);
-                    // NEW-MEDIUM-07 FIX: Store actual calculated value without clamping to 0
-                    $freshProduct->forceFill(['stock_quantity' => $calculated])->save();
-
-                    return $calculated;
+                    // V31-CRIT-01 FIX: Return the warehouse-specific quantity for the API response
+                    // without storing it in products.stock_quantity. The stock_quantity field
+                    // represents total stock across ALL warehouses (managed by the repository).
+                    return $this->calculateCurrentStock($product->id, $warehouseId, $product->branch_id);
                 });
 
                 $results['success'][] = [

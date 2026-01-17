@@ -33,40 +33,47 @@ class WebhooksController extends BaseApiController
             return $this->errorResponse(__('Store not found or not active'), 404);
         }
 
-        // V22-CRIT-01 FIX: Set branch context from the store's branch_id
-        if ($store->branch_id) {
-            BranchContextManager::setBranchContext($store->branch_id);
-            request()->attributes->set('branch_id', $store->branch_id);
-        }
-
-        if (! $this->verifyShopifyWebhook($request, $store)) {
-            return $this->errorResponse(__('Invalid webhook signature'), 401);
-        }
-
-        $topic = $request->header('X-Shopify-Topic');
-        $data = $request->all();
-
+        // V31-CRIT-02 FIX: Use try/finally to ensure BranchContext is always cleared
+        // This prevents context leakage in long-running servers (Octane/RoadRunner)
         try {
-            match ($topic) {
-                'products/create', 'products/update' => $this->syncService->handleShopifyProductUpdate($store, $data),
-                'products/delete' => $this->syncService->handleShopifyProductDelete($store, $data),
-                'orders/create' => $this->syncService->handleShopifyOrderCreate($store, $data),
-                'orders/updated' => $this->syncService->handleShopifyOrderUpdate($store, $data),
-                'inventory_levels/update' => $this->syncService->handleShopifyInventoryUpdate($store, $data),
-                default => null,
-            };
+            // V22-CRIT-01 FIX: Set branch context from the store's branch_id
+            if ($store->branch_id) {
+                BranchContextManager::setBranchContext($store->branch_id);
+                request()->attributes->set('branch_id', $store->branch_id);
+            }
 
-            return $this->successResponse(null, __('Webhook processed successfully'));
-        } catch (\Exception $e) {
-            // BUG-006 FIX: Log detailed error server-side, return generic message to client
-            Log::error('Shopify webhook processing failed', [
-                'store_id' => $storeId,
-                'topic' => $topic,
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            if (! $this->verifyShopifyWebhook($request, $store)) {
+                return $this->errorResponse(__('Invalid webhook signature'), 401);
+            }
 
-            return $this->errorResponse(__('Webhook processing failed'), 500);
+            $topic = $request->header('X-Shopify-Topic');
+            $data = $request->all();
+
+            try {
+                match ($topic) {
+                    'products/create', 'products/update' => $this->syncService->handleShopifyProductUpdate($store, $data),
+                    'products/delete' => $this->syncService->handleShopifyProductDelete($store, $data),
+                    'orders/create' => $this->syncService->handleShopifyOrderCreate($store, $data),
+                    'orders/updated' => $this->syncService->handleShopifyOrderUpdate($store, $data),
+                    'inventory_levels/update' => $this->syncService->handleShopifyInventoryUpdate($store, $data),
+                    default => null,
+                };
+
+                return $this->successResponse(null, __('Webhook processed successfully'));
+            } catch (\Exception $e) {
+                // BUG-006 FIX: Log detailed error server-side, return generic message to client
+                Log::error('Shopify webhook processing failed', [
+                    'store_id' => $storeId,
+                    'topic' => $topic,
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                return $this->errorResponse(__('Webhook processing failed'), 500);
+            }
+        } finally {
+            // V31-CRIT-02 FIX: Always clear branch context to prevent leakage
+            BranchContextManager::clearBranchContext();
         }
     }
 
@@ -79,39 +86,46 @@ class WebhooksController extends BaseApiController
             return $this->errorResponse(__('Store not found or not active'), 404);
         }
 
-        // V22-CRIT-01 FIX: Set branch context from the store's branch_id
-        if ($store->branch_id) {
-            BranchContextManager::setBranchContext($store->branch_id);
-            request()->attributes->set('branch_id', $store->branch_id);
-        }
-
-        if (! $this->verifyWooCommerceWebhook($request, $store)) {
-            return $this->errorResponse(__('Invalid webhook signature'), 401);
-        }
-
-        $topic = $request->header('X-WC-Webhook-Topic');
-        $data = $request->all();
-
+        // V31-CRIT-02 FIX: Use try/finally to ensure BranchContext is always cleared
+        // This prevents context leakage in long-running servers (Octane/RoadRunner)
         try {
-            match ($topic) {
-                'product.created', 'product.updated' => $this->syncService->handleWooProductUpdate($store, $data),
-                'product.deleted' => $this->syncService->handleWooProductDelete($store, $data),
-                'order.created' => $this->syncService->handleWooOrderCreate($store, $data),
-                'order.updated' => $this->syncService->handleWooOrderUpdate($store, $data),
-                default => null,
-            };
+            // V22-CRIT-01 FIX: Set branch context from the store's branch_id
+            if ($store->branch_id) {
+                BranchContextManager::setBranchContext($store->branch_id);
+                request()->attributes->set('branch_id', $store->branch_id);
+            }
 
-            return $this->successResponse(null, __('Webhook processed successfully'));
-        } catch (\Exception $e) {
-            // BUG-006 FIX: Log detailed error server-side, return generic message to client
-            Log::error('WooCommerce webhook processing failed', [
-                'store_id' => $storeId,
-                'topic' => $topic,
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            if (! $this->verifyWooCommerceWebhook($request, $store)) {
+                return $this->errorResponse(__('Invalid webhook signature'), 401);
+            }
 
-            return $this->errorResponse(__('Webhook processing failed'), 500);
+            $topic = $request->header('X-WC-Webhook-Topic');
+            $data = $request->all();
+
+            try {
+                match ($topic) {
+                    'product.created', 'product.updated' => $this->syncService->handleWooProductUpdate($store, $data),
+                    'product.deleted' => $this->syncService->handleWooProductDelete($store, $data),
+                    'order.created' => $this->syncService->handleWooOrderCreate($store, $data),
+                    'order.updated' => $this->syncService->handleWooOrderUpdate($store, $data),
+                    default => null,
+                };
+
+                return $this->successResponse(null, __('Webhook processed successfully'));
+            } catch (\Exception $e) {
+                // BUG-006 FIX: Log detailed error server-side, return generic message to client
+                Log::error('WooCommerce webhook processing failed', [
+                    'store_id' => $storeId,
+                    'topic' => $topic,
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                return $this->errorResponse(__('Webhook processing failed'), 500);
+            }
+        } finally {
+            // V31-CRIT-02 FIX: Always clear branch context to prevent leakage
+            BranchContextManager::clearBranchContext();
         }
     }
 
@@ -180,40 +194,47 @@ class WebhooksController extends BaseApiController
             return $this->errorResponse(__('Store not found or not active'), 404);
         }
 
-        // V22-CRIT-01 FIX: Set branch context from the store's branch_id
-        if ($store->branch_id) {
-            BranchContextManager::setBranchContext($store->branch_id);
-            request()->attributes->set('branch_id', $store->branch_id);
-        }
-
-        if (! $this->verifyLaravelWebhook($request, $store)) {
-            return $this->errorResponse(__('Invalid webhook signature'), 401);
-        }
-
-        $event = $request->input('event');
-        $data = $request->input('data', []);
-
+        // V31-CRIT-02 FIX: Use try/finally to ensure BranchContext is always cleared
+        // This prevents context leakage in long-running servers (Octane/RoadRunner)
         try {
-            match ($event) {
-                'product.created', 'product.updated' => $this->syncService->syncLaravelProductToERP($store, $data),
-                'product.deleted' => $this->handleLaravelProductDelete($store, $data),
-                'order.created' => $this->syncService->syncLaravelOrderToERP($store, $data),
-                'order.updated' => $this->syncService->syncLaravelOrderToERP($store, $data),
-                'inventory.updated' => $this->handleLaravelInventoryUpdate($store, $data),
-                default => null,
-            };
+            // V22-CRIT-01 FIX: Set branch context from the store's branch_id
+            if ($store->branch_id) {
+                BranchContextManager::setBranchContext($store->branch_id);
+                request()->attributes->set('branch_id', $store->branch_id);
+            }
 
-            return $this->successResponse(null, __('Webhook processed successfully'));
-        } catch (\Exception $e) {
-            // BUG-006 FIX: Log detailed error server-side, return generic message to client
-            Log::error('Laravel webhook processing failed', [
-                'store_id' => $storeId,
-                'event' => $event,
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            if (! $this->verifyLaravelWebhook($request, $store)) {
+                return $this->errorResponse(__('Invalid webhook signature'), 401);
+            }
 
-            return $this->errorResponse(__('Webhook processing failed'), 500);
+            $event = $request->input('event');
+            $data = $request->input('data', []);
+
+            try {
+                match ($event) {
+                    'product.created', 'product.updated' => $this->syncService->syncLaravelProductToERP($store, $data),
+                    'product.deleted' => $this->handleLaravelProductDelete($store, $data),
+                    'order.created' => $this->syncService->syncLaravelOrderToERP($store, $data),
+                    'order.updated' => $this->syncService->syncLaravelOrderToERP($store, $data),
+                    'inventory.updated' => $this->handleLaravelInventoryUpdate($store, $data),
+                    default => null,
+                };
+
+                return $this->successResponse(null, __('Webhook processed successfully'));
+            } catch (\Exception $e) {
+                // BUG-006 FIX: Log detailed error server-side, return generic message to client
+                Log::error('Laravel webhook processing failed', [
+                    'store_id' => $storeId,
+                    'event' => $event,
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                return $this->errorResponse(__('Webhook processing failed'), 500);
+            }
+        } finally {
+            // V31-CRIT-02 FIX: Always clear branch context to prevent leakage
+            BranchContextManager::clearBranchContext();
         }
     }
 

@@ -43,6 +43,7 @@ class ClosePosDayJob implements ShouldQueue
 
     /**
      * V22-MED-05 FIX: Process POS closing for a specific branch
+     * V31-HIGH-04 FIX: Use sale_date instead of created_at for consistency with POSService
      */
     protected function processClosingForBranch(string $date, int $branchId): void
     {
@@ -50,9 +51,10 @@ class ClosePosDayJob implements ShouldQueue
         BranchContextManager::setBranchContext($branchId);
 
         try {
+            // V31-HIGH-04 FIX: Use sale_date instead of created_at to be consistent with POSService
             // V6-MEDIUM-02 FIX: Filter only revenue statuses, exclude cancelled/void/returned sales
             $sales = \App\Models\Sale::query()
-                ->whereDate('created_at', $date)
+                ->whereDate('sale_date', $date)
                 ->where('branch_id', $branchId)
                 ->whereNotIn('status', ['cancelled', 'void', 'returned', 'refunded'])
                 ->get(['total_amount', 'paid_amount']);
@@ -70,13 +72,19 @@ class ClosePosDayJob implements ShouldQueue
             $paid = (float) $paidString;
 
             // Save a closing record if you have a model/table for that
+            // V31-HIGH-04 FIX: closed_by is nullable for scheduled/CLI closings
             if (class_exists(\App\Models\PosClosing::class)) {
-                \App\Models\PosClosing::query()->create([
-                    'branch_id' => $branchId,
-                    'date' => $date,
-                    'gross' => $gross,
-                    'paid' => $paid,
-                ]);
+                \App\Models\PosClosing::query()->updateOrCreate(
+                    [
+                        'branch_id' => $branchId,
+                        'date' => $date,
+                    ],
+                    [
+                        'gross' => $gross,
+                        'paid' => $paid,
+                        'closed_by' => null, // V31-HIGH-04 FIX: Explicitly null for scheduled jobs
+                    ]
+                );
             } else {
                 Log::info('POS closing summary', compact('date', 'gross', 'paid') + ['branch_id' => $branchId]);
             }

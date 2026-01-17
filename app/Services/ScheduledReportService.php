@@ -70,20 +70,23 @@ class ScheduledReportService
     protected function fetchSalesReportData(array $filters): array
     {
         try {
-            $dateExpr = $this->dbCompat->castDate('created_at');
+            // V31-MED-05 FIX: Use sale_date instead of created_at for accurate period filtering
+            $dateExpr = $this->dbCompat->dateExpression('sale_date');
             $query = DB::table('sales')
                 ->select([
                     DB::raw("{$dateExpr} as date"),
                     DB::raw('COUNT(*) as orders_count'),
                     DB::raw('SUM(total_amount) as total_sales'),
                     DB::raw('AVG(total_amount) as avg_order'),
-                ]);
+                ])
+                // V31-MED-05 FIX: Exclude non-revenue statuses
+                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
 
             if (! empty($filters['date_from'])) {
-                $query->where('created_at', '>=', $filters['date_from']);
+                $query->whereDate('sale_date', '>=', $filters['date_from']);
             }
             if (! empty($filters['date_to'])) {
-                $query->where('created_at', '<=', $filters['date_to']);
+                $query->whereDate('sale_date', '<=', $filters['date_to']);
             }
             if (! empty($filters['branch_id'])) {
                 $query->where('branch_id', (int) $filters['branch_id']);
@@ -139,8 +142,13 @@ class ScheduledReportService
     protected function fetchCustomerReportData(array $filters): array
     {
         try {
+            // V31-MED-05 FIX: Add proper filtering for sales status and deleted_at
             $query = DB::table('customers')
-                ->leftJoin('sales', 'customers.id', '=', 'sales.customer_id')
+                ->leftJoin('sales', function ($join) {
+                    $join->on('customers.id', '=', 'sales.customer_id')
+                        ->whereNull('sales.deleted_at')
+                        ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded']);
+                })
                 ->select([
                     'customers.name',
                     'customers.email',

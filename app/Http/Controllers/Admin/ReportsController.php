@@ -112,9 +112,12 @@ class ReportsController extends Controller
         $from = $request->input('from', now()->startOfMonth()->toDateString());
         $to = $request->input('to', now()->endOfMonth()->toDateString());
 
+        // V31-HIGH-03 FIX: Use sale_date instead of created_at for accurate period filtering
+        // and exclude non-revenue statuses (draft, cancelled, void, refunded)
         $query = DB::table('sales')
-            ->whereDate('created_at', '>=', $from)
-            ->whereDate('created_at', '<=', $to);
+            ->whereDate('sale_date', '>=', $from)
+            ->whereDate('sale_date', '<=', $to)
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -143,9 +146,12 @@ class ReportsController extends Controller
         $from = $request->input('from', now()->startOfMonth()->toDateString());
         $to = $request->input('to', now()->endOfMonth()->toDateString());
 
+        // V31-HIGH-03 FIX: Use purchase_date instead of created_at for accurate period filtering
+        // and exclude non-relevant statuses (draft, cancelled)
         $query = DB::table('purchases')
-            ->whereDate('created_at', '>=', $from)
-            ->whereDate('created_at', '<=', $to);
+            ->whereDate('purchase_date', '>=', $from)
+            ->whereDate('purchase_date', '<=', $to)
+            ->whereNotIn('status', ['draft', 'cancelled']);
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -167,6 +173,7 @@ class ReportsController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: Finance profit and loss report
+     * V31-HIGH-03 FIX: Use proper date columns and exclude non-revenue statuses
      */
     public function financePnl(Request $request)
     {
@@ -174,13 +181,17 @@ class ReportsController extends Controller
         $from = $request->input('from', now()->startOfMonth()->toDateString());
         $to = $request->input('to', now()->endOfMonth()->toDateString());
 
+        // V31-HIGH-03 FIX: Use sale_date/purchase_date instead of created_at
+        // and filter out non-revenue/non-expense statuses
         $salesQuery = DB::table('sales')
-            ->whereDate('created_at', '>=', $from)
-            ->whereDate('created_at', '<=', $to);
+            ->whereDate('sale_date', '>=', $from)
+            ->whereDate('sale_date', '<=', $to)
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
 
         $purchasesQuery = DB::table('purchases')
-            ->whereDate('created_at', '>=', $from)
-            ->whereDate('created_at', '<=', $to);
+            ->whereDate('purchase_date', '>=', $from)
+            ->whereDate('purchase_date', '<=', $to)
+            ->whereNotIn('status', ['draft', 'cancelled']);
 
         $expensesQuery = DB::table('expenses')
             ->whereDate('expense_date', '>=', $from)
@@ -192,21 +203,26 @@ class ReportsController extends Controller
             $expensesQuery->where('branch_id', $branchId);
         }
 
-        $totalSales = (float) $salesQuery->sum('total_amount');
-        $totalPurchases = (float) $purchasesQuery->sum('total_amount');
-        $totalExpenses = (float) $expensesQuery->sum('amount');
+        // V31-HIGH-03 FIX: Use bcmath for precise financial calculations
+        $totalSalesRaw = $salesQuery->sum('total_amount') ?? 0;
+        $totalPurchasesRaw = $purchasesQuery->sum('total_amount') ?? 0;
+        $totalExpensesRaw = $expensesQuery->sum('amount') ?? 0;
 
-        $grossProfit = $totalSales - $totalPurchases;
-        $netProfit = $grossProfit - $totalExpenses;
+        $totalSales = (string) $totalSalesRaw;
+        $totalPurchases = (string) $totalPurchasesRaw;
+        $totalExpenses = (string) $totalExpensesRaw;
+
+        $grossProfit = bcsub($totalSales, $totalPurchases, 2);
+        $netProfit = bcsub($grossProfit, $totalExpenses, 2);
 
         return $this->ok([
             'period' => ['from' => $from, 'to' => $to],
             'branch_id' => $branchId ?: 'all',
-            'revenue' => $totalSales,
-            'cost_of_goods' => $totalPurchases,
-            'gross_profit' => $grossProfit,
-            'expenses' => $totalExpenses,
-            'net_profit' => $netProfit,
+            'revenue' => (float) $totalSales,
+            'cost_of_goods' => (float) $totalPurchases,
+            'gross_profit' => (float) $grossProfit,
+            'expenses' => (float) $totalExpenses,
+            'net_profit' => (float) $netProfit,
         ]);
     }
 
@@ -248,6 +264,7 @@ class ReportsController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: Finance aging report
+     * V31-HIGH-03 FIX: Use sale_date/purchase_date and filter non-revenue statuses
      */
     public function financeAging(Request $request)
     {
@@ -257,13 +274,19 @@ class ReportsController extends Controller
         $today = now();
 
         if ($type === 'receivables') {
+            // V31-HIGH-03 FIX: Use sale_date for aging and filter non-revenue statuses
+            // Explicitly select sale_date to ensure the proper date is used for aging
             $query = DB::table('sales')
+                ->select(['id', 'total_amount', 'paid_amount', 'sale_date'])
                 ->whereRaw('paid_amount < total_amount')
-                ->where('status', '!=', 'cancelled');
+                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
         } else {
+            // V31-HIGH-03 FIX: Use purchase_date for aging and filter non-relevant statuses
+            // Explicitly select purchase_date to ensure the proper date is used for aging
             $query = DB::table('purchases')
+                ->select(['id', 'total_amount', 'paid_amount', 'purchase_date'])
                 ->whereRaw('paid_amount < total_amount')
-                ->where('status', '!=', 'cancelled');
+                ->whereNotIn('status', ['draft', 'cancelled']);
         }
 
         if ($branchId) {
@@ -272,37 +295,48 @@ class ReportsController extends Controller
 
         $items = $query->get();
 
+        // V31-HIGH-03 FIX: Use bcmath for precise financial calculations
         $aging = [
-            'current' => 0,
-            '1_30_days' => 0,
-            '31_60_days' => 0,
-            '61_90_days' => 0,
-            'over_90_days' => 0,
+            'current' => '0',
+            '1_30_days' => '0',
+            '31_60_days' => '0',
+            '61_90_days' => '0',
+            'over_90_days' => '0',
         ];
 
         foreach ($items as $item) {
-            $outstanding = ($item->total_amount ?? 0) - ($item->paid_amount ?? 0);
-            $createdAt = \Carbon\Carbon::parse($item->created_at);
-            $daysOld = $createdAt->diffInDays($today);
+            $outstanding = bcsub((string) ($item->total_amount ?? 0), (string) ($item->paid_amount ?? 0), 2);
+            // V31-HIGH-03 FIX: Use sale_date/purchase_date directly (explicitly selected in query)
+            // Skip items with null date as they have no valid aging basis
+            $dateColumn = $type === 'receivables' ? $item->sale_date : $item->purchase_date;
+            if ($dateColumn === null) {
+                // Skip items without a proper date - they shouldn't exist but handle gracefully
+                continue;
+            }
+            $itemDate = \Carbon\Carbon::parse($dateColumn);
+            $daysOld = $itemDate->diffInDays($today);
 
             if ($daysOld <= 0) {
-                $aging['current'] += $outstanding;
+                $aging['current'] = bcadd($aging['current'], $outstanding, 2);
             } elseif ($daysOld <= 30) {
-                $aging['1_30_days'] += $outstanding;
+                $aging['1_30_days'] = bcadd($aging['1_30_days'], $outstanding, 2);
             } elseif ($daysOld <= 60) {
-                $aging['31_60_days'] += $outstanding;
+                $aging['31_60_days'] = bcadd($aging['31_60_days'], $outstanding, 2);
             } elseif ($daysOld <= 90) {
-                $aging['61_90_days'] += $outstanding;
+                $aging['61_90_days'] = bcadd($aging['61_90_days'], $outstanding, 2);
             } else {
-                $aging['over_90_days'] += $outstanding;
+                $aging['over_90_days'] = bcadd($aging['over_90_days'], $outstanding, 2);
             }
         }
+
+        // Convert to float for JSON response
+        $agingFloat = array_map(fn ($v) => (float) $v, $aging);
 
         return $this->ok([
             'type' => $type,
             'branch_id' => $branchId ?: 'all',
-            'aging' => $aging,
-            'total' => array_sum($aging),
+            'aging' => $agingFloat,
+            'total' => array_sum($agingFloat),
         ]);
     }
 }

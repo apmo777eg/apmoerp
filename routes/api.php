@@ -82,7 +82,9 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    Route::prefix('webhooks')->middleware('throttle:30,1')->group(function () {
+    // V31-CRIT-02 FIX: Add api-core middleware to webhooks for consistent API behavior
+    // (JSON validation, headers, ClearBranchContext) across all API endpoints
+    Route::prefix('webhooks')->middleware(['api-core', 'throttle:30,1'])->group(function () {
         Route::post('/shopify/{storeId}', [WebhooksController::class, 'handleShopify'])->name('webhooks.shopify');
         Route::post('/woocommerce/{storeId}', [WebhooksController::class, 'handleWooCommerce'])->name('webhooks.woocommerce');
         Route::post('/laravel/{storeId}', [WebhooksController::class, 'handleLaravel'])->name('webhooks.laravel');

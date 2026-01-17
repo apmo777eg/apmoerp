@@ -422,12 +422,13 @@ class POSService implements POSServiceInterface
      * @param  Branch  $branch  The branch to close
      * @param  Carbon  $date  The date to close
      * @param  bool  $force  Force close even if there are open sessions
+     * @param  int|null  $closedBy  V31-HIGH-04 FIX: User ID who closed (nullable for system/scheduled closings)
      * @return array Summary of closed day including sales count and receipts
      */
-    public function closeDay(Branch $branch, Carbon $date, bool $force = false): array
+    public function closeDay(Branch $branch, Carbon $date, bool $force = false, ?int $closedBy = null): array
     {
         return $this->handleServiceOperation(
-            callback: function () use ($branch, $date, $force) {
+            callback: function () use ($branch, $date, $force, $closedBy) {
                 // Check for open sessions that should be closed first
                 if (! $force) {
                     $openSessions = PosSession::where('branch_id', $branch->id)
@@ -471,6 +472,10 @@ class POSService implements POSServiceInterface
 
                 // Record the closing if PosClosing model exists
                 if (class_exists(PosClosing::class)) {
+                    // V31-HIGH-04 FIX: Accept closedBy parameter instead of relying on auth()->id()
+                    // This ensures proper audit trail even when running via CLI/scheduler
+                    $actualClosedBy = $closedBy ?? auth()->id();
+
                     PosClosing::updateOrCreate(
                         [
                             'branch_id' => $branch->id,
@@ -482,7 +487,7 @@ class POSService implements POSServiceInterface
                             'sales_count' => $salesCount,
                             'receipts_count' => $receiptsCount,
                             'closed_at' => now(),
-                            'closed_by' => auth()->id(),
+                            'closed_by' => $actualClosedBy,
                         ]
                     );
                 }

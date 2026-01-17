@@ -3,25 +3,40 @@
 namespace App\Services\Reports;
 
 use App\Models\Product;
+use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
 
 class SlowMovingStockService
 {
+    protected DatabaseCompatibilityService $dbCompat;
+
+    public function __construct(DatabaseCompatibilityService $dbCompat)
+    {
+        $this->dbCompat = $dbCompat;
+    }
+
     /**
      * Get slow-moving and obsolete stock analysis
+     * V31-MED-07 FIX: Use DatabaseCompatibilityService for DB-agnostic SQL
+     * and filter sales statuses
      */
     public function getSlowMovingStock($days = 90)
     {
         $cutoffDate = Carbon::now()->subDays($days);
 
+        // V31-MED-07 FIX: Use DatabaseCompatibilityService for DATEDIFF
+        $daysDiffExpr = $this->dbCompat->daysDifference($this->dbCompat->now(), 'MAX(sale_items.created_at)');
+
         $products = Product::select('products.*')
             ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_sold')
             ->selectRaw('MAX(sale_items.created_at) as last_sold_date')
-            ->selectRaw('DATEDIFF(NOW(), MAX(sale_items.created_at)) as days_since_sale')
+            ->selectRaw("{$daysDiffExpr} as days_since_sale")
             ->leftJoin('sale_items', 'products.id', '=', 'sale_items.product_id')
             ->leftJoin('sales', function ($join) {
                 $join->on('sale_items.sale_id', '=', 'sales.id')
-                    ->whereNull('sales.deleted_at');
+                    ->whereNull('sales.deleted_at')
+                    // V31-MED-07 FIX: Exclude non-revenue statuses
+                    ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded']);
             })
             ->where('products.stock_quantity', '>', 0)
             ->whereNull('products.deleted_at')

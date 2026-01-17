@@ -99,6 +99,8 @@ class OrdersController extends BaseApiController
             'shipping' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'external_id' => 'nullable|string|max:100',
+            // V31-MED-06 FIX: Accept order_date from input for proper date handling
+            'order_date' => 'nullable|date',
             // V22-HIGH-03 FIX: Scope warehouse validation to the store's branch
             'warehouse_id' => [
                 'nullable',
@@ -224,6 +226,13 @@ class OrdersController extends BaseApiController
                 $shipping = max(0, (float) ($validated['shipping'] ?? 0));
                 $grandTotal = $subTotal - ($itemDiscountTotal + $orderDiscount) + $tax + $shipping;
 
+                // V31-MED-06 FIX: Get integration user ID for store token auth
+                // This provides proper audit trail for API orders
+                $createdById = auth()->id();
+                if (! $createdById && $store?->integration) {
+                    $createdById = $store->integration->user_id;
+                }
+
                 $sale = Sale::create([
                     'branch_id' => $branchId,
                     'warehouse_id' => $warehouseId,
@@ -242,8 +251,10 @@ class OrdersController extends BaseApiController
                     // STILL-V7-HIGH-U05 FIX: Use external_reference for external IDs (aligns with StoreSyncService)
                     // reference_number should remain internal-only
                     'external_reference' => $validated['external_id'] ?? null,
-                    'sale_date' => now()->toDateString(),
-                    'created_by' => auth()->id(),
+                    // V31-MED-06 FIX: Accept order_date from input, defaulting to today
+                    'sale_date' => $validated['order_date'] ?? now()->toDateString(),
+                    // V31-MED-06 FIX: Use integration user ID when auth is not available
+                    'created_by' => $createdById,
                 ]);
 
                 foreach ($itemsData as $itemData) {
