@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
+use App\Services\DatabaseCompatibilityService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,25 +18,36 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryTurnoverService
 {
+    public function __construct(
+        protected DatabaseCompatibilityService $dbCompat
+    ) {}
+
     /**
      * Get inventory turnover analysis
+     * V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost) instead of products.cost
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getTurnoverAnalysis(?int $branchId = null, int $days = 30): array
     {
         $startDate = now()->subDays($days);
 
         // Get COGS for the period
+        // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost at time of sale)
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at
+        // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
         $cogsQuery = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->where('sales.status', '!=', 'cancelled')
-            ->where('sales.created_at', '>=', $startDate);
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->where('sales.sale_date', '>=', $startDate);
 
         if ($branchId) {
             $cogsQuery->where('sales.branch_id', $branchId);
         }
 
-        $cogs = $cogsQuery->sum(DB::raw('sale_items.quantity * COALESCE(products.cost, 0)'));
+        $cogs = $cogsQuery->sum(DB::raw('sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)'));
 
         // Get average inventory value
         $inventoryQuery = DB::table('products')
@@ -64,24 +76,33 @@ class InventoryTurnoverService
 
     /**
      * Get turnover by product
+     * V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost) instead of products.cost
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
      */
     public function getProductTurnover(?int $branchId = null, int $days = 30, int $limit = 20): array
     {
-        $startDate = now()->subDays($days);
+        $startDate = now()->subDays($days)->toDateString();
+
+        // Build the sales data subquery using Query Builder with proper bindings
+        $salesSubquery = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products as p', 'sale_items.product_id', '=', 'p.id')
+            ->select(
+                'sale_items.product_id',
+                DB::raw('SUM(sale_items.quantity) as sold_qty'),
+                DB::raw('SUM(sale_items.quantity * COALESCE(sale_items.cost_price, p.cost, 0)) as cogs')
+            )
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->groupBy('sale_items.product_id');
 
         $query = DB::table('products')
-            ->leftJoin(DB::raw('(
-                SELECT 
-                    sale_items.product_id,
-                    SUM(sale_items.quantity) as sold_qty,
-                    SUM(sale_items.quantity * COALESCE(products.cost, 0)) as cogs
-                FROM sale_items
-                JOIN sales ON sale_items.sale_id = sales.id
-                JOIN products ON sale_items.product_id = products.id
-                WHERE sales.status != \'cancelled\'
-                AND sales.created_at >= \''.$startDate->toDateTimeString().'\'
-                GROUP BY sale_items.product_id
-            ) as sales_data'), 'products.id', '=', 'sales_data.product_id')
+            ->leftJoinSub($salesSubquery, 'sales_data', function ($join) {
+                $join->on('products.id', '=', 'sales_data.product_id');
+            })
             ->select([
                 'products.id',
                 'products.name',
@@ -114,19 +135,27 @@ class InventoryTurnoverService
 
     /**
      * Identify dead stock (items with no sales)
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
      */
     public function getDeadStock(?int $branchId = null, int $days = 90, int $limit = 20): array
     {
-        $startDate = now()->subDays($days);
+        $startDate = now()->subDays($days)->toDateString();
+
+        // Build the recent sales subquery using Query Builder with proper bindings
+        $recentSalesSubquery = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->select('sale_items.product_id')
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->distinct();
 
         $query = DB::table('products')
-            ->leftJoin(DB::raw('(
-                SELECT DISTINCT sale_items.product_id
-                FROM sale_items
-                JOIN sales ON sale_items.sale_id = sales.id
-                WHERE sales.status != \'cancelled\'
-                AND sales.created_at >= \''.$startDate->toDateTimeString().'\'
-            ) as recent_sales'), 'products.id', '=', 'recent_sales.product_id')
+            ->leftJoinSub($recentSalesSubquery, 'recent_sales', function ($join) {
+                $join->on('products.id', '=', 'recent_sales.product_id');
+            })
             ->select([
                 'products.id',
                 'products.name',
@@ -160,23 +189,31 @@ class InventoryTurnoverService
 
     /**
      * Identify overstocked items
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
      */
     public function getOverstockedItems(?int $branchId = null, float $threshold = 3.0, int $limit = 20): array
     {
         // Threshold: months of supply (stock_qty / monthly_sales)
-        $monthlySalesStart = now()->subDays(30);
+        $monthlySalesStart = now()->subDays(30)->toDateString();
+
+        // Build the monthly sales subquery using Query Builder with proper bindings
+        $monthlySalesSubquery = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->select(
+                'sale_items.product_id',
+                DB::raw('SUM(sale_items.quantity) as monthly_sales')
+            )
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereDate('sales.sale_date', '>=', $monthlySalesStart)
+            ->groupBy('sale_items.product_id');
 
         $query = DB::table('products')
-            ->leftJoin(DB::raw('(
-                SELECT 
-                    sale_items.product_id,
-                    SUM(sale_items.quantity) as monthly_sales
-                FROM sale_items
-                JOIN sales ON sale_items.sale_id = sales.id
-                WHERE sales.status != \'cancelled\'
-                AND sales.created_at >= \''.$monthlySalesStart->toDateTimeString().'\'
-                GROUP BY sale_items.product_id
-            ) as sales_data'), 'products.id', '=', 'sales_data.product_id')
+            ->leftJoinSub($monthlySalesSubquery, 'sales_data', function ($join) {
+                $join->on('products.id', '=', 'sales_data.product_id');
+            })
             ->select([
                 'products.id',
                 'products.name',
@@ -210,24 +247,33 @@ class InventoryTurnoverService
 
     /**
      * Get turnover by category
+     * V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost) instead of products.cost
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
      */
     public function getCategoryTurnover(?int $branchId = null, int $days = 30): array
     {
-        $startDate = now()->subDays($days);
+        $startDate = now()->subDays($days)->toDateString();
+
+        // Build the COGS subquery using Query Builder with proper bindings
+        $cogsSubquery = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products as p', 'sale_items.product_id', '=', 'p.id')
+            ->select(
+                'sale_items.product_id',
+                DB::raw('SUM(sale_items.quantity * COALESCE(sale_items.cost_price, p.cost, 0)) as cogs')
+            )
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->groupBy('sale_items.product_id');
 
         $query = DB::table('products')
             ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
-            ->leftJoin(DB::raw('(
-                SELECT 
-                    sale_items.product_id,
-                    SUM(sale_items.quantity * COALESCE(p.cost, 0)) as cogs
-                FROM sale_items
-                JOIN sales ON sale_items.sale_id = sales.id
-                JOIN products p ON sale_items.product_id = p.id
-                WHERE sales.status != \'cancelled\'
-                AND sales.created_at >= \''.$startDate->toDateTimeString().'\'
-                GROUP BY sale_items.product_id
-            ) as sales_data'), 'products.id', '=', 'sales_data.product_id')
+            ->leftJoinSub($cogsSubquery, 'sales_data', function ($join) {
+                $join->on('products.id', '=', 'sales_data.product_id');
+            })
             ->select([
                 'product_categories.id',
                 DB::raw('COALESCE(product_categories.name, \'Uncategorized\') as name'),

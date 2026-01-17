@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
+use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\DB;
  */
 class SalesForecastingService
 {
+    public function __construct(
+        protected DatabaseCompatibilityService $dbCompat
+    ) {}
     /**
      * Get sales forecast for the next N periods
      */
@@ -46,13 +50,17 @@ class SalesForecastingService
 
     /**
      * Get historical sales data
+     * V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date expressions
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     protected function getHistoricalSales(?int $branchId, string $period, int $periods): array
     {
-        $dateFormat = match ($period) {
-            'week' => '%Y-%u',
-            'month' => '%Y-%m',
-            default => '%Y-%m-%d',
+        // V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date truncation
+        $periodExpr = match ($period) {
+            'week' => $this->dbCompat->weekTruncateExpression('sale_date'),
+            'month' => $this->dbCompat->monthTruncateExpression('sale_date'),
+            default => $this->dbCompat->dateExpression('sale_date'),
         };
 
         $startDate = match ($period) {
@@ -61,16 +69,19 @@ class SalesForecastingService
             default => now()->subDays($periods),
         };
 
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at
+        // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
         $query = DB::table('sales')
             ->select([
-                DB::raw("DATE_FORMAT(created_at, '{$dateFormat}') as period"),
+                DB::raw("{$periodExpr} as period"),
                 DB::raw('COUNT(*) as order_count'),
                 DB::raw('COALESCE(SUM(total_amount), 0) as revenue'),
                 DB::raw('COALESCE(AVG(total_amount), 0) as avg_order_value'),
             ])
-            ->where('status', '!=', 'cancelled')
-            ->where('created_at', '>=', $startDate)
-            ->groupBy(DB::raw("DATE_FORMAT(created_at, '{$dateFormat}')"))
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->where('sale_date', '>=', $startDate)
+            ->groupBy(DB::raw($periodExpr))
             ->orderBy('period');
 
         if ($branchId) {
@@ -220,21 +231,28 @@ class SalesForecastingService
 
     /**
      * Get product-specific forecast
+     * V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date expressions
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getProductForecast(int $productId, ?int $branchId = null, int $forecastPeriods = 7): array
     {
+        // V35-HIGH-04 FIX: Use DatabaseCompatibilityService for date expression
+        $dateExpr = $this->dbCompat->dateExpression('sales.sale_date');
+
         $historical = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select([
-                DB::raw("DATE_FORMAT(sales.created_at, '%Y-%m-%d') as period"),
+                DB::raw("{$dateExpr} as period"),
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as quantity'),
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) as revenue'),
             ])
             ->where('sale_items.product_id', $productId)
-            ->where('sales.status', '!=', 'cancelled')
-            ->where('sales.created_at', '>=', now()->subDays(30))
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->where('sales.sale_date', '>=', now()->subDays(30))
             ->when($branchId, fn ($q) => $q->where('sales.branch_id', $branchId))
-            ->groupBy(DB::raw("DATE_FORMAT(sales.created_at, '%Y-%m-%d')"))
+            ->groupBy(DB::raw($dateExpr))
             ->orderBy('period')
             ->get()
             ->map(fn ($row) => [

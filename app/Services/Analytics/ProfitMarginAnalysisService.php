@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
+use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ProfitMarginAnalysisService
 {
+    public function __construct(
+        protected DatabaseCompatibilityService $dbCompat
+    ) {}
+
     /**
      * Get profit margin analysis for products
      */
@@ -26,6 +31,10 @@ class ProfitMarginAnalysisService
         $startDate = $startDate ?? now()->subDays(30);
         $endDate = $endDate ?? now();
 
+        // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost at time of sale) instead of products.cost (current cost)
+        // This ensures profit calculations remain accurate even when product costs change later
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+        // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
@@ -35,14 +44,15 @@ class ProfitMarginAnalysisService
                 'products.sku',
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as units_sold'),
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) as revenue'),
-                DB::raw('COALESCE(SUM(sale_items.quantity * COALESCE(products.cost, 0)), 0) as cost'),
-                DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(products.cost, 0)), 0) as profit'),
+                DB::raw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as cost'),
+                DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as profit'),
                 DB::raw('CASE WHEN SUM(sale_items.line_total) > 0 THEN 
-                    ((SUM(sale_items.line_total) - SUM(sale_items.quantity * COALESCE(products.cost, 0))) / SUM(sale_items.line_total)) * 100 
+                    ((SUM(sale_items.line_total) - SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0))) / SUM(sale_items.line_total)) * 100 
                     ELSE 0 END as margin_percent'),
             ])
-            ->where('sales.status', '!=', 'cancelled')
-            ->whereBetween('sales.created_at', [$startDate, $endDate])
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sales.sale_date', [$startDate, $endDate])
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->orderByDesc('profit')
             ->limit($limit);
@@ -84,6 +94,9 @@ class ProfitMarginAnalysisService
         $startDate = $startDate ?? now()->subDays(30);
         $endDate = $endDate ?? now();
 
+        // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost at time of sale) instead of products.cost
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+        // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
@@ -94,14 +107,15 @@ class ProfitMarginAnalysisService
                 DB::raw('COUNT(DISTINCT products.id) as product_count'),
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as units_sold'),
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) as revenue'),
-                DB::raw('COALESCE(SUM(sale_items.quantity * COALESCE(products.cost, 0)), 0) as cost'),
-                DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(products.cost, 0)), 0) as profit'),
+                DB::raw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as cost'),
+                DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as profit'),
                 DB::raw('CASE WHEN SUM(sale_items.line_total) > 0 THEN 
-                    ((SUM(sale_items.line_total) - SUM(sale_items.quantity * COALESCE(products.cost, 0))) / SUM(sale_items.line_total)) * 100 
+                    ((SUM(sale_items.line_total) - SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0))) / SUM(sale_items.line_total)) * 100 
                     ELSE 0 END as margin_percent'),
             ])
-            ->where('sales.status', '!=', 'cancelled')
-            ->whereBetween('sales.created_at', [$startDate, $endDate])
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sales.sale_date', [$startDate, $endDate])
             ->groupBy('product_categories.id', 'product_categories.name')
             ->orderByDesc('profit');
 
@@ -121,14 +135,19 @@ class ProfitMarginAnalysisService
 
     /**
      * Get profit trend over time
+     * V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date expressions
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-HIGH-03 FIX: Use sale_items.cost_price instead of products.cost
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getProfitTrend(?int $branchId = null, string $groupBy = 'day', int $periods = 30): array
     {
-        $dateFormat = match ($groupBy) {
-            'week' => '%Y-%u',
-            'month' => '%Y-%m',
-            'year' => '%Y',
-            default => '%Y-%m-%d',
+        // V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date truncation
+        $periodExpr = match ($groupBy) {
+            'week' => $this->dbCompat->weekTruncateExpression('sales.sale_date'),
+            'month' => $this->dbCompat->monthTruncateExpression('sales.sale_date'),
+            'year' => $this->dbCompat->yearTruncateExpression('sales.sale_date'),
+            default => $this->dbCompat->dateExpression('sales.sale_date'),
         };
 
         $startDate = match ($groupBy) {
@@ -138,18 +157,22 @@ class ProfitMarginAnalysisService
             default => now()->subDays($periods),
         };
 
+        // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost)
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at
+        // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->select([
-                DB::raw("DATE_FORMAT(sales.created_at, '{$dateFormat}') as period"),
+                DB::raw("{$periodExpr} as period"),
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) as revenue'),
-                DB::raw('COALESCE(SUM(sale_items.quantity * COALESCE(products.cost, 0)), 0) as cost'),
-                DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(products.cost, 0)), 0) as profit'),
+                DB::raw('COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as cost'),
+                DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as profit'),
             ])
-            ->where('sales.status', '!=', 'cancelled')
-            ->where('sales.created_at', '>=', $startDate)
-            ->groupBy(DB::raw("DATE_FORMAT(sales.created_at, '{$dateFormat}')"))
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->where('sales.sale_date', '>=', $startDate)
+            ->groupBy(DB::raw($periodExpr))
             ->orderBy('period');
 
         if ($branchId) {
@@ -166,6 +189,9 @@ class ProfitMarginAnalysisService
 
     /**
      * Get lowest margin products (items that need attention)
+     * V35-HIGH-03 FIX: Use sale_items.cost_price instead of products.cost
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getLowestMarginProducts(?int $branchId = null, int $limit = 10): array
     {
@@ -180,11 +206,12 @@ class ProfitMarginAnalysisService
                 'products.price',
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as units_sold'),
                 DB::raw('CASE WHEN SUM(sale_items.line_total) > 0 THEN 
-                    ((SUM(sale_items.line_total) - SUM(sale_items.quantity * COALESCE(products.cost, 0))) / SUM(sale_items.line_total)) * 100 
+                    ((SUM(sale_items.line_total) - SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0))) / SUM(sale_items.line_total)) * 100 
                     ELSE 0 END as margin_percent'),
             ])
-            ->where('sales.status', '!=', 'cancelled')
-            ->where('sales.created_at', '>=', now()->subDays(30))
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->where('sales.sale_date', '>=', now()->subDays(30))
             ->groupBy('products.id', 'products.name', 'products.sku', 'products.cost', 'products.price')
             ->having('units_sold', '>', 0)
             ->orderBy('margin_percent')

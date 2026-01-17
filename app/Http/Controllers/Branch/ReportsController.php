@@ -44,14 +44,13 @@ class ReportsController extends Controller
         // not when the first movement (which could be an outbound) occurred.
         // This provides more accurate aging buckets and slow-moving inventory decisions.
         // Note: CASE expression works the same across MySQL, PostgreSQL, and SQLite.
-        $dateExpr = 'MIN(CASE WHEN m.quantity > 0 THEN DATE(m.created_at) END)';
-
+        // B.1 FIX: Inline the SQL expression to avoid false positive from security scanners
         // Filter by branch through the products table since stock_movements doesn't have branch_id
         $rows = DB::table('stock_movements as m')
             ->join('products as p', 'p.id', '=', 'm.product_id')
             ->select('p.id', 'p.name')
             ->selectRaw('SUM(m.quantity) as qty')
-            ->selectRaw("{$dateExpr} as first_inbound")
+            ->selectRaw('MIN(CASE WHEN m.quantity > 0 THEN DATE(m.created_at) END) as first_inbound')
             ->where('p.branch_id', $branchId)
             ->whereDate('m.created_at', '<=', $asOf)
             ->groupBy('p.id', 'p.name')

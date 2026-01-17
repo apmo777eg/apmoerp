@@ -71,11 +71,16 @@ class Reports extends Component
     /**
      * Get sales statistics for the branch
      * FIX N-02: Use correct column names (total_amount, paid_amount instead of total, paid)
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getSalesStats(): array
     {
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at
+        // V35-MED-06 FIX: Exclude non-revenue statuses
         $query = Sale::where('branch_id', $this->branch->id)
-            ->whereBetween('created_at', [$this->fromDate.' 00:00:00', $this->toDate.' 23:59:59']);
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sale_date', [$this->fromDate, $this->toDate]);
 
         return [
             'total_sales' => (clone $query)->count(),
@@ -89,6 +94,7 @@ class Reports extends Component
 
     /**
      * Get inventory statistics for the branch
+     * V35-MED-05 FIX: Use cost instead of default_price (selling price) for inventory asset value
      */
     public function getInventoryStats(): array
     {
@@ -96,7 +102,9 @@ class Reports extends Component
 
         return [
             'total_products' => (clone $query)->count(),
-            'total_value' => (clone $query)->sum(DB::raw('COALESCE(default_price, 0) * COALESCE(stock_quantity, 0)')),
+            // V35-MED-05 FIX: Use cost for inventory asset value (not selling price)
+            // Inventory valuation should be based on cost, not potential sales value
+            'total_value' => (clone $query)->sum(DB::raw('COALESCE(cost, standard_cost, 0) * COALESCE(stock_quantity, 0)')),
             'low_stock' => (clone $query)
                 ->whereNotNull('min_stock')
                 ->where('min_stock', '>', 0)
@@ -127,6 +135,8 @@ class Reports extends Component
     /**
      * Get top selling products for the branch
      * FIX N-02: Use line_total instead of total for sale_items
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getTopProducts(): array
     {
@@ -134,7 +144,11 @@ class Reports extends Component
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->where('sales.branch_id', $this->branch->id)
-            ->whereBetween('sales.created_at', [$this->fromDate.' 00:00:00', $this->toDate.' 23:59:59'])
+            // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            // V35-HIGH-02 FIX: Use sale_date instead of created_at
+            ->whereBetween('sales.sale_date', [$this->fromDate, $this->toDate])
             ->select('products.name', DB::raw('SUM(sale_items.quantity) as total_qty'), DB::raw('SUM(sale_items.line_total) as total_amount'))
             ->groupBy('sale_items.product_id', 'products.name')
             ->orderByDesc('total_qty')
@@ -146,12 +160,17 @@ class Reports extends Component
     /**
      * Get daily sales for chart
      * FIX N-02: Use total_amount instead of total
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     public function getDailySales(): array
     {
         return Sale::where('branch_id', $this->branch->id)
-            ->whereBetween('created_at', [$this->fromDate.' 00:00:00', $this->toDate.' 23:59:59'])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
+            // V35-MED-06 FIX: Exclude non-revenue statuses
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+            // V35-HIGH-02 FIX: Use sale_date instead of created_at
+            ->whereBetween('sale_date', [$this->fromDate, $this->toDate])
+            ->select(DB::raw('DATE(sale_date) as date'), DB::raw('SUM(total_amount) as total'))
             ->groupBy('date')
             ->orderBy('date')
             ->get()

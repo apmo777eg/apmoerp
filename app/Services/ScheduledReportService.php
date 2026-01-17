@@ -177,7 +177,8 @@ class ScheduledReportService
     protected function fetchOrdersReportData(array $filters): array
     {
         try {
-            // Use actual column name 'reference_number' instead of 'code'
+            // V35-CRIT-01 FIX: Use sale_date for accurate period filtering (consistent with fetchSalesReportData)
+            // Add branch scoping, soft delete filter, and status exclusions
             $query = DB::table('sales')
                 ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->select([
@@ -186,20 +187,31 @@ class ScheduledReportService
                     'customers.name as customer_name',
                     'sales.total_amount',
                     'sales.status',
+                    'sales.sale_date',
                     'sales.created_at',
-                ]);
+                ])
+                // V35-CRIT-01 FIX: Filter out soft-deleted sales
+                ->whereNull('sales.deleted_at')
+                // V35-CRIT-01 FIX: Exclude non-revenue statuses by default (matches fetchSalesReportData)
+                ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded']);
 
+            // V35-CRIT-01 FIX: Use sale_date instead of created_at for date filtering
             if (! empty($filters['date_from'])) {
-                $query->where('sales.created_at', '>=', $filters['date_from']);
+                $query->whereDate('sales.sale_date', '>=', $filters['date_from']);
             }
             if (! empty($filters['date_to'])) {
-                $query->where('sales.created_at', '<=', $filters['date_to']);
+                $query->whereDate('sales.sale_date', '<=', $filters['date_to']);
             }
+            // V35-CRIT-01 FIX: Add branch_id filter to prevent cross-branch data leakage
+            if (! empty($filters['branch_id'])) {
+                $query->where('sales.branch_id', (int) $filters['branch_id']);
+            }
+            // Allow additional status filtering if needed
             if (! empty($filters['status'])) {
                 $query->where('sales.status', $filters['status']);
             }
 
-            return $query->orderByDesc('sales.created_at')
+            return $query->orderByDesc('sales.sale_date')
                 ->limit(500)
                 ->get()
                 ->map(fn ($row) => (array) $row)
