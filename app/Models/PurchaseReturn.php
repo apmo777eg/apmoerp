@@ -12,13 +12,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Purchase Return Model
- * 
+ *
  * Manages returns to suppliers for defective, damaged, wrong items, or excess inventory.
  * Integrates with GRN for quality control and generates debit notes for accounting.
  */
 class PurchaseReturn extends Model
 {
-    use HasFactory, SoftDeletes, HasBranch;
+    use HasBranch, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'return_number',
@@ -62,13 +62,18 @@ class PurchaseReturn extends Model
 
     // Status constants
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_SHIPPED = 'shipped';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     // Type constants
     public const TYPE_FULL = 'full';
+
     public const TYPE_PARTIAL = 'partial';
 
     protected static function boot()
@@ -85,23 +90,27 @@ class PurchaseReturn extends Model
     /**
      * Generate unique return number
      * V6-CRITICAL-08 FIX: Use database locking to prevent race conditions and scope by branch
+     * V32-CRIT-03 FIX: Wrap in DB::transaction to ensure lockForUpdate is effective
      */
     public static function generateReturnNumber(?int $branchId = null): string
     {
-        $prefix = 'PR';
-        $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
-        $date = now()->format('Ymd');
-        
-        // Use lockForUpdate to prevent race conditions during concurrent creation
-        // Also properly scope by branch_id in the query
-        $lastReturn = static::where('return_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
-            ->lockForUpdate()
-            ->orderByDesc('return_number')
-            ->first();
-        
-        $sequence = $lastReturn ? ((int) substr($lastReturn->return_number, -4)) + 1 : 1;
-        
-        return sprintf('%s-%s-%s-%04d', $prefix, $branchCode, $date, $sequence);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            $prefix = 'PR';
+            $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
+            $date = now()->format('Ymd');
+
+            // Use lockForUpdate to prevent race conditions during concurrent creation
+            // Also properly scope by branch_id in the query
+            // V32-CRIT-03 FIX: The outer DB::transaction ensures the lock is effective
+            $lastReturn = static::where('return_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
+                ->lockForUpdate()
+                ->orderByDesc('return_number')
+                ->first();
+
+            $sequence = $lastReturn ? ((int) substr($lastReturn->return_number, -4)) + 1 : 1;
+
+            return sprintf('%s-%s-%s-%04d', $prefix, $branchCode, $date, $sequence);
+        });
     }
 
     // Relationships

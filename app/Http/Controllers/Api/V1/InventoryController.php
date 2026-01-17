@@ -113,6 +113,19 @@ class InventoryController extends BaseApiController
             $difference = $newQuantity - $oldQuantity;
             $actualDirection = $difference >= 0 ? 'in' : 'out';
             $actualQty = abs($difference);
+
+            // V32-MED-01 FIX: Add tolerance check to avoid micro stock movements from float rounding
+            // With decimal:4 quantities, a tolerance of 0.0001 prevents noise movements while
+            // still capturing intentional small adjustments. This addresses float conversion
+            // issues where 1.0000 vs 0.999999999 would create unnecessary movements.
+            if ($actualQty < 0.0001) {
+                return $this->successResponse([
+                    'product_id' => $product->id,
+                    'sku' => $product->sku,
+                    'old_quantity' => $oldQuantity,
+                    'new_quantity' => $oldQuantity, // No change
+                ], __('Stock unchanged (difference below threshold)'));
+            }
         } else {
             $actualDirection = $validated['direction'];
             $actualQty = abs((float) $validated['qty']);

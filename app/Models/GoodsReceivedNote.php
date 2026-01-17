@@ -45,20 +45,32 @@ class GoodsReceivedNote extends BaseModel
 
         static::creating(function ($model) {
             if (! $model->reference_number) {
-                // V8-HIGH-N02 FIX: Use lockForUpdate to prevent race condition
-                // Get the last reference number with a lock to prevent duplicates
-                $lastGrn = static::whereDate('created_at', today())
-                    ->lockForUpdate()
-                    ->orderBy('id', 'desc')
-                    ->first();
-
-                $seq = 1;
-                if ($lastGrn && preg_match('/GRN-\d{8}-(\d{5})$/', $lastGrn->reference_number, $matches)) {
-                    $seq = ((int) $matches[1]) + 1;
-                }
-
-                $model->reference_number = 'GRN-'.date('Ymd').'-'.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+                $model->reference_number = static::generateReferenceNumber();
             }
+        });
+    }
+
+    /**
+     * Generate unique GRN reference number
+     * V8-HIGH-N02 FIX: Use lockForUpdate to prevent race condition
+     * V32-CRIT-03 FIX: Wrap in DB::transaction to ensure lockForUpdate is effective
+     */
+    public static function generateReferenceNumber(): string
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            // Get the last reference number with a lock to prevent duplicates
+            // V32-CRIT-03 FIX: The outer DB::transaction ensures the lock is effective
+            $lastGrn = static::whereDate('created_at', today())
+                ->lockForUpdate()
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $seq = 1;
+            if ($lastGrn && preg_match('/GRN-\d{8}-(\d{5})$/', $lastGrn->reference_number, $matches)) {
+                $seq = ((int) $matches[1]) + 1;
+            }
+
+            return 'GRN-'.date('Ymd').'-'.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
         });
     }
 

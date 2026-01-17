@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Debit Note Model
- * 
+ *
  * Accounting documents for supplier returns and adjustments.
  * Tracks amounts to be credited back from suppliers.
  */
 class DebitNote extends Model
 {
-    use HasFactory, SoftDeletes, HasBranch;
+    use HasBranch, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'debit_note_number',
@@ -58,16 +58,24 @@ class DebitNote extends Model
 
     // Status constants
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_APPLIED = 'applied';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     // Type constants
     public const TYPE_RETURN = 'return';
+
     public const TYPE_ADJUSTMENT = 'adjustment';
+
     public const TYPE_DISCOUNT = 'discount';
+
     public const TYPE_DAMAGE = 'damage';
+
     public const TYPE_OTHER = 'other';
 
     protected static function boot()
@@ -87,22 +95,26 @@ class DebitNote extends Model
     /**
      * Generate unique debit note number
      * V6-CRITICAL-08 FIX: Use database locking to prevent race conditions
+     * V32-CRIT-03 FIX: Wrap in DB::transaction to ensure lockForUpdate is effective
      */
     public static function generateDebitNoteNumber(?int $branchId = null): string
     {
-        $prefix = 'DN';
-        $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
-        $date = now()->format('Ymd');
-        
-        // Use lockForUpdate to prevent race conditions during concurrent creation
-        $lastNote = static::where('debit_note_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
-            ->lockForUpdate()
-            ->orderByDesc('debit_note_number')
-            ->first();
-        
-        $sequence = $lastNote ? ((int) substr($lastNote->debit_note_number, -4)) + 1 : 1;
-        
-        return sprintf('%s-%s-%s-%04d', $prefix, $branchCode, $date, $sequence);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            $prefix = 'DN';
+            $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
+            $date = now()->format('Ymd');
+
+            // Use lockForUpdate to prevent race conditions during concurrent creation
+            // V32-CRIT-03 FIX: The outer DB::transaction ensures the lock is effective
+            $lastNote = static::where('debit_note_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
+                ->lockForUpdate()
+                ->orderByDesc('debit_note_number')
+                ->first();
+
+            $sequence = $lastNote ? ((int) substr($lastNote->debit_note_number, -4)) + 1 : 1;
+
+            return sprintf('%s-%s-%s-%04d', $prefix, $branchCode, $date, $sequence);
+        });
     }
 
     // Relationships

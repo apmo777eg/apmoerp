@@ -116,26 +116,30 @@ class StockTransfer extends Model
     /**
      * Generate unique transfer number
      * NEW-HIGH-08 FIX: Use database locking to prevent race conditions
+     * V32-CRIT-03 FIX: Wrap in DB::transaction to ensure lockForUpdate is effective
      */
     public static function generateTransferNumber(): string
     {
-        $prefix = 'TRF';
-        $date = now()->format('Ymd');
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            $prefix = 'TRF';
+            $date = now()->format('Ymd');
 
-        // Use lockForUpdate to prevent concurrent reads from getting the same number
-        $lastTransfer = static::where('transfer_number', 'like', "{$prefix}-{$date}-%")
-            ->lockForUpdate()
-            ->orderBy('transfer_number', 'desc')
-            ->first();
+            // Use lockForUpdate to prevent concurrent reads from getting the same number
+            // V32-CRIT-03 FIX: The outer DB::transaction ensures the lock is effective
+            $lastTransfer = static::where('transfer_number', 'like', "{$prefix}-{$date}-%")
+                ->lockForUpdate()
+                ->orderBy('transfer_number', 'desc')
+                ->first();
 
-        if ($lastTransfer) {
-            $lastNumber = (int) substr($lastTransfer->transfer_number, -4);
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
+            if ($lastTransfer) {
+                $lastNumber = (int) substr($lastTransfer->transfer_number, -4);
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
 
-        return "{$prefix}-{$date}-{$newNumber}";
+            return "{$prefix}-{$date}-{$newNumber}";
+        });
     }
 
     /**
@@ -327,15 +331,22 @@ class StockTransfer extends Model
 
     /**
      * Complete transfer (after all items processed)
+     *
+     * V32-HIGH-03 FIX: Accept userId parameter instead of using auth()->id() directly.
+     * This allows the method to work correctly in CLI/queue/webhook contexts
+     * where there is no authenticated user.
+     *
+     * @param  int|null  $userId  User ID for audit trail. Falls back to auth()->id() if null.
      */
-    public function complete(): bool
+    public function complete(?int $userId = null): bool
     {
         if ($this->status !== self::STATUS_RECEIVED) {
             return false;
         }
 
         $this->update(['status' => self::STATUS_COMPLETED]);
-        $this->recordStatusChange(self::STATUS_RECEIVED, self::STATUS_COMPLETED, auth()->id());
+        // V32-HIGH-03 FIX: Use provided userId or fall back to auth()->id()
+        $this->recordStatusChange(self::STATUS_RECEIVED, self::STATUS_COMPLETED, $userId ?? auth()->id());
 
         return true;
     }

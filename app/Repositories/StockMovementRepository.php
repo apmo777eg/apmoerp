@@ -116,6 +116,8 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
      * NEW-V14-MEDIUM-04 FIX: Fail fast if warehouse_id is invalid (row doesn't exist)
      *
      * V22-HIGH-08 FIX: Update product.stock_quantity cache after creating movement
+     *
+     * V32-CRIT-02 FIX: Validate warehouse belongs to same branch as product
      */
     public function create(array $data): StockMovement
     {
@@ -153,6 +155,24 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
 
             if ($warehouse === null) {
                 throw new DomainException("Invalid warehouse_id: {$data['warehouse_id']}");
+            }
+
+            // V32-CRIT-02 FIX: Validate warehouse belongs to the same branch as the product
+            // In a multi-branch ERP, allowing stock movements across branches corrupts
+            // stock totals, aging reports, and audit trails.
+            $product = DB::table('products')
+                ->where('id', $data['product_id'])
+                ->first();
+
+            if ($product === null) {
+                throw new DomainException("Invalid product_id: {$data['product_id']}");
+            }
+
+            // Only validate branch match if product has a branch_id assigned (non-global product)
+            if ($product->branch_id !== null && $warehouse->branch_id !== $product->branch_id) {
+                throw new DomainException(
+                    "Branch mismatch: Product (branch_id: {$product->branch_id}) cannot have stock movement in warehouse (branch_id: {$warehouse->branch_id})"
+                );
             }
 
             // Then also lock any existing stock movement rows for this product+warehouse

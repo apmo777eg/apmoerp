@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesReturn extends Model
 {
-    use HasFactory, SoftDeletes, HasBranch;
+    use HasBranch, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'return_number',
@@ -51,13 +51,18 @@ class SalesReturn extends Model
 
     // Status constants
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     // Type constants
     public const TYPE_FULL = 'full';
+
     public const TYPE_PARTIAL = 'partial';
 
     protected static function boot()
@@ -74,27 +79,31 @@ class SalesReturn extends Model
     /**
      * Generate unique return number
      * V6-CRITICAL-08 FIX: Use database locking to prevent race conditions
+     * V32-CRIT-03 FIX: Wrap in DB::transaction to ensure lockForUpdate is effective
      */
     public static function generateReturnNumber(?int $branchId = null): string
     {
-        $prefix = 'RET';
-        $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
-        $date = now()->format('Ymd');
-        
-        // Use lockForUpdate to prevent race conditions during concurrent creation
-        $lastReturn = static::where('return_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
-            ->lockForUpdate()
-            ->orderBy('return_number', 'desc')
-            ->first();
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            $prefix = 'RET';
+            $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
+            $date = now()->format('Ymd');
 
-        if ($lastReturn) {
-            $lastNumber = (int) substr($lastReturn->return_number, -4);
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
+            // Use lockForUpdate to prevent race conditions during concurrent creation
+            // V32-CRIT-03 FIX: The outer DB::transaction ensures the lock is effective
+            $lastReturn = static::where('return_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
+                ->lockForUpdate()
+                ->orderBy('return_number', 'desc')
+                ->first();
 
-        return "{$prefix}-{$branchCode}-{$date}-{$newNumber}";
+            if ($lastReturn) {
+                $lastNumber = (int) substr($lastReturn->return_number, -4);
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
+
+            return "{$prefix}-{$branchCode}-{$date}-{$newNumber}";
+        });
     }
 
     /**
@@ -194,7 +203,7 @@ class SalesReturn extends Model
      */
     public function approve(int $userId): bool
     {
-        if (!$this->canBeApproved()) {
+        if (! $this->canBeApproved()) {
             return false;
         }
 
@@ -231,7 +240,7 @@ class SalesReturn extends Model
      */
     public function complete(int $userId): bool
     {
-        if (!$this->canBeProcessed()) {
+        if (! $this->canBeProcessed()) {
             return false;
         }
 
@@ -250,16 +259,16 @@ class SalesReturn extends Model
     public function calculateTotals(): void
     {
         $items = $this->items;
-        
-        $this->subtotal = $items->sum(fn($item) => $item->qty_returned * $item->unit_price);
+
+        $this->subtotal = $items->sum(fn ($item) => $item->qty_returned * $item->unit_price);
         $this->tax_amount = $items->sum('tax_amount');
         $this->discount_amount = $items->sum('discount');
         $this->total_amount = $this->subtotal + $this->tax_amount - $this->discount_amount;
-        
+
         if ($this->refund_amount === 0) {
             $this->refund_amount = $this->total_amount;
         }
-        
+
         $this->save();
     }
 }

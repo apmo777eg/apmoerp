@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CreditNote extends Model
 {
-    use HasFactory, SoftDeletes, HasBranch;
+    use HasBranch, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'credit_note_number',
@@ -53,16 +53,24 @@ class CreditNote extends Model
 
     // Status constants
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_APPLIED = 'applied';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     // Type constants
     public const TYPE_RETURN = 'return';
+
     public const TYPE_ADJUSTMENT = 'adjustment';
+
     public const TYPE_DISCOUNT = 'discount';
+
     public const TYPE_REFUND = 'refund';
+
     public const TYPE_OTHER = 'other';
 
     protected static function boot()
@@ -73,7 +81,7 @@ class CreditNote extends Model
             if (empty($creditNote->credit_note_number)) {
                 $creditNote->credit_note_number = static::generateCreditNoteNumber($creditNote->branch_id);
             }
-            
+
             if (empty($creditNote->remaining_amount)) {
                 $creditNote->remaining_amount = $creditNote->amount;
             }
@@ -83,27 +91,31 @@ class CreditNote extends Model
     /**
      * Generate unique credit note number
      * V6-CRITICAL-08 FIX: Use database locking to prevent race conditions
+     * V32-CRIT-03 FIX: Wrap in DB::transaction to ensure lockForUpdate is effective
      */
     public static function generateCreditNoteNumber(?int $branchId = null): string
     {
-        $prefix = 'CN';
-        $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
-        $date = now()->format('Ymd');
-        
-        // Use lockForUpdate to prevent race conditions during concurrent creation
-        $lastCN = static::where('credit_note_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
-            ->lockForUpdate()
-            ->orderBy('credit_note_number', 'desc')
-            ->first();
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            $prefix = 'CN';
+            $branchCode = $branchId ? str_pad($branchId, 3, '0', STR_PAD_LEFT) : '000';
+            $date = now()->format('Ymd');
 
-        if ($lastCN) {
-            $lastNumber = (int) substr($lastCN->credit_note_number, -4);
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
+            // Use lockForUpdate to prevent race conditions during concurrent creation
+            // V32-CRIT-03 FIX: The outer DB::transaction ensures the lock is effective
+            $lastCN = static::where('credit_note_number', 'like', "{$prefix}-{$branchCode}-{$date}-%")
+                ->lockForUpdate()
+                ->orderBy('credit_note_number', 'desc')
+                ->first();
 
-        return "{$prefix}-{$branchCode}-{$date}-{$newNumber}";
+            if ($lastCN) {
+                $lastNumber = (int) substr($lastCN->credit_note_number, -4);
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
+
+            return "{$prefix}-{$branchCode}-{$date}-{$newNumber}";
+        });
     }
 
     /**
@@ -219,11 +231,11 @@ class CreditNote extends Model
         ]);
 
         // Update credit note
-        $this->applied_amount = bcadd((string)$this->applied_amount, (string)$amount, 2);
-        $this->remaining_amount = bcsub((string)$this->remaining_amount, (string)$amount, 2);
+        $this->applied_amount = bcadd((string) $this->applied_amount, (string) $amount, 2);
+        $this->remaining_amount = bcsub((string) $this->remaining_amount, (string) $amount, 2);
         $this->status = self::STATUS_APPLIED;
-        
-        if (!$this->applied_date) {
+
+        if (! $this->applied_date) {
             $this->applied_date = now()->toDateString();
         }
 
@@ -237,7 +249,7 @@ class CreditNote extends Model
      */
     public function isFullyUtilized(): bool
     {
-        return bccomp((string)$this->remaining_amount, '0', 2) <= 0;
+        return bccomp((string) $this->remaining_amount, '0', 2) <= 0;
     }
 
     /**
