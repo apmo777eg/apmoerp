@@ -16,21 +16,22 @@ $iconMap = [
 ];
 
 $displayIcon = $iconMap[$type] ?? $icon;
-// Detect SVG-like content using case-insensitive matching
-// This handles valid SVG and any potentially malicious content containing SVG tags
-$isSvg = is_string($displayIcon) && (
+// Detect if content contains HTML/SVG markup that needs sanitization
+// If any HTML-like tags are detected, pass through sanitize_svg_icon for safety
+$containsMarkup = is_string($displayIcon) && (
     stripos($displayIcon, '<svg') !== false || 
-    stripos($displayIcon, '<?xml') !== false
+    stripos($displayIcon, '<?xml') !== false ||
+    preg_match('/<[a-z]/i', $displayIcon)  // Any HTML-like tag
 );
 @endphp
 
 <div {{ $attributes->merge(['class' => 'flex flex-col items-center justify-center py-12 px-4']) }}>
     <div class="text-6xl mb-4">
-        @if($isSvg)
-            {{-- Always sanitize SVG-like content to prevent XSS --}}
+        @if($containsMarkup)
+            {{-- Always sanitize content containing HTML/SVG markup to prevent XSS --}}
             {!! sanitize_svg_icon($displayIcon) !!}
         @else
-            {{-- Safe output for emoji or text --}}
+            {{-- Safe output for emoji or plain text --}}
             {{ $displayIcon }}
         @endif
     </div>

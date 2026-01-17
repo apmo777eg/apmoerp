@@ -169,34 +169,45 @@ class QueryPerformanceService
             }
 
             // Block dangerous patterns that could be used for SQL injection or information disclosure
+            // Patterns are grouped by type for better error reporting
             $dangerousPatterns = [
-                // Statement injection
-                '/;\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)/i',
-                '/UNION\s+(ALL\s+)?SELECT/i',
-                // File operations
-                '/INTO\s+(OUTFILE|DUMPFILE)/i',
-                '/LOAD_FILE\s*\(/i',
-                // Time-based attacks
-                '/BENCHMARK\s*\(/i',
-                '/SLEEP\s*\(/i',
-                // Information disclosure via system tables
-                '/INFORMATION_SCHEMA\./i',
-                '/mysql\./i',
-                '/performance_schema\./i',
-                // SQL comments (can be used to bypass filters)
-                '/--\s/',
-                '/\/\*/',
-                '/\*\//',
-                // Subqueries that might bypass SELECT-only check
-                '/\(\s*(UPDATE|DELETE|INSERT|DROP|ALTER|CREATE)/i',
+                'statement_injection' => [
+                    '/;\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)/i',
+                    '/UNION\s+(ALL\s+)?SELECT/i',
+                ],
+                'file_operations' => [
+                    '/INTO\s+(OUTFILE|DUMPFILE)/i',
+                    '/LOAD_FILE\s*\(/i',
+                ],
+                'time_based_attacks' => [
+                    '/BENCHMARK\s*\(/i',
+                    '/SLEEP\s*\(/i',
+                ],
+                'information_disclosure' => [
+                    '/INFORMATION_SCHEMA\./i',
+                    '/mysql\./i',
+                    '/performance_schema\./i',
+                ],
+                'sql_comments' => [
+                    '/--\s/',
+                    '/\/\*/',
+                    '/\*\//',
+                ],
+                'nested_statements' => [
+                    '/\(\s*(UPDATE|DELETE|INSERT|DROP|ALTER|CREATE)/i',
+                ],
             ];
 
-            foreach ($dangerousPatterns as $pattern) {
-                if (preg_match($pattern, $normalizedSql)) {
-                    return [
-                        'error' => 'Query contains disallowed patterns.',
-                        'suggestions' => [],
-                    ];
+            foreach ($dangerousPatterns as $category => $patterns) {
+                foreach ($patterns as $pattern) {
+                    if (preg_match($pattern, $normalizedSql)) {
+                        return [
+                            'error' => 'Query analysis blocked: detected disallowed '
+                                .str_replace('_', ' ', $category)
+                                .'. Only simple SELECT queries are allowed.',
+                            'suggestions' => [],
+                        ];
+                    }
                 }
             }
 
