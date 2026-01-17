@@ -19,6 +19,7 @@ class SalesForecastingService
     public function __construct(
         protected DatabaseCompatibilityService $dbCompat
     ) {}
+
     /**
      * Get sales forecast for the next N periods
      */
