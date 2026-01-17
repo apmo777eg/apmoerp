@@ -61,8 +61,9 @@ class InventoryController extends BaseApiController
             ->groupBy('products.id', 'products.name', 'products.sku', 'products.min_stock', 'products.branch_id');
 
         // Optionally include warehouse_id in select when filtered
+        // A.6 FIX: Use parameter binding instead of string interpolation for SQL safety
         if ($warehouseId !== null) {
-            $query->addSelect(DB::raw("'{$warehouseId}' as warehouse_id"));
+            $query->selectRaw('? as warehouse_id', [$warehouseId]);
         }
 
         // For low stock filter
