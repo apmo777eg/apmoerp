@@ -119,10 +119,16 @@ class SalesAnalytics extends Component
         $this->loadAllData();
     }
 
+    /**
+     * Base scoped query with proper date filtering
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude non-revenue statuses
+     */
     protected function scopedQuery()
     {
         $query = Sale::query()
-            ->whereBetween('created_at', [$this->dateFrom.' 00:00:00', $this->dateTo.' 23:59:59']);
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sale_date', [$this->dateFrom, $this->dateTo]);
 
         if (! $this->isAdmin && $this->branchId) {
             $query->where('branch_id', $this->branchId);
@@ -154,10 +160,12 @@ class SalesAnalytics extends Component
         $totalTax = (clone $query)->sum('tax_amount') ?? 0;
         $refundedAmount = (clone $query)->where('status', 'refunded')->sum('total_amount') ?? 0;
 
+        // V35-HIGH-02 FIX: Use sale_date instead of created_at for previous period comparison
         $prevPeriodQuery = Sale::query()
-            ->whereBetween('created_at', [
-                Carbon::parse($this->dateFrom)->subDays(Carbon::parse($this->dateFrom)->diffInDays(Carbon::parse($this->dateTo)) + 1)->toDateString().' 00:00:00',
-                Carbon::parse($this->dateFrom)->subDay()->toDateString().' 23:59:59',
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sale_date', [
+                Carbon::parse($this->dateFrom)->subDays(Carbon::parse($this->dateFrom)->diffInDays(Carbon::parse($this->dateTo)) + 1)->toDateString(),
+                Carbon::parse($this->dateFrom)->subDay()->toDateString(),
             ]);
 
         if (! $this->isAdmin && $this->branchId) {
@@ -231,6 +239,11 @@ class SalesAnalytics extends Component
         ];
     }
 
+    /**
+     * Load top products report
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     */
     protected function loadTopProducts(): void
     {
         $query = SaleItem::query()
@@ -243,7 +256,9 @@ class SalesAnalytics extends Component
             ])
             ->selectRaw('SUM(sale_items.quantity) as total_qty')
             ->selectRaw('SUM(sale_items.line_total) as total_revenue')
-            ->whereBetween('sales.created_at', [$this->dateFrom.' 00:00:00', $this->dateTo.' 23:59:59']);
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sales.sale_date', [$this->dateFrom, $this->dateTo]);
 
         if (! $this->isAdmin && $this->branchId) {
             $query->where('sales.branch_id', $this->branchId);
@@ -264,6 +279,11 @@ class SalesAnalytics extends Component
             ->toArray();
     }
 
+    /**
+     * Load top customers report
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     */
     protected function loadTopCustomers(): void
     {
         $query = Sale::query()
@@ -275,7 +295,9 @@ class SalesAnalytics extends Component
             ])
             ->selectRaw('COUNT(sales.id) as total_orders')
             ->selectRaw('SUM(sales.total_amount) as total_spent')
-            ->whereBetween('sales.created_at', [$this->dateFrom.' 00:00:00', $this->dateTo.' 23:59:59'])
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sales.sale_date', [$this->dateFrom, $this->dateTo])
             ->whereNotNull('sales.customer_id');
 
         if (! $this->isAdmin && $this->branchId) {
@@ -297,6 +319,11 @@ class SalesAnalytics extends Component
             ->toArray();
     }
 
+    /**
+     * Load payment method breakdown
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude non-revenue statuses (deleted_at already filtered)
+     */
     protected function loadPaymentBreakdown(): void
     {
         $query = DB::table('sale_payments')
@@ -304,8 +331,9 @@ class SalesAnalytics extends Component
             ->select('sale_payments.payment_method')
             ->selectRaw('COUNT(*) as count')
             ->selectRaw('SUM(sale_payments.amount) as total')
-            ->whereBetween('sales.created_at', [$this->dateFrom.' 00:00:00', $this->dateTo.' 23:59:59'])
-            ->whereNull('sales.deleted_at');
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sales.sale_date', [$this->dateFrom, $this->dateTo]);
 
         if (! $this->isAdmin && $this->branchId) {
             $query->where('sales.branch_id', $this->branchId);
@@ -320,6 +348,12 @@ class SalesAnalytics extends Component
         ];
     }
 
+    /**
+     * Load hourly distribution
+     * Note: Hourly distribution uses created_at intentionally as it tracks when orders were placed,
+     * not when they were dated. This is for operational insights (peak hours).
+     * V35-MED-06 FIX: Exclude non-revenue statuses
+     */
     protected function loadHourlyDistribution(): void
     {
         $hourExpr = $this->dbService->hourExpression('created_at');
@@ -327,7 +361,8 @@ class SalesAnalytics extends Component
         $query = Sale::query()
             ->selectRaw("{$hourExpr} as hour")
             ->selectRaw('COUNT(*) as count')
-            ->whereBetween('created_at', [$this->dateFrom.' 00:00:00', $this->dateTo.' 23:59:59']);
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sale_date', [$this->dateFrom, $this->dateTo]);
 
         if (! $this->isAdmin && $this->branchId) {
             $query->where('branch_id', $this->branchId);
@@ -348,6 +383,11 @@ class SalesAnalytics extends Component
         ];
     }
 
+    /**
+     * Load category performance
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     */
     protected function loadCategoryPerformance(): void
     {
         $query = SaleItem::query()
@@ -359,7 +399,9 @@ class SalesAnalytics extends Component
             ])
             ->selectRaw('SUM(sale_items.quantity) as total_qty')
             ->selectRaw('SUM(sale_items.line_total) as total_revenue')
-            ->whereBetween('sales.created_at', [$this->dateFrom.' 00:00:00', $this->dateTo.' 23:59:59']);
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->whereBetween('sales.sale_date', [$this->dateFrom, $this->dateTo]);
 
         if (! $this->isAdmin && $this->branchId) {
             $query->where('sales.branch_id', $this->branchId);

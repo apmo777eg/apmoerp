@@ -114,14 +114,17 @@ class StockReorderService
     /**
      * Calculate average daily sales velocity.
      * V10-CRITICAL-01 FIX: Add optional branch filter for branch-specific calculations
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      */
     private function calculateSalesVelocity(int $productId, int $days = 30, ?int $branchId = null): float
     {
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sale_items.product_id', $productId)
-            ->where('sales.status', '!=', 'cancelled')
-            ->where('sales.created_at', '>=', now()->subDays($days));
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
+            ->where('sales.sale_date', '>=', now()->subDays($days));
 
         // V10-CRITICAL-01 FIX: Filter by branch to get branch-specific sales velocity
         if ($branchId !== null) {
