@@ -182,24 +182,27 @@ class Form extends Component
             $this->delivery_date = $sale->delivery_date?->format('Y-m-d') ?? '';
             $this->shipping_method = $sale->shipping_method ?? '';
             $this->tracking_number = $sale->tracking_number ?? '';
-            $this->discount_total = (float) ($sale->discount_total ?? 0);
-            $this->shipping_total = (float) ($sale->shipping_total ?? 0);
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $this->discount_total = decimal_float($sale->discount_total ?? 0);
+            $this->shipping_total = decimal_float($sale->shipping_total ?? 0);
 
             $this->items = $sale->items->map(fn ($item) => [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
                 'product_name' => $item->product?->name ?? '',
                 'sku' => $item->product?->sku ?? '',
-                'qty' => (float) $item->qty,
-                'unit_price' => (float) $item->unit_price,
-                'discount' => (float) ($item->discount ?? 0),
-                'tax_rate' => (float) ($item->tax_rate ?? 0),
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'qty' => decimal_float($item->qty),
+                'unit_price' => decimal_float($item->unit_price),
+                'discount' => decimal_float($item->discount ?? 0),
+                'tax_rate' => decimal_float($item->tax_rate ?? 0),
             ])->toArray();
 
             if ($sale->payments->isNotEmpty()) {
                 $firstPayment = $sale->payments->first();
                 $this->payment_method = $firstPayment->payment_method ?? 'cash';
-                $this->payment_amount = (float) ($firstPayment->amount ?? 0);
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                $this->payment_amount = decimal_float($firstPayment->amount ?? 0);
             }
         }
     }
@@ -265,7 +268,8 @@ class Form extends Component
                 'product_name' => $product->name,
                 'sku' => $product->sku ?? '',
                 'qty' => 1,
-                'unit_price' => (float) ($product->default_price ?? 0),
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'unit_price' => decimal_float($product->default_price ?? 0),
                 'discount' => 0,
                 'tax_rate' => 0,
             ];
@@ -297,7 +301,8 @@ class Form extends Component
             $total = bcadd($total, $lineAfterDiscount, BCMATH_CALCULATION_SCALE);
         }
 
-        return (float) bcdiv($total, '1', BCMATH_STORAGE_SCALE);
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        return decimal_float(bcdiv($total, '1', BCMATH_STORAGE_SCALE));
     }
 
     /**
@@ -319,7 +324,8 @@ class Form extends Component
             $total = bcadd($total, $taxAmount, BCMATH_CALCULATION_SCALE);
         }
 
-        return (float) bcdiv($total, '1', BCMATH_STORAGE_SCALE);
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        return decimal_float(bcdiv($total, '1', BCMATH_STORAGE_SCALE));
     }
 
     /**
@@ -337,7 +343,8 @@ class Form extends Component
         $result = bcsub($result, $discountTotal, BCMATH_CALCULATION_SCALE);
         $result = bcadd($result, $shippingTotal, BCMATH_CALCULATION_SCALE);
 
-        return (float) bcdiv($result, '1', BCMATH_STORAGE_SCALE);
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        return decimal_float(bcdiv($result, '1', BCMATH_STORAGE_SCALE));
     }
 
     public function save(): mixed
@@ -443,7 +450,8 @@ class Form extends Component
                             }
 
                             // Use the database price, not the client-provided price
-                            $validatedPrice = (float) ($product->default_price ?? 0);
+                            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                            $validatedPrice = decimal_float($product->default_price ?? 0);
 
                             // Optional: Check if user has permission to override prices
                             if (abs($validatedPrice - ($item['unit_price'] ?? 0)) > PRICE_COMPARISON_TOLERANCE) {
@@ -453,7 +461,7 @@ class Form extends Component
                                     ]);
                                 }
                                 // If user can modify prices, use their price but log it for audit
-                                $validatedPrice = (float) $item['unit_price'];
+                                $validatedPrice = decimal_float($item['unit_price']);
                             }
 
                             // Use bcmath for precise financial calculations
@@ -473,10 +481,11 @@ class Form extends Component
                                 'quantity' => $item['qty'],
                                 'unit_price' => $validatedPrice,
                                 'discount_percent' => 0,
-                                'discount_amount' => (float) bcdiv($discountAmount, '1', BCMATH_STORAGE_SCALE),
+                                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                                'discount_amount' => decimal_float(bcdiv($discountAmount, '1', BCMATH_STORAGE_SCALE)),
                                 'tax_percent' => $item['tax_rate'] ?? 0,
-                                'tax_amount' => (float) bcdiv($taxAmount, '1', BCMATH_STORAGE_SCALE),
-                                'line_total' => (float) bcdiv($lineTotal, '1', BCMATH_STORAGE_SCALE),
+                                'tax_amount' => decimal_float(bcdiv($taxAmount, '1', BCMATH_STORAGE_SCALE)),
+                                'line_total' => decimal_float(bcdiv($lineTotal, '1', BCMATH_STORAGE_SCALE)),
                             ]);
                         }
 

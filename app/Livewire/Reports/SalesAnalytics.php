@@ -177,7 +177,8 @@ class SalesAnalytics extends Component
         $totalSales = (clone $query)->sum('total_amount') ?? 0;
         $totalOrders = (clone $query)->count();
         $completedOrders = (clone $query)->where('status', 'completed')->count();
-        $avgOrderValue = $totalOrders > 0 ? (float) bcdiv((string) $totalSales, (string) $totalOrders, 2) : 0;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $avgOrderValue = $totalOrders > 0 ? decimal_float(bcdiv((string) $totalSales, (string) $totalOrders, 2)) : 0;
         $totalDiscount = (clone $query)->sum('discount_amount') ?? 0;
         $totalTax = (clone $query)->sum('tax_amount') ?? 0;
         $refundedAmount = (clone $query)->where('status', 'refunded')->sum('total_amount') ?? 0;
@@ -198,12 +199,14 @@ class SalesAnalytics extends Component
 
         if (bccomp((string) $prevTotalSales, '0', 2) > 0) {
             $diff = bcsub((string) $totalSales, (string) $prevTotalSales, 4);
-            $salesGrowth = (float) bcdiv(bcmul($diff, '100', 6), (string) $prevTotalSales, 1);
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $salesGrowth = decimal_float(bcdiv(bcmul($diff, '100', 6), (string) $prevTotalSales, 1));
         } else {
             $salesGrowth = bccomp((string) $totalSales, '0', 2) > 0 ? 100.0 : 0.0;
         }
 
-        $completionRate = $totalOrders > 0 ? (float) bcdiv(bcmul((string) $completedOrders, '100', 4), (string) $totalOrders, 1) : 0;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $completionRate = $totalOrders > 0 ? decimal_float(bcdiv(bcmul((string) $completedOrders, '100', 4), (string) $totalOrders, 1)) : 0;
 
         $this->summaryStats = [
             'total_sales' => $totalSales,
@@ -268,7 +271,8 @@ class SalesAnalytics extends Component
                     return (string) $p;
                 }
             })->toArray(),
-            'revenue' => $results->pluck('revenue')->map(fn ($v) => (float) $v)->toArray(),
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'revenue' => $results->pluck('revenue')->map(fn ($v) => decimal_float($v))->toArray(),
             'orders' => $results->pluck('orders')->map(fn ($v) => (int) $v)->toArray(),
         ];
     }
@@ -308,7 +312,8 @@ class SalesAnalytics extends Component
                 'name' => $p->name,
                 'sku' => $p->sku,
                 'quantity' => (int) $p->total_qty,
-                'revenue' => (float) $p->total_revenue,
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'revenue' => decimal_float($p->total_revenue),
             ])
             ->toArray();
     }
@@ -348,7 +353,8 @@ class SalesAnalytics extends Component
                 'name' => $c->name,
                 'email' => $c->email,
                 'orders' => (int) $c->total_orders,
-                'total_spent' => (float) $c->total_spent,
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'total_spent' => decimal_float($c->total_spent),
             ])
             ->toArray();
     }
@@ -378,7 +384,8 @@ class SalesAnalytics extends Component
         $this->paymentBreakdown = [
             'labels' => $results->pluck('payment_method')->map(fn ($m) => ucfirst($m ?? 'cash'))->toArray(),
             'counts' => $results->pluck('count')->map(fn ($v) => (int) $v)->toArray(),
-            'totals' => $results->pluck('total')->map(fn ($v) => (float) $v)->toArray(),
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'totals' => $results->pluck('total')->map(fn ($v) => decimal_float($v))->toArray(),
         ];
     }
 
@@ -461,7 +468,8 @@ class SalesAnalytics extends Component
         $this->categoryPerformance = [
             'labels' => $results->pluck('category_name')->map(fn ($c) => $c ?? 'Uncategorized')->toArray(),
             'quantities' => $results->pluck('total_qty')->map(fn ($v) => (int) $v)->toArray(),
-            'revenues' => $results->pluck('total_revenue')->map(fn ($v) => (float) $v)->toArray(),
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'revenues' => $results->pluck('total_revenue')->map(fn ($v) => decimal_float($v))->toArray(),
         ];
     }
 

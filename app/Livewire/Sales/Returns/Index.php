@@ -111,9 +111,10 @@ class Index extends Component
         $this->returnItems = $this->selectedSale->items->map(fn ($item) => [
             'product_id' => $item->product_id,
             'product_name' => $item->product?->name ?? 'Unknown',
-            'max_qty' => (float) $item->qty,
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'max_qty' => decimal_float($item->qty),
             'qty' => 0,
-            'price' => (float) $item->unit_price,
+            'price' => decimal_float($item->unit_price),
         ])->toArray();
     }
 
@@ -150,7 +151,8 @@ class Index extends Component
             ->filter(fn ($item) => $item['qty'] > 0)
             ->map(fn ($item) => [
                 'product_id' => $item['product_id'],
-                'qty' => min((float) $item['qty'], (float) $item['max_qty']),
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'qty' => min(decimal_float($item['qty']), decimal_float($item['max_qty'])),
             ])
             ->values()
             ->toArray();
