@@ -175,18 +175,20 @@ class AutomatedAlertService
 
         foreach ($customers as $customer) {
             // Calculate utilization with bcmath precision
-            $utilization = (float) bcmul(
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $utilization = decimal_float(bcmul(
                 bcdiv((string) $customer->balance, (string) $customer->credit_limit, 6),
                 '100',
                 2
-            );
+            ));
 
             $severity = $utilization >= 100 ? 'critical' : ($utilization >= 90 ? 'high' : 'medium');
             $action = $utilization >= 100 ? 'credit_hold' : 'review_credit';
 
             // Calculate available credit with bcmath
-            $availableCredit = (float) bcsub((string) $customer->credit_limit, (string) $customer->balance, 2);
-            $availableCredit = bccomp($availableCredit, '0', 2) < 0 ? 0 : $availableCredit;
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $availableCredit = decimal_float(bcsub((string) $customer->credit_limit, (string) $customer->balance, 2));
+            $availableCredit = bccomp((string) $availableCredit, '0', 2) < 0 ? 0 : $availableCredit;
 
             $alerts[] = [
                 'type' => 'credit_limit_warning',
@@ -236,7 +238,8 @@ class AutomatedAlertService
             $daysUntilExpiry = now()->diffInDays($product->expiry_date);
             $unitCost = $product->cost ? $product->cost : ($product->standard_cost ? $product->standard_cost : 0);
             // Calculate estimated loss with bcmath precision using actual stock from movements
-            $estimatedLoss = (float) bcmul((string) $currentStock, (string) $unitCost, 2);
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $estimatedLoss = decimal_float(bcmul((string) $currentStock, (string) $unitCost, 2));
 
             $alerts[] = [
                 'type' => 'expiring_product',

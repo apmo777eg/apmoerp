@@ -109,9 +109,10 @@ class CostingService
         $totalCost = bcmul($avgCost, (string) $quantity, 4);
 
         return [
-            'unit_cost' => (float) $avgCost,
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'unit_cost' => decimal_float($avgCost, 4),
             // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-            'total_cost' => (float) bcround($totalCost, 2),
+            'total_cost' => decimal_float(bcround($totalCost, 2)),
             'batches_used' => [],
         ];
     }
@@ -121,7 +122,8 @@ class CostingService
      */
     protected function calculateStandardCost(Product $product, float $quantity): array
     {
-        $unitCost = (float) $product->standard_cost;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $unitCost = decimal_float($product->standard_cost, 4);
 
         return [
             'unit_cost' => $unitCost,
@@ -154,19 +156,21 @@ class CostingService
             $batchesUsed[] = [
                 'batch_id' => $batch->id,
                 'batch_number' => $batch->batch_number,
-                'quantity' => (float) $batchQty,
-                'unit_cost' => (float) $batch->unit_cost,
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'quantity' => decimal_float($batchQty),
+                'unit_cost' => decimal_float($batch->unit_cost, 4),
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total_cost' => (float) bcround($batchCost, 2),
+                'total_cost' => decimal_float(bcround($batchCost, 2)),
             ];
         }
 
         $unitCost = $quantityNeeded > 0 ? bcdiv($totalCost, (string) $quantityNeeded, 4) : '0';
 
         return [
-            'unit_cost' => (float) $unitCost,
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'unit_cost' => decimal_float($unitCost, 4),
             // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-            'total_cost' => (float) bcround($totalCost, 2),
+            'total_cost' => decimal_float(bcround($totalCost, 2)),
             'batches_used' => $batchesUsed,
         ];
     }
@@ -243,8 +247,9 @@ class CostingService
                 ? bcdiv($combinedValue, $combinedQty, 4)
                 : '0';
 
-            $batch->quantity = (float) $combinedQty;
-            $batch->unit_cost = (float) $weightedAvgCost;
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $batch->quantity = decimal_float($combinedQty, 4);
+            $batch->unit_cost = decimal_float($weightedAvgCost, 4);
         } else {
             // New batch
             $batch->fill(array_merge([
@@ -326,15 +331,16 @@ class CostingService
         $totalQuantity = bcadd($warehouseQuantity, $transitQuantity, 4);
 
         return [
-            'warehouse_value' => (float) $warehouseValue,
-            'warehouse_quantity' => (float) $warehouseQuantity,
-            'transit_value' => (float) $transitValue,
-            'transit_quantity' => (float) $transitQuantity,
-            'total_value' => (float) $totalValue,
-            'total_quantity' => (float) $totalQuantity,
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'warehouse_value' => decimal_float($warehouseValue, 4),
+            'warehouse_quantity' => decimal_float($warehouseQuantity, 4),
+            'transit_value' => decimal_float($transitValue, 4),
+            'transit_quantity' => decimal_float($transitQuantity, 4),
+            'total_value' => decimal_float($totalValue, 4),
+            'total_quantity' => decimal_float($totalQuantity, 4),
             'breakdown' => [
-                'in_warehouses' => (float) $warehouseValue,
-                'in_transit' => (float) $transitValue,
+                'in_warehouses' => decimal_float($warehouseValue, 4),
+                'in_transit' => decimal_float($transitValue, 4),
             ],
         ];
     }
@@ -357,7 +363,8 @@ class CostingService
             ->active()
             ->sum('quantity');
 
-        if ((float) $totalStock <= self::STOCK_ZERO_TOLERANCE) {
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        if (decimal_float($totalStock, 4) <= self::STOCK_ZERO_TOLERANCE) {
             // Mark all batches as depleted to prevent old costs from affecting new stock
             InventoryBatch::where('product_id', $productId)
                 ->where('warehouse_id', $warehouseId)

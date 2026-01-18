@@ -278,7 +278,8 @@ class BankingService
      */
     public function getAccountBalanceFloat(int $accountId): float
     {
-        return (float) $this->getAccountBalance($accountId);
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        return decimal_float($this->getAccountBalance($accountId), 4);
     }
 
     /**
@@ -326,7 +327,8 @@ class BankingService
         if (bccomp($availableBalance, (string) $data['amount'], 4) < 0) {
             throw new \InvalidArgumentException(sprintf(
                 'Insufficient balance for withdrawal. Available: %.4f, Requested: %.4f',
-                (float) $availableBalance,
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                decimal_float($availableBalance, 4),
                 $data['amount']
             ));
         }

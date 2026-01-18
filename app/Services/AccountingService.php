@@ -91,7 +91,8 @@ class AccountingService
                         $lines[] = [
                             'journal_entry_id' => $entry->id,
                             'account_id' => $receivableAccount->id,
-                            'debit' => (float) $unpaidAmount,
+                            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                            'debit' => decimal_float($unpaidAmount),
                             'credit' => 0,
                             'description' => "Account receivable (partial payment) - Customer #{$sale->customer_id}",
                         ];
@@ -333,7 +334,8 @@ class AccountingService
         $difference = bcsub($totalDebit, $totalCredit, 2);
 
         // Log unbalanced entries for audit
-        if (abs((float) $difference) >= 0.01) {
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        if (abs(decimal_float($difference)) >= 0.01) {
             Log::error('Unbalanced journal entry detected', [
                 'entry_id' => $entry->id,
                 'total_debit' => $totalDebit,
@@ -342,7 +344,7 @@ class AccountingService
             ]);
         }
 
-        return abs((float) $difference) < 0.01;
+        return abs(decimal_float($difference)) < 0.01;
     }
 
     /**
@@ -601,7 +603,8 @@ class AccountingService
 
         $difference = bcsub($totalDebit, $totalCredit, 2);
 
-        return abs((float) $difference) < 0.01;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        return abs(decimal_float($difference)) < 0.01;
     }
 
     /**
@@ -616,7 +619,8 @@ class AccountingService
             ->selectRaw('SUM(debit) - SUM(credit) as balance')
             ->value('balance');
 
-        return (float) ($result ?? 0);
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        return decimal_float($result ?? 0);
     }
 
     /**
@@ -718,7 +722,8 @@ class AccountingService
         }
 
         // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-        $totalCost = (float) bcround($totalCost, 2);
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $totalCost = decimal_float(bcround($totalCost, 2));
 
         // Skip if total cost is zero or negative
         if ($totalCost <= 0) {

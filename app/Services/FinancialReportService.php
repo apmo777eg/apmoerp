@@ -68,9 +68,10 @@ class FinancialReportService
         return [
             'accounts' => $data,
             // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-            'total_debit' => (float) bcround($totalDebitStr, 2),
-            'total_credit' => (float) bcround($totalCreditStr, 2),
-            'difference' => (float) $difference,
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            'total_debit' => decimal_float(bcround($totalDebitStr, 2)),
+            'total_credit' => decimal_float(bcround($totalCreditStr, 2)),
+            'difference' => decimal_float($difference),
             'is_balanced' => bccomp(str_replace('-', '', $difference), '0.01', 2) < 0,
         ];
     }
@@ -145,14 +146,15 @@ class FinancialReportService
             'revenue' => [
                 'accounts' => $revenue,
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total' => (float) bcround((string) $totalRevenue, 2),
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'total' => decimal_float(bcround((string) $totalRevenue, 2)),
             ],
             'expenses' => [
                 'accounts' => $expenses,
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total' => (float) bcround((string) $totalExpenses, 2),
+                'total' => decimal_float(bcround((string) $totalExpenses, 2)),
             ],
-            'net_income' => (float) $netIncome,
+            'net_income' => decimal_float($netIncome),
         ];
     }
 
@@ -250,19 +252,20 @@ class FinancialReportService
             'assets' => [
                 'accounts' => $assets,
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total' => (float) bcround((string) $totalAssets, 2),
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'total' => decimal_float(bcround((string) $totalAssets, 2)),
             ],
             'liabilities' => [
                 'accounts' => $liabilities,
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total' => (float) bcround((string) $totalLiabilities, 2),
+                'total' => decimal_float(bcround((string) $totalLiabilities, 2)),
             ],
             'equity' => [
                 'accounts' => $equity,
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total' => (float) bcround((string) $totalEquity, 2),
+                'total' => decimal_float(bcround((string) $totalEquity, 2)),
             ],
-            'total_liabilities_and_equity' => (float) $totalLiabilitiesAndEquity,
+            'total_liabilities_and_equity' => decimal_float($totalLiabilitiesAndEquity),
             'is_balanced' => bccomp(str_replace('-', '', $balanceDiff), '0.01', 2) < 0,
         ];
     }
@@ -308,7 +311,8 @@ class FinancialReportService
             $totalRefunded = $refundsBySale->get($sale->getKey(), 0);
 
             // Calculate true outstanding: total - payments + refunds (refunds reduce what was paid)
-            $outstandingAmount = (float) $sale->total_amount - (float) $totalPaid + (float) $totalRefunded;
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $outstandingAmount = decimal_float($sale->total_amount) - decimal_float($totalPaid) + decimal_float($totalRefunded);
 
             if ($outstandingAmount <= 0) {
                 continue;
@@ -378,7 +382,8 @@ class FinancialReportService
                 ->sum('amount');
 
             // Calculate true outstanding: total - payments
-            $outstandingAmount = (float) $purchase->total_amount - (float) $totalPaid;
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $outstandingAmount = decimal_float($purchase->total_amount) - decimal_float($totalPaid);
 
             if ($outstandingAmount <= 0) {
                 continue;
@@ -452,8 +457,9 @@ class FinancialReportService
         $totalCredit = 0;
 
         foreach ($lines as $line) {
-            $debit = (float) $line->debit;
-            $credit = (float) $line->credit;
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $debit = decimal_float($line->debit);
+            $credit = decimal_float($line->credit);
 
             // Calculate running balance based on account type
             if (in_array($account->type, ['asset', 'expense'])) {
@@ -488,9 +494,10 @@ class FinancialReportService
             'transactions' => $transactions,
             'summary' => [
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                'total_debit' => (float) bcround((string) $totalDebit, 2),
-                'total_credit' => (float) bcround((string) $totalCredit, 2),
-                'ending_balance' => (float) bcround((string) $runningBalance, 2),
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                'total_debit' => decimal_float(bcround((string) $totalDebit, 2)),
+                'total_credit' => decimal_float(bcround((string) $totalCredit, 2)),
+                'ending_balance' => decimal_float(bcround((string) $runningBalance, 2)),
             ],
         ];
     }
@@ -518,8 +525,9 @@ class FinancialReportService
                 }
             });
 
-        $totalDebit = (float) $query->sum('debit');
-        $totalCredit = (float) $query->sum('credit');
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $totalDebit = decimal_float($query->sum('debit'));
+        $totalCredit = decimal_float($query->sum('credit'));
 
         // Asset and Expense accounts have natural debit balance
         if (in_array($account->type, ['asset', 'expense'])) {
