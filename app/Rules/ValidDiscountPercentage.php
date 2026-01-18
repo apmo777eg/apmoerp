@@ -26,7 +26,8 @@ class ValidDiscountPercentage implements ValidationRule
             return;
         }
 
-        $discount = (float) $value;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $discount = decimal_float($value);
 
         if ($discount < 0) {
             $fail(__('validation.min.numeric', ['attribute' => $attribute, 'min' => 0]));

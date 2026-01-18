@@ -104,7 +104,8 @@ class BankTransaction extends Model
      */
     public function getSignedAmount(): float
     {
-        $amount = (float) $this->amount;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $amount = decimal_float($this->amount);
         if ($this->isDeposit() || $this->type === 'interest') {
             return $amount;
         }

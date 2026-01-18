@@ -26,8 +26,8 @@ class PricingService implements PricingServiceInterface
         return $this->handleServiceOperation(
             callback: function () use ($product, $priceGroupId, $override) {
                 if ($override !== null) {
-                    // Use bcmath for consistent precision
-                    return (float) bcdiv((string) $override, '1', 4);
+                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                    return decimal_float(bcdiv((string) $override, '1', 4), 4);
                 }
 
                 if ($priceGroupId && class_exists(PriceGroup::class)) {
@@ -35,14 +35,14 @@ class PricingService implements PricingServiceInterface
                     if ($pg && method_exists($pg, 'priceFor')) {
                         $p = $pg->priceFor($product->getKey());
                         if ($p !== null) {
-                            return (float) bcdiv((string) $p, '1', 4);
+                            return decimal_float(bcdiv((string) $p, '1', 4), 4);
                         }
                     }
                 }
 
                 $base = $product->default_price ?? 0.0;
 
-                return (float) bcdiv((string) $base, '1', 4);
+                return decimal_float(bcdiv((string) $base, '1', 4), 4);
             },
             operation: 'resolveUnitPrice',
             context: ['product_id' => $product->id, 'price_group_id' => $priceGroupId],
@@ -54,10 +54,11 @@ class PricingService implements PricingServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($line) {
-                $qty = max(0.0, (float) Arr::get($line, 'qty', 1));
-                $price = max(0.0, (float) Arr::get($line, 'price', 0));
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                $qty = max(0.0, decimal_float(Arr::get($line, 'qty', 1)));
+                $price = max(0.0, decimal_float(Arr::get($line, 'price', 0)));
                 $percent = (bool) Arr::get($line, 'percent', true);
-                $discVal = (float) Arr::get($line, 'discount', 0);
+                $discVal = decimal_float(Arr::get($line, 'discount', 0));
                 $taxId = Arr::get($line, 'tax_id');
 
                 $subtotal = $qty * $price;
@@ -80,11 +81,12 @@ class PricingService implements PricingServiceInterface
                 $total = max(0.0, $total);
 
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
                 return [
-                    'subtotal' => (float) bcround((string) $subtotal, 2),
-                    'discount' => (float) bcround((string) $discount, 2),
-                    'tax' => (float) bcround((string) $taxAmount, 2),
-                    'total' => (float) bcround((string) $total, 2),
+                    'subtotal' => decimal_float(bcround((string) $subtotal, 2)),
+                    'discount' => decimal_float(bcround((string) $discount, 2)),
+                    'tax' => decimal_float(bcround((string) $taxAmount, 2)),
+                    'total' => decimal_float(bcround((string) $total, 2)),
                 ];
             },
             operation: 'lineTotals',

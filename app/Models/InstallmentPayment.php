@@ -57,9 +57,10 @@ class InstallmentPayment extends Model
 
     public function recordPayment(float $amount, string $method, ?string $reference = null, ?int $userId = null): void
     {
-        $amountPaid = (float) ($this->amount_paid ?? 0);
-        $newAmountPaid = min($amountPaid + $amount, (float) $this->amount_due);
-        $newStatus = $newAmountPaid >= (float) $this->amount_due ? 'paid' : 'partial';
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $amountPaid = decimal_float($this->amount_paid ?? 0);
+        $newAmountPaid = min($amountPaid + $amount, decimal_float($this->amount_due));
+        $newStatus = $newAmountPaid >= decimal_float($this->amount_due) ? 'paid' : 'partial';
 
         $this->update([
             'amount_paid' => $newAmountPaid,

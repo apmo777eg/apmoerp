@@ -111,7 +111,8 @@ class InventoryService implements InventoryServiceInterface
                         ->lockForUpdate()
                         ->findOrFail($data['warehouse_id']);
 
-                    $qty = (float) $data['qty'];
+                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                    $qty = decimal_float($data['qty']);
                     $direction = $data['direction'];
 
                     if ($direction === 'out' && $qty > 0) {
@@ -156,7 +157,8 @@ class InventoryService implements InventoryServiceInterface
 
                 // Migration uses signed quantity: positive = stock in, negative = stock out
                 // Sum gives net stock level
-                return (float) $query->sum('quantity');
+                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+                return decimal_float($query->sum('quantity'));
             },
             operation: 'getStockLevel',
             context: ['product_id' => $productId, 'warehouse_id' => $warehouseId],

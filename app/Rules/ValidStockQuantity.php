@@ -26,7 +26,8 @@ class ValidStockQuantity implements ValidationRule
             return;
         }
 
-        $quantity = (float) $value;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $quantity = decimal_float($value);
 
         if ($quantity < 0) {
             $fail(__('validation.min.numeric', ['attribute' => $attribute, 'min' => 0]));

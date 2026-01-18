@@ -22,13 +22,14 @@ class ProductObserver
             $product->name = trim((string) $product->name);
         }
         if ($product->getAttribute('default_price') !== null) {
-            $product->default_price = round((float) $product->default_price, 2);
+            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            $product->default_price = round(decimal_float($product->default_price), 2);
         }
         if ($product->getAttribute('standard_cost') !== null) {
-            $product->standard_cost = round((float) $product->standard_cost, 2);
+            $product->standard_cost = round(decimal_float($product->standard_cost), 2);
         }
         if ($product->getAttribute('cost') !== null) {
-            $product->cost = round((float) $product->cost, 2);
+            $product->cost = round(decimal_float($product->cost), 2);
         }
     }
 

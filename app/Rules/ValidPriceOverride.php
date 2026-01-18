@@ -22,7 +22,8 @@ class ValidPriceOverride implements ValidationRule
             return;
         }
 
-        $price = (float) $value;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $price = decimal_float($value);
         if ($price < 0) {
             $fail('Price cannot be negative.');
 

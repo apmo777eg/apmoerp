@@ -88,7 +88,8 @@ class CurrencyRate extends Model
             return null;
         }
 
-        $rateValue = (float) $rate->rate;
+        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        $rateValue = decimal_float($rate->rate, 6);
         Cache::put($cacheKey, $rateValue, 300);
 
         return $rateValue;
