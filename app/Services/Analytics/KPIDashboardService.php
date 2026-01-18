@@ -461,12 +461,32 @@ class KPIDashboardService
 
     /**
      * Get conversion rate
+     *
+     * V39-MED-06 NOTE: Conversion rate requires a source of truth for tracking.
+     * Possible implementations based on business model:
+     * - Web analytics: Track visits vs orders (requires analytics integration)
+     * - Quotes to orders: Track quote creation vs sales with quote reference
+     * - Leads to customers: Track lead creation vs customer with purchases
+     *
+     * Currently returns 0 as no tracking data source is configured.
+     * To implement, choose a tracking strategy and add the relevant tables/integrations.
      */
     protected function getConversionRate(?int $branchId, array $dates): float
     {
-        // This would typically compare visitors to customers
-        // Simplified: compare quotes/inquiries to sales
-        return 0; // Implement based on your tracking
+        // V39-MED-06 NOTE: Implementation requires tracking data source.
+        // Example implementation for quotes-to-orders:
+        // $quotes = DB::table('quotes')
+        //     ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+        //     ->whereBetween('created_at', [$dates['start'], $dates['end']])
+        //     ->count();
+        // $convertedQuotes = Sale::query()
+        //     ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+        //     ->whereBetween('sale_date', [$dates['start'], $dates['end']])
+        //     ->whereNotNull('quote_id')
+        //     ->count();
+        // return $quotes > 0 ? round(($convertedQuotes / $quotes) * 100, 1) : 0;
+
+        return 0;
     }
 
     /**

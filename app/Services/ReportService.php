@@ -81,11 +81,15 @@ class ReportService implements ReportServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($branchId, $limit) {
+                // V39-HIGH-05 FIX: Exclude soft-deleted sales and non-revenue statuses
+                // Use line_total instead of qty*unit_price to account for discounts/taxes
                 $rows = DB::table('sale_items as si')
                     ->join('sales as s', 's.id', '=', 'si.sale_id')
                     ->join('products as p', 'p.id', '=', 'si.product_id')
                     ->where('s.branch_id', $branchId)
-                    ->selectRaw('p.id, p.name, SUM(si.quantity*si.unit_price) as gross')
+                    ->whereNull('s.deleted_at')
+                    ->whereNotIn('s.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->selectRaw('p.id, p.name, SUM(COALESCE(si.line_total, si.quantity * si.unit_price)) as gross')
                     ->groupBy('p.id', 'p.name')
                     ->orderByDesc('gross')
                     ->limit($limit)

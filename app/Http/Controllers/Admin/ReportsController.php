@@ -60,6 +60,14 @@ class ReportsController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: System performance report
+     *
+     * V39-HIGH-02 NOTE: Response times and slow query metrics require integration with
+     * an APM solution (e.g., Laravel Telescope, Pulse, New Relic) or custom middleware
+     * that logs request timings to a database. Currently only real-time memory metrics
+     * are available. For production monitoring, consider:
+     * - Installing Laravel Telescope for development debugging
+     * - Installing Laravel Pulse for production performance monitoring
+     * - Configuring MySQL slow query log and parsing it periodically
      */
     public function performance(Request $request)
     {
@@ -69,12 +77,16 @@ class ReportsController extends Controller
         $performanceData = [
             'period' => ['from' => $from, 'to' => $to],
             'response_times' => [
+                // V39-HIGH-02 NOTE: These metrics require APM integration (Telescope/Pulse)
                 'avg' => 0,
                 'min' => 0,
                 'max' => 0,
+                'note' => 'Requires APM integration for real metrics',
             ],
             'database_queries' => [
+                // V39-HIGH-02 NOTE: Slow query count requires MySQL slow query log parsing
                 'slow_queries_count' => 0,
+                'note' => 'Requires slow query log integration',
             ],
             'memory_usage' => [
                 'current' => memory_get_usage(true),
@@ -87,17 +99,59 @@ class ReportsController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: System errors report
+     * V39-CRIT-01 FIX: Implement actual error collection from failed_jobs table
      */
     public function errors(Request $request)
     {
         $from = $request->input('from', now()->subDays(7)->toDateString());
         $to = $request->input('to', now()->toDateString());
 
+        // V39-CRIT-01 FIX: Query failed_jobs table for actual error data
+        $failedJobsQuery = DB::table('failed_jobs')
+            ->whereDate('failed_at', '>=', $from)
+            ->whereDate('failed_at', '<=', $to);
+
+        $totalErrors = (clone $failedJobsQuery)->count();
+
+        // Group errors by queue (as a proxy for error type)
+        $errorsByType = (clone $failedJobsQuery)
+            ->select('queue', DB::raw('COUNT(*) as count'))
+            ->groupBy('queue')
+            ->orderByDesc('count')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->queue => $row->count])
+            ->all();
+
+        // Get recent errors (last 10)
+        $recentErrors = (clone $failedJobsQuery)
+            ->select(['id', 'queue', 'payload', 'exception', 'failed_at'])
+            ->orderByDesc('failed_at')
+            ->limit(10)
+            ->get()
+            ->map(function ($job) {
+                // Extract job name from payload
+                $payload = json_decode($job->payload, true);
+                $jobName = $payload['displayName'] ?? $payload['job'] ?? 'Unknown';
+
+                // Truncate exception message for display
+                $exceptionLines = explode("\n", $job->exception ?? '');
+                $shortException = $exceptionLines[0] ?? 'Unknown error';
+
+                return [
+                    'id' => $job->id,
+                    'job' => $jobName,
+                    'queue' => $job->queue,
+                    'exception' => mb_substr($shortException, 0, 200),
+                    'failed_at' => $job->failed_at,
+                ];
+            })
+            ->all();
+
         $errorsData = [
             'period' => ['from' => $from, 'to' => $to],
-            'total_errors' => 0,
-            'errors_by_type' => [],
-            'recent_errors' => [],
+            'total_errors' => $totalErrors,
+            'errors_by_type' => $errorsByType,
+            'recent_errors' => $recentErrors,
         ];
 
         return $this->ok($errorsData);
@@ -108,6 +162,13 @@ class ReportsController extends Controller
      *
      * SECURITY NOTE: The selectRaw expressions use only hardcoded column names.
      * No user input is interpolated into the SQL.
+     *
+     * V39-HIGH-04 NOTE: Outstanding is computed as (total_amount - paid_amount).
+     * The paid_amount field is updated by Sale::updatePaymentStatus() from the payments ledger.
+     * However, if refunds exist, this calculation may understate outstanding amounts because
+     * refunds reduce the effective payments. For accurate outstanding with refunds,
+     * use the AR aging report from FinancialReportService::getAccountsReceivableAging()
+     * which computes outstanding = total - payments + refunds.
      */
     public function financeSales(Request $request)
     {
@@ -144,6 +205,10 @@ class ReportsController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: Finance purchases report
+     *
+     * V39-HIGH-04 NOTE: Outstanding is computed as (total_amount - paid_amount).
+     * For accurate outstanding with refunds/credits, use the AP aging report from
+     * FinancialReportService::getAccountsPayableAging() which uses the payments ledger.
      */
     public function financePurchases(Request $request)
     {
@@ -191,7 +256,9 @@ class ReportsController extends Controller
 
         // V31-HIGH-03 FIX: Use sale_date instead of created_at
         // and filter out non-revenue statuses
+        // V39-CRIT-03 FIX: Exclude soft-deleted sales using whereNull('deleted_at')
         $salesQuery = DB::table('sales')
+            ->whereNull('deleted_at')
             ->whereDate('sale_date', '>=', $from)
             ->whereDate('sale_date', '<=', $to)
             ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
@@ -202,8 +269,10 @@ class ReportsController extends Controller
 
         // BUG-1 FIX: Calculate actual COGS from sale_items.cost_price * quantity
         // This represents the actual cost of goods that were sold, not total purchases
+        // V39-CRIT-03 FIX: Exclude soft-deleted sales using whereNull('sales.deleted_at')
         $cogsQuery = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereNull('sales.deleted_at')
             ->whereDate('sales.sale_date', '>=', $from)
             ->whereDate('sales.sale_date', '<=', $to)
             ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
