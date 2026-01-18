@@ -92,11 +92,17 @@ class AuthenticateStoreToken
         // Tokens in query strings can leak via logs, referrers, and browser history.
         // Prefer Authorization: Bearer header for secure token transmission.
         if ($tokenSource !== 'header') {
-            // Log minimal information to avoid exposing sensitive data
-            Log::warning('Deprecated API token method used', [
-                'token_source' => $tokenSource,
-                'endpoint' => $request->path(),
-            ]);
+            // Rate limit deprecation logging to prevent log flooding attacks
+            // Log at most once per store per minute using cache
+            $cacheKey = "deprecated_token_log:{$store->id}";
+            if (! cache()->has($cacheKey)) {
+                // Log minimal information to avoid exposing sensitive data
+                Log::warning('Deprecated API token method used', [
+                    'token_source' => $tokenSource,
+                    'endpoint' => $request->path(),
+                ]);
+                cache()->put($cacheKey, true, 60); // Cache for 60 seconds
+            }
 
             // V37-HIGH-03 FIX: Add deprecation header to response to inform clients
             if ($response instanceof Response) {
