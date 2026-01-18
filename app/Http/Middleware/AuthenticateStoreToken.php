@@ -171,8 +171,7 @@ class AuthenticateStoreToken
      * and a warning header is returned to inform clients to migrate.
      *
      * Security can be tightened via config/auth.php 'store_token' settings:
-     * - require_bearer_header: When true, only accepts Authorization: Bearer header
-     * - allow_deprecated_methods: When false, rejects query/body tokens entirely
+     * - allow_deprecated_methods: When false, rejects query/body tokens (header-only mode)
      *
      * @return array{0: string|null, 1: string} Tuple of [token, source]
      */

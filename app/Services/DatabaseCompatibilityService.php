@@ -66,6 +66,7 @@ class DatabaseCompatibilityService
     private const SAFE_DATE_EXPRESSIONS = [
         'NOW()',
         "datetime('now')",
+        'CURRENT_TIMESTAMP',
     ];
 
     /**
@@ -78,7 +79,7 @@ class DatabaseCompatibilityService
     private function validateColumnName(string $column): void
     {
         if (! preg_match(self::COLUMN_PATTERN, $column)) {
-            throw new \InvalidArgumentException("Invalid column name format: {$column}");
+            throw new \InvalidArgumentException('Invalid column name format');
         }
     }
 
@@ -108,7 +109,7 @@ class DatabaseCompatibilityService
             return;
         }
 
-        throw new \InvalidArgumentException("Invalid date expression format: {$expr}");
+        throw new \InvalidArgumentException('Invalid date expression format');
     }
 
     /**
@@ -425,7 +426,7 @@ class DatabaseCompatibilityService
         // Validate JSON path using constant pattern
         // Empty paths are not allowed
         if (empty($path) || ! preg_match(self::JSON_PATH_PATTERN, $path)) {
-            throw new \InvalidArgumentException("Invalid JSON path format: {$path}");
+            throw new \InvalidArgumentException('Invalid JSON path format');
         }
 
         // Normalize path - strip leading $ or $. for PostgreSQL which uses key names directly
