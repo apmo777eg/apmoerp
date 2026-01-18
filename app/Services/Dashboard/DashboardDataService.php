@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\DB;
  * - Widget data generation for all widget types
  * - Widget data caching
  * - Sales, inventory, HR, helpdesk widget data
+ *
+ * SECURITY NOTE: All raw SQL expressions in this service use only hardcoded column names.
+ * Parameters like $branchId and $userId are passed through where() with proper binding.
+ * No user input is interpolated into the SQL expressions.
  */
 class DashboardDataService
 {

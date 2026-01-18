@@ -15,6 +15,13 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * AccountingService - Journal entry generation and accounting operations
+ *
+ * SECURITY NOTE: All raw SQL expressions in this service use only hardcoded column names.
+ * Parameters like $branchId and model IDs are passed through where() with proper binding.
+ * No user input is interpolated into the SQL expressions.
+ */
 class AccountingService
 {
     /**

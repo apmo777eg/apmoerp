@@ -15,6 +15,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * ReportService - Report generation service
+ *
+ * SECURITY NOTE: All raw SQL expressions in this service use only hardcoded column names.
+ * Parameters like $branchId and date ranges are passed through where() with proper binding.
+ * No user input is interpolated into the SQL expressions.
+ */
 class ReportService implements ReportServiceInterface
 {
     use HandlesServiceErrors;

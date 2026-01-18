@@ -19,6 +19,13 @@ use App\Traits\HandlesServiceErrors;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * POSService - Point of Sale service implementation
+ *
+ * SECURITY NOTE: All raw SQL expressions in this service use only hardcoded column names.
+ * Parameters are passed through where()/whereIn() with proper binding.
+ * No user input is interpolated into the SQL expressions.
+ */
 class POSService implements POSServiceInterface
 {
     use HandlesServiceErrors;

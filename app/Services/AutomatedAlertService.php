@@ -20,6 +20,11 @@ use App\Models\Sale;
  * - Expiring product alerts
  * - Credit limit warnings
  * - Supplier performance alerts
+ *
+ * SECURITY NOTE: All raw SQL expressions in this service use only hardcoded column names.
+ * Parameters like $branchId are passed through where() with proper binding.
+ * Stock calculations use StockService which validates column names.
+ * No user input is interpolated into the SQL expressions.
  */
 class AutomatedAlertService
 {

@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\DB;
  *
  * This service is fully implemented and provides critical inventory valuation
  * functionality for the ERP system.
+ *
+ * SECURITY NOTE: All raw SQL expressions in this service use only hardcoded column names.
+ * Parameters like $productId and $warehouseId are passed through where() with proper binding.
+ * No user input is interpolated into the SQL expressions.
  */
 class CostingService
 {
