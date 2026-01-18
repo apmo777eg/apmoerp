@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\PurchaseStatus;
+use App\Enums\SaleStatus;
 use App\Models\Branch;
 use App\Models\Module;
 use App\Models\Product;
@@ -49,7 +51,7 @@ class ReportService implements ReportServiceInterface
                     ->whereNull('deleted_at')
                     ->whereDate('sale_date', '>=', $from)
                     ->whereDate('sale_date', '<=', $to)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
                     ->select(DB::raw('COALESCE(SUM(total_amount), 0) as total'), DB::raw('COALESCE(SUM(paid_amount), 0) as paid'))
                     ->first();
 
@@ -61,7 +63,7 @@ class ReportService implements ReportServiceInterface
                     ->whereNull('deleted_at')
                     ->whereDate('purchase_date', '>=', $from)
                     ->whereDate('purchase_date', '<=', $to)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->whereNotIn('status', PurchaseStatus::nonRelevantStatuses())
                     ->select(DB::raw('COALESCE(SUM(total_amount), 0) as total'), DB::raw('COALESCE(SUM(paid_amount), 0) as paid'))
                     ->first();
 
@@ -88,7 +90,7 @@ class ReportService implements ReportServiceInterface
                     ->join('products as p', 'p.id', '=', 'si.product_id')
                     ->where('s.branch_id', $branchId)
                     ->whereNull('s.deleted_at')
-                    ->whereNotIn('s.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->whereNotIn('s.status', SaleStatus::nonRevenueStatuses())
                     ->selectRaw('p.id, p.name, SUM(COALESCE(si.line_total, si.quantity * si.unit_price)) as gross')
                     ->groupBy('p.id', 'p.name')
                     ->orderByDesc('gross')
@@ -234,7 +236,7 @@ class ReportService implements ReportServiceInterface
                     $query->where('sales.status', $filters['status']);
                 } else {
                     // V34-CRIT-01 FIX: Filter out non-revenue statuses by default
-                    $query->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    $query->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses());
                 }
 
                 $items = $query->orderBy('sales.sale_date', 'desc')->get();
@@ -279,7 +281,7 @@ class ReportService implements ReportServiceInterface
                     $query->where('purchases.status', $filters['status']);
                 } else {
                     // V34-CRIT-01 FIX: Filter out non-relevant statuses by default
-                    $query->whereNotIn('purchases.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    $query->whereNotIn('purchases.status', PurchaseStatus::nonRelevantStatuses());
                 }
 
                 $items = $query->orderBy('purchases.purchase_date', 'desc')->get();
@@ -446,7 +448,7 @@ class ReportService implements ReportServiceInterface
                     ->select('branch_id', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
                     ->whereIn('branch_id', $branches->pluck('id'))
                     ->whereBetween('sale_date', [$dateFrom->toDateString(), $dateTo->toDateString()])
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
                     ->groupBy('branch_id')
                     ->get()->keyBy('branch_id');
 
@@ -456,7 +458,7 @@ class ReportService implements ReportServiceInterface
                     ->select('branch_id', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
                     ->whereIn('branch_id', $branches->pluck('id'))
                     ->whereBetween('purchase_date', [$dateFrom->toDateString(), $dateTo->toDateString()])
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->whereNotIn('status', PurchaseStatus::nonRelevantStatuses())
                     ->groupBy('branch_id')
                     ->get()->keyBy('branch_id');
 

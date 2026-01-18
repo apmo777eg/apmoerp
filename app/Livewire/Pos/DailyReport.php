@@ -9,6 +9,7 @@ use App\Models\Sale;
 use App\Models\SalePayment;
 use App\Services\BranchAccessService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Enums\SaleStatus;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -60,7 +61,7 @@ class DailyReport extends Component
         // and exclude all non-valid statuses (not just cancelled)
         // V35-MED-06 FIX: Include 'draft' in exclusion list for consistency
         $query = Sale::whereDate('sale_date', $this->date)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
 
         if ($this->branchId) {
             $query->where('branch_id', $this->branchId);
@@ -123,7 +124,7 @@ class DailyReport extends Component
         // and exclude all non-valid statuses (not just cancelled)
         // V35-MED-06 FIX: Include 'draft' in exclusion list for consistency
         $salesQuery = Sale::whereDate('sale_date', $this->date)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->with(['customer', 'payments', 'createdBy']);
 
         if ($this->branchId) {

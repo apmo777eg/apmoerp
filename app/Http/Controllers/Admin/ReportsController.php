@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PurchaseStatus;
+use App\Enums\SaleStatus;
 use App\Http\Controllers\Controller;
 use App\Services\Contracts\ReportServiceInterface as Reports;
 use Illuminate\Http\Request;
@@ -183,7 +185,7 @@ class ReportsController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('sale_date', '>=', $from)
             ->whereDate('sale_date', '<=', $to)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -223,7 +225,7 @@ class ReportsController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('purchase_date', '>=', $from)
             ->whereDate('purchase_date', '<=', $to)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+            ->whereNotIn('status', PurchaseStatus::nonRelevantStatuses());
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -261,7 +263,7 @@ class ReportsController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('sale_date', '>=', $from)
             ->whereDate('sale_date', '<=', $to)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
 
         if ($branchId) {
             $salesQuery->where('branch_id', $branchId);
@@ -275,7 +277,7 @@ class ReportsController extends Controller
             ->whereNull('sales.deleted_at')
             ->whereDate('sales.sale_date', '>=', $from)
             ->whereDate('sales.sale_date', '<=', $to)
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses());
 
         if ($branchId) {
             $cogsQuery->where('sales.branch_id', $branchId);
@@ -379,7 +381,7 @@ class ReportsController extends Controller
                 ->select(['id', 'total_amount', 'paid_amount', 'sale_date'])
                 ->whereNull('deleted_at')
                 ->whereRaw('paid_amount < total_amount')
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
         } else {
             // V31-HIGH-03 FIX: Use purchase_date for aging and filter non-relevant statuses
             // Explicitly select purchase_date to ensure the proper date is used for aging
@@ -388,7 +390,7 @@ class ReportsController extends Controller
                 ->select(['id', 'total_amount', 'paid_amount', 'purchase_date'])
                 ->whereNull('deleted_at')
                 ->whereRaw('paid_amount < total_amount')
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                ->whereNotIn('status', PurchaseStatus::nonRelevantStatuses());
         }
 
         if ($branchId) {

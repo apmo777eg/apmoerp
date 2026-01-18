@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Analytics;
 
 use App\Services\DatabaseCompatibilityService;
+use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -45,7 +46,7 @@ class InventoryTurnoverService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', $startDate);
 
         if ($branchId) {
@@ -100,7 +101,7 @@ class InventoryTurnoverService
                 DB::raw('SUM(sale_items.quantity * COALESCE(sale_items.cost_price, p.cost, 0)) as cogs')
             )
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->groupBy('sale_items.product_id');
 
@@ -153,7 +154,7 @@ class InventoryTurnoverService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select('sale_items.product_id')
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->distinct();
 
@@ -211,7 +212,7 @@ class InventoryTurnoverService
                 DB::raw('SUM(sale_items.quantity) as monthly_sales')
             )
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $monthlySalesStart)
             ->groupBy('sale_items.product_id');
 
@@ -270,7 +271,7 @@ class InventoryTurnoverService
                 DB::raw('SUM(sale_items.quantity * COALESCE(sale_items.cost_price, p.cost, 0)) as cogs')
             )
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->groupBy('sale_items.product_id');
 

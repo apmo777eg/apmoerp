@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\SaleStatus;
 use App\Models\Branch;
 use App\Services\BranchContextManager;
 use Illuminate\Bus\Queueable;
@@ -57,7 +58,7 @@ class ClosePosDayJob implements ShouldQueue
             $sales = \App\Models\Sale::query()
                 ->whereDate('sale_date', $date)
                 ->where('branch_id', $branchId)
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
                 ->get(['total_amount', 'paid_amount']);
 
             // Use bcmath for precise financial totals

@@ -6,6 +6,7 @@ namespace App\Services\Analytics;
 
 use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
+use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -70,7 +71,7 @@ class ProfitMarginAnalysisService
                     ELSE 0 END as margin_percent'),
             ])
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [$startDate, $endDate])
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->orderByDesc('profit')
@@ -137,7 +138,7 @@ class ProfitMarginAnalysisService
                     ELSE 0 END as margin_percent'),
             ])
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [$startDate, $endDate])
             ->groupBy('product_categories.id', 'product_categories.name')
             ->orderByDesc('profit');
@@ -204,7 +205,7 @@ class ProfitMarginAnalysisService
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as profit'),
             ])
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', $startDate)
             ->groupBy(DB::raw($periodExpr))
             ->orderBy('period');
@@ -247,7 +248,7 @@ class ProfitMarginAnalysisService
                     ELSE 0 END as margin_percent'),
             ])
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', now()->subDays(30))
             ->groupBy('products.id', 'products.name', 'products.sku', 'products.cost', 'products.price')
             ->having('units_sold', '>', 0)

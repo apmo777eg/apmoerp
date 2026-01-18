@@ -11,13 +11,14 @@
         $from = now()->subDays(14)->toDateString();
 
         $saleModel = '\\App\\Models\\Sale';
+        $nonRevenueStatuses = \App\Enums\SaleStatus::nonRevenueStatuses();
         // V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate financial reporting
-        // V35-MED-06 FIX: Exclude non-revenue statuses
+        // V35-MED-06 FIX: Exclude non-revenue statuses using SaleStatus enum
         // SECURITY: The selectRaw below uses only hardcoded column/function names
         $salesStats = [
             'count' => class_exists($saleModel) ? $saleModel::count() : 0,
-            'today' => class_exists($saleModel) ? $saleModel::whereDate('sale_date', $today)->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])->sum('total_amount') : 0,
-            'total' => class_exists($saleModel) ? $saleModel::whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])->sum('total_amount') : 0,
+            'today' => class_exists($saleModel) ? $saleModel::whereDate('sale_date', $today)->whereNotIn('status', $nonRevenueStatuses)->sum('total_amount') : 0,
+            'total' => class_exists($saleModel) ? $saleModel::whereNotIn('status', $nonRevenueStatuses)->sum('total_amount') : 0,
         ];
 
         $employeeModel = '\\App\\Models\\HREmployee';
@@ -42,12 +43,12 @@
         ];
 
         // V35-HIGH-02 FIX: Use sale_date instead of created_at
-        // V35-MED-06 FIX: Exclude non-revenue statuses
+        // V35-MED-06 FIX: Exclude non-revenue statuses using SaleStatus enum
         // SECURITY: The selectRaw uses only hardcoded column/function names (DATE, SUM)
         $salesSeries = class_exists($saleModel)
             ? $saleModel::selectRaw('DATE(sale_date) as day, SUM(total_amount) as total')
                 ->whereDate('sale_date', '>=', $from)
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                ->whereNotIn('status', $nonRevenueStatuses)
                 ->groupBy('day')
                 ->orderBy('day')
                 ->get()

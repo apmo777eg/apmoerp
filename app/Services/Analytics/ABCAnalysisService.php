@@ -7,6 +7,7 @@ namespace App\Services\Analytics;
 use App\Models\Product;
 use App\Models\SaleItem;
 use App\Traits\HandlesServiceErrors;
+use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -66,7 +67,7 @@ class ABCAnalysisService
                             $q->where('branch_id', $branchId);
                         }
                         $q->whereBetween('sale_date', [$startDate, $endDate])
-                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                            ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
                     })
                     ->whereNotNull('product_id')
                     ->groupBy('product_id')
@@ -180,7 +181,7 @@ class ABCAnalysisService
                             $q->where('branch_id', $branchId);
                         }
                         $q->whereBetween('sale_date', [$startDate, $endDate])
-                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                            ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
                     })
                     ->whereNotNull('product_id')
                     ->groupBy('product_id')

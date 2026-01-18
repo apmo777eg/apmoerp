@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\ReportTemplate;
+use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -104,7 +105,7 @@ class ScheduledReportService
                 // V38-HIGH-01 FIX: Exclude soft-deleted records
                 ->whereNull('deleted_at')
                 // V31-MED-05 FIX: Exclude non-revenue statuses
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
 
             if (! empty($filters['date_from'])) {
                 $query->whereDate('sale_date', '>=', $filters['date_from']);
@@ -171,7 +172,7 @@ class ScheduledReportService
                 ->leftJoin('sales', function ($join) {
                     $join->on('customers.id', '=', 'sales.customer_id')
                         ->whereNull('sales.deleted_at')
-                        ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                        ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses());
                 })
                 ->select([
                     'customers.name',
@@ -217,7 +218,7 @@ class ScheduledReportService
                 // V35-CRIT-01 FIX: Filter out soft-deleted sales
                 ->whereNull('sales.deleted_at')
                 // V35-CRIT-01 FIX: Exclude non-revenue statuses by default (matches fetchSalesReportData)
-                ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses());
 
             // V35-CRIT-01 FIX: Use sale_date instead of created_at for date filtering
             if (! empty($filters['date_from'])) {

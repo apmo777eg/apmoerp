@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\Cache;
+use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -298,7 +299,7 @@ class AdvancedAnalyticsService
                 // V35-HIGH-02 FIX: Use sale_date for customer activity analysis
                 // V35-MED-06 FIX: Exclude non-revenue statuses
                 $q->where('sale_date', '>', now()->subMonths(6))
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
                     ->orderBy('sale_date', 'desc');
             }])
             ->get();
@@ -414,7 +415,7 @@ class AdvancedAnalyticsService
         $prevStart = $prevEnd->copy()->subDays($periodDays);
         
         $query = Sale::query()
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sale_date', [$prevStart, $prevEnd]);
         
         if ($branchId) {
@@ -496,7 +497,7 @@ class AdvancedAnalyticsService
                     $q->where('branch_id', $branchId);
                 }
                 $q->whereBetween('sale_date', $dateRange)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             })
             ->whereNotNull('product_id')
             ->groupBy('product_id')
@@ -533,7 +534,7 @@ class AdvancedAnalyticsService
             )
             ->with('product') // CODE-REVIEW FIX: Eager load products to avoid N+1
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereNotNull('product_id')
             ->groupBy('product_id')
             ->orderBy('total_qty', 'asc')
@@ -610,7 +611,7 @@ class AdvancedAnalyticsService
                     $q->where('branch_id', $branchId);
                 }
                 $q->whereBetween('sale_date', $dateRange)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             })
             ->sum(DB::raw('COALESCE(cost_price, 0) * COALESCE(quantity, 0)'));
 
@@ -643,7 +644,7 @@ class AdvancedAnalyticsService
     {
         $query = Sale::query()
             ->whereBetween('sale_date', $dateRange)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->whereNotNull('customer_id');
         
         if ($branchId) {
@@ -661,7 +662,7 @@ class AdvancedAnalyticsService
         $returningCustomersCount = Sale::query()
             ->select('customer_id')
             ->whereNotNull('customer_id')
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->groupBy('customer_id')
             ->havingRaw('COUNT(*) > 1')
@@ -679,7 +680,7 @@ class AdvancedAnalyticsService
     {
         $query = Customer::query()
             ->withSum(['sales' => function ($q) {
-                $q->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                $q->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             }], 'total_amount');
         
         if ($branchId) {
@@ -698,11 +699,11 @@ class AdvancedAnalyticsService
         $query = Customer::query()
             ->withCount(['sales' => function ($q) use ($dateRange) {
                 $q->whereBetween('sale_date', $dateRange)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             }])
             ->withSum(['sales' => function ($q) use ($dateRange) {
                 $q->whereBetween('sale_date', $dateRange)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             }], 'total_amount');
         
         if ($branchId) {
@@ -730,7 +731,7 @@ class AdvancedAnalyticsService
                 DB::raw('SUM(total_amount) as total')
             )
             ->whereBetween('sale_date', $dateRange)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->groupBy(DB::raw('DATE(sale_date)'))
             ->orderBy('date');
         
@@ -821,7 +822,7 @@ class AdvancedAnalyticsService
             
             $query = Sale::query()
                 ->whereBetween('sale_date', [$start, $end])
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             
             if ($branchId) {
                 $query->where('branch_id', $branchId);
@@ -852,7 +853,7 @@ class AdvancedAnalyticsService
                         $q->where('branch_id', $branchId);
                     }
                     $q->whereBetween('sale_date', [$start, $end])
-                        ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                        ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
                 })
                 ->sum('quantity') ?? 0;
             
@@ -900,7 +901,7 @@ class AdvancedAnalyticsService
                     $q->where('branch_id', $branchId);
                 }
                 $q->where('sale_date', '>=', $start)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             })
             ->sum('quantity') ?? 0;
         
@@ -948,7 +949,7 @@ class AdvancedAnalyticsService
     protected function calculateAvgDaysBetweenPurchases(Customer $customer): float
     {
         $sales = $customer->sales()
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->orderBy('sale_date')
             ->get();
         
@@ -976,7 +977,7 @@ class AdvancedAnalyticsService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select('products.category_id', DB::raw('SUM(sale_items.line_total) as total'))
             ->whereBetween('sales.sale_date', $dateRange)
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereNotNull('products.category_id')
             ->groupBy('products.category_id')
             ->orderByDesc('total')
@@ -1000,7 +1001,7 @@ class AdvancedAnalyticsService
         $query = Sale::query()
             ->select(DB::raw('HOUR(sale_date) as hour'), DB::raw('COUNT(*) as count'))
             ->whereBetween('sale_date', $dateRange)
-            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->groupBy(DB::raw('HOUR(sale_date)'))
             ->orderByDesc('count')
             ->limit(3);
@@ -1024,7 +1025,7 @@ class AdvancedAnalyticsService
                     $q->where('branch_id', $branchId);
                 }
                 $q->whereBetween('sale_date', $dateRange)
-                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
             })
             ->get();
         

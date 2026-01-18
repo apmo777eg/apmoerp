@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Branch;
 
+use App\Enums\PurchaseStatus;
+use App\Enums\SaleStatus;
 use App\Http\Controllers\Controller;
 use App\Services\Contracts\ReportServiceInterface as Reports;
 use Illuminate\Http\Request;
@@ -69,8 +71,7 @@ class ReportsController extends Controller
 
         // MED-01 FIX: Exclude cancelled/void/returned/refunded sales and purchases for accurate PnL
         // V38-HIGH-02 FIX: Include 'draft' in exclusion list for consistency with other reports
-        // These statuses represent transactions that should not be counted in revenue/expenses
-        $excludedStatuses = ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'];
+        // V39-REFACTOR: Use SaleStatus/PurchaseStatus enums for maintainability
 
         // V32-HIGH-01 FIX: Use sale_date instead of created_at for accurate period reporting
         // In ERP, financial reports must use the business transaction date, not the record creation date.
@@ -79,7 +80,7 @@ class ReportsController extends Controller
         $sales = DB::table('sales')
             ->where('branch_id', $b)
             ->whereNull('deleted_at')
-            ->whereNotIn('status', $excludedStatuses)
+            ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sale_date', '>=', $from)
             ->whereDate('sale_date', '<=', $to)
             ->sum('total_amount');
@@ -89,7 +90,7 @@ class ReportsController extends Controller
         $purchases = DB::table('purchases')
             ->where('branch_id', $b)
             ->whereNull('deleted_at')
-            ->whereNotIn('status', $excludedStatuses)
+            ->whereNotIn('status', PurchaseStatus::nonRelevantStatuses())
             ->whereDate('purchase_date', '>=', $from)
             ->whereDate('purchase_date', '<=', $to)
             ->sum('total_amount');

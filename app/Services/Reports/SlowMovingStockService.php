@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services\Reports;
+use App\Enums\SaleStatus;
 
 use App\Models\Product;
 use App\Services\DatabaseCompatibilityService;
@@ -55,7 +56,7 @@ class SlowMovingStockService
                 $join->on('sale_items.sale_id', '=', 'sales.id')
                     ->whereNull('sales.deleted_at')
                     // V31-MED-07 FIX: Exclude non-revenue statuses
-                    ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded']);
+                    ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses());
             })
             ->where('products.stock_quantity', '>', 0)
             ->whereNull('products.deleted_at')

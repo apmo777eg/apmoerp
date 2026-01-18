@@ -7,6 +7,7 @@ namespace App\Services\UX;
 use App\Models\Customer;
 use App\Models\Product;
 use Illuminate\Support\Collection;
+use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -270,7 +271,7 @@ class SmartSuggestionsService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sale_items.product_id', $productId)
             ->whereNull('sales.deleted_at')
-            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', now()->subDays($days))
             ->sum('sale_items.quantity');
 

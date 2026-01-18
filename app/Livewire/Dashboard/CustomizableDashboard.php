@@ -8,6 +8,7 @@ use App\Livewire\Concerns\LoadsDashboardData;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use App\Enums\SaleStatus;
 use Livewire\Component;
 
 /**
@@ -262,7 +263,7 @@ class CustomizableDashboard extends Component
             $thisMonthSales = \App\Models\Sale::where('branch_id', $branchId)
                 ->whereMonth('sale_date', now()->month)
                 ->whereYear('sale_date', now()->year)
-                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'voided', 'returned', 'refunded'])
+                ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
                 ->whereHas('items', function ($q) use ($module) {
                     $q->whereHas('product', function ($pq) use ($module) {
                         $pq->where('module_id', $module->id);
