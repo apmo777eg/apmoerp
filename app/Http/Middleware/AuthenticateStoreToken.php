@@ -82,38 +82,29 @@ class AuthenticateStoreToken
 
         $storeToken->touchLastUsed();
 
+        // Set store context before passing to next middleware
+        $this->setStoreContext($request, $store, $storeToken);
+
+        // Process request through remaining middleware
+        $response = $next($request);
+
         // V37-HIGH-03 FIX: Log deprecation warning when token is passed via query/body
         // Tokens in query strings can leak via logs, referrers, and browser history.
         // Prefer Authorization: Bearer header for secure token transmission.
         if ($tokenSource !== 'header') {
-            Log::warning('API token passed via query/body (deprecated)', [
+            // Log minimal information to avoid exposing sensitive data
+            Log::warning('Deprecated API token method used', [
                 'token_source' => $tokenSource,
-                'store_id' => $store->id,
                 'endpoint' => $request->path(),
-                'ip' => $request->ip(),
-                'deprecation_notice' => 'Passing API tokens via query string or request body is deprecated. Use Authorization: Bearer header instead.',
             ]);
 
             // V37-HIGH-03 FIX: Add deprecation header to response to inform clients
-            $response = $next($request);
             if ($response instanceof Response) {
                 $response->headers->set('X-Deprecation-Warning', 'API token via query/body is deprecated. Use Authorization: Bearer header.');
             }
-
-            $request->merge([
-                'store' => $store,
-                'store_token' => $storeToken,
-            ]);
-
-            return $response;
         }
 
-        $request->merge([
-            'store' => $store,
-            'store_token' => $storeToken,
-        ]);
-
-        return $next($request);
+        return $response;
     }
 
     /**
@@ -123,6 +114,20 @@ class AuthenticateStoreToken
     public function terminate(Request $request, Response $response): void
     {
         BranchContextManager::clearBranchContext();
+    }
+
+    /**
+     * Set store and token context on the request.
+     *
+     * V37-CODE-REVIEW: Extracted to avoid code duplication between
+     * secure and deprecated token handling paths.
+     */
+    protected function setStoreContext(Request $request, Store $store, StoreToken $storeToken): void
+    {
+        $request->merge([
+            'store' => $store,
+            'store_token' => $storeToken,
+        ]);
     }
 
     /**
