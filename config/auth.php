@@ -117,4 +117,24 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Store API Token Security
+    |--------------------------------------------------------------------------
+    |
+    | These options control how API tokens are accepted for store integrations.
+    |
+    | - allow_deprecated_methods: Controls whether tokens can be passed via
+    |   query string or request body. Set to false for strict security
+    |   (header-only mode). Default is true for backward compatibility.
+    |
+    | Security recommendation: Set STORE_TOKEN_ALLOW_DEPRECATED=false in
+    | production once all clients have migrated to Authorization: Bearer header.
+    |
+    */
+
+    'store_token' => [
+        'allow_deprecated_methods' => env('STORE_TOKEN_ALLOW_DEPRECATED', true),
+    ],
+
 ];
