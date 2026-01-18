@@ -254,10 +254,13 @@ class CustomizableDashboard extends Component
                 ->whereColumn('stock_quantity', '<=', 'min_stock')
                 ->count();
 
+            // V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate sales reporting
+            // V35-MED-06 FIX: Exclude non-revenue statuses
             // Get this month's sales for this module
             $thisMonthSales = \App\Models\Sale::where('branch_id', $branchId)
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
+                ->whereMonth('sale_date', now()->month)
+                ->whereYear('sale_date', now()->year)
+                ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
                 ->whereHas('items', function ($q) use ($module) {
                     $q->whereHas('product', function ($pq) use ($module) {
                         $pq->where('module_id', $module->id);
