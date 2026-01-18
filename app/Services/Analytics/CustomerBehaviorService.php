@@ -26,6 +26,9 @@ class CustomerBehaviorService
      * R = Recency (how recently they bought)
      * F = Frequency (how often they buy)
      * M = Monetary (how much they spend)
+     *
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function rfmAnalysis(?int $branchId = null, ?string $startDate = null): array
     {
@@ -33,17 +36,19 @@ class CustomerBehaviorService
             callback: function () use ($branchId, $startDate) {
                 $startDate = $startDate ?? now()->subYear()->toDateString();
 
+                // V35-HIGH-02 FIX: Use sale_date for financial reporting
+                // V35-MED-06 FIX: Exclude all non-revenue statuses
                 $query = Sale::query()
                     ->select(
                         'customer_id',
-                        DB::raw('MAX(created_at) as last_purchase'),
+                        DB::raw('MAX(sale_date) as last_purchase'),
                         DB::raw('COUNT(*) as purchase_count'),
                         DB::raw('SUM(total_amount) as total_spent'),
                         DB::raw('AVG(total_amount) as avg_order_value')
                     )
                     ->whereNotNull('customer_id')
-                    ->where('status', '!=', 'cancelled')
-                    ->where('created_at', '>=', $startDate);
+                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+                    ->where('sale_date', '>=', $startDate);
 
                 if ($branchId) {
                     $query->where('branch_id', $branchId);
@@ -125,21 +130,26 @@ class CustomerBehaviorService
 
     /**
      * Analyze customer purchase frequency
+     *
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function purchaseFrequency(?int $branchId = null): array
     {
         return $this->handleServiceOperation(
             callback: function () use ($branchId) {
+                // V35-HIGH-02 FIX: Use sale_date for financial reporting
+                // V35-MED-06 FIX: Exclude all non-revenue statuses
                 $query = Sale::query()
                     ->select(
                         'customer_id',
                         DB::raw('COUNT(*) as purchase_count'),
-                        DB::raw('MIN(created_at) as first_purchase'),
-                        DB::raw('MAX(created_at) as last_purchase')
+                        DB::raw('MIN(sale_date) as first_purchase'),
+                        DB::raw('MAX(sale_date) as last_purchase')
                     )
                     ->whereNotNull('customer_id')
-                    ->where('status', '!=', 'cancelled')
-                    ->where('created_at', '>=', now()->subYear());
+                    ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+                    ->where('sale_date', '>=', now()->subYear());
 
                 if ($branchId) {
                     $query->where('branch_id', $branchId);
@@ -186,6 +196,8 @@ class CustomerBehaviorService
 
     /**
      * Analyze product preferences by customer
+     *
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function productPreferences(int $customerId): array
     {
@@ -200,7 +212,7 @@ class CustomerBehaviorService
                     )
                     ->whereHas('sale', function ($q) use ($customerId) {
                         $q->where('customer_id', $customerId)
-                            ->where('status', '!=', 'cancelled');
+                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     })
                     ->whereNotNull('product_id')
                     ->groupBy('product_id')
@@ -228,6 +240,9 @@ class CustomerBehaviorService
 
     /**
      * Get customers at risk of churning
+     *
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function atRiskCustomers(?int $branchId = null, int $inactiveDays = 90): Collection
     {
@@ -235,21 +250,23 @@ class CustomerBehaviorService
             callback: function () use ($branchId, $inactiveDays) {
                 $activeThreshold = now()->subDays($inactiveDays);
 
+                // V35-HIGH-02 FIX: Use sale_date for customer activity analysis
+                // V35-MED-06 FIX: Exclude all non-revenue statuses
                 // Get customers who were active but haven't purchased recently
                 $query = Customer::query()
                     ->whereHas('sales', function ($q) use ($activeThreshold) {
-                        $q->where('created_at', '<', $activeThreshold)
-                            ->where('status', '!=', 'cancelled');
+                        $q->where('sale_date', '<', $activeThreshold)
+                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     })
                     ->whereDoesntHave('sales', function ($q) use ($activeThreshold) {
-                        $q->where('created_at', '>=', $activeThreshold)
-                            ->where('status', '!=', 'cancelled');
+                        $q->where('sale_date', '>=', $activeThreshold)
+                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     })
                     ->withCount(['sales' => function ($q) {
-                        $q->where('status', '!=', 'cancelled');
+                        $q->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     }])
                     ->withSum(['sales' => function ($q) {
-                        $q->where('status', '!=', 'cancelled');
+                        $q->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     }], 'total_amount');
 
                 if ($branchId) {
@@ -260,7 +277,11 @@ class CustomerBehaviorService
                     ->limit(50)
                     ->get()
                     ->map(function ($customer) {
-                        $lastSale = $customer->sales()->latest()->first();
+                        // V35-HIGH-02 FIX: Use sale_date for last purchase date
+                        $lastSale = $customer->sales()
+                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+                            ->orderByDesc('sale_date')
+                            ->first();
 
                         return [
                             'id' => $customer->id,
@@ -269,8 +290,8 @@ class CustomerBehaviorService
                             'phone' => $customer->phone,
                             'total_purchases' => $customer->sales_count,
                             'total_spent' => round($customer->sales_sum_total_amount ?? 0, 2),
-                            'last_purchase' => $lastSale?->created_at?->toDateString(),
-                            'days_inactive' => $lastSale ? now()->diffInDays($lastSale->created_at) : null,
+                            'last_purchase' => $lastSale?->sale_date?->toDateString(),
+                            'days_inactive' => $lastSale ? now()->diffInDays($lastSale->sale_date) : null,
                         ];
                     });
             },
@@ -281,17 +302,21 @@ class CustomerBehaviorService
 
     /**
      * Get customer lifetime value (CLV)
+     *
+     * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function customerLifetimeValue(?int $branchId = null, int $limit = 50): array
     {
         return $this->handleServiceOperation(
             callback: function () use ($branchId, $limit) {
+                // V35-MED-06 FIX: Exclude all non-revenue statuses
                 $query = Customer::query()
                     ->withCount(['sales' => function ($q) {
-                        $q->where('status', '!=', 'cancelled');
+                        $q->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     }])
                     ->withSum(['sales' => function ($q) {
-                        $q->where('status', '!=', 'cancelled');
+                        $q->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
                     }], 'total_amount')
                     ->having('sales_count', '>', 0);
 
@@ -307,8 +332,12 @@ class CustomerBehaviorService
 
                 return [
                     'customers' => $customers->map(function ($c) use ($totalCLV) {
-                        $firstSale = $c->sales()->oldest()->first();
-                        $monthsActive = $firstSale ? max(1, now()->diffInMonths($firstSale->created_at)) : 1;
+                        // V35-HIGH-02 FIX: Use sale_date for customer tenure calculation
+                        $firstSale = $c->sales()
+                            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded'])
+                            ->orderBy('sale_date')
+                            ->first();
+                        $monthsActive = $firstSale ? max(1, now()->diffInMonths($firstSale->sale_date)) : 1;
                         $monthlyValue = ($c->sales_sum_total_amount ?? 0) / $monthsActive;
 
                         return [

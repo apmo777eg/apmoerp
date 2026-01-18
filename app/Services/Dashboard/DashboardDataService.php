@@ -68,12 +68,14 @@ class DashboardDataService
     /**
      * Generate sales today data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function generateSalesTodayData(?int $branchId): array
     {
         $query = DB::table('sales')
             ->whereDate('sale_date', today())
-            ->where('status', '!=', 'cancelled');
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -94,12 +96,14 @@ class DashboardDataService
     /**
      * Generate sales this week data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function generateSalesWeekData(?int $branchId): array
     {
         $query = DB::table('sales')
             ->whereBetween('sale_date', [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()])
-            ->where('status', '!=', 'cancelled');
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -115,13 +119,15 @@ class DashboardDataService
     /**
      * Generate sales this month data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
+     * V35-MED-06 FIX: Exclude all non-revenue statuses
      */
     public function generateSalesMonthData(?int $branchId): array
     {
         $query = DB::table('sales')
             ->whereYear('sale_date', now()->year)
             ->whereMonth('sale_date', now()->month)
-            ->where('status', '!=', 'cancelled');
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['draft', 'cancelled', 'void', 'refunded']);
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -137,6 +143,7 @@ class DashboardDataService
     /**
      * Generate top selling products data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
+     * V35-MED-06 FIX: Exclude all non-revenue statuses and soft-deleted sales
      */
     public function generateTopSellingProductsData(?int $branchId, int $limit = 5): array
     {
@@ -149,7 +156,8 @@ class DashboardDataService
                 DB::raw('COALESCE(SUM(sale_items.quantity), 0) as total_quantity'),
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) as total_revenue')
             )
-            ->where('sales.status', '!=', 'cancelled')
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
             ->whereBetween('sales.sale_date', [now()->subDays(30)->toDateString(), now()->toDateString()])
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_quantity')
@@ -168,6 +176,7 @@ class DashboardDataService
     /**
      * Generate top customers data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
+     * V35-MED-06 FIX: Exclude all non-revenue statuses and soft-deleted sales
      */
     public function generateTopCustomersData(?int $branchId, int $limit = 5): array
     {
@@ -179,7 +188,8 @@ class DashboardDataService
                 DB::raw('COUNT(sales.id) as total_orders'),
                 DB::raw('COALESCE(SUM(sales.total_amount), 0) as total_spent')
             )
-            ->where('sales.status', '!=', 'cancelled')
+            ->whereNull('sales.deleted_at')
+            ->whereNotIn('sales.status', ['draft', 'cancelled', 'void', 'refunded'])
             ->whereBetween('sales.sale_date', [now()->subDays(30)->toDateString(), now()->toDateString()])
             ->groupBy('customers.id', 'customers.name')
             ->orderByDesc('total_spent')
