@@ -45,9 +45,10 @@ class CheckDatabaseIntegrity extends Command
     /**
      * V40-HIGH-14 FIX: Whitelist of allowed filter types for checkDuplicates
      * This ensures no arbitrary SQL can be passed to whereRaw.
+     * Only filter types listed here are accepted by checkDuplicates().
      */
-    private const DUPLICATE_CHECK_FILTERS = [
-        'non_empty_string' => true, // filter for non-null, non-empty string columns
+    private const ALLOWED_DUPLICATE_FILTERS = [
+        'non_empty_string', // filter for non-null, non-empty string columns
     ];
 
     public function handle(): int
@@ -277,8 +278,9 @@ class CheckDatabaseIntegrity extends Command
         // V40-HIGH-14 FIX: Apply filter based on whitelist - no raw SQL interpolation
         if ($filterType === 'non_empty_string') {
             $query->whereNotNull($column)->where($column, '!=', '');
-        } elseif ($filterType !== '' && ! isset(self::DUPLICATE_CHECK_FILTERS[$filterType])) {
-            // Unknown filter type - log and skip filter for safety
+        } elseif ($filterType !== '' && ! in_array($filterType, self::ALLOWED_DUPLICATE_FILTERS, true)) {
+            // Unknown filter type - log warning for debugging
+            $this->warnings[] = "Unknown filter type '{$filterType}' for duplicate check on {$table}.{$column}";
             return;
         }
 
