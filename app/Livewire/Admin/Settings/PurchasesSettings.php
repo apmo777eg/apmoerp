@@ -55,7 +55,7 @@ class PurchasesSettings extends Component
         $this->purchase_payment_terms_days = (int) ($settings['purchases.payment_terms_days'] ?? 30);
         $this->auto_receive_on_purchase = (bool) ($settings['purchases.auto_receive_on_purchase'] ?? false);
         $this->require_purchase_approval = (bool) ($settings['purchases.require_purchase_approval'] ?? true);
-        $this->purchase_approval_threshold = (float) ($settings['purchases.approval_threshold'] ?? 10000);
+        $this->purchase_approval_threshold = decimal_float($settings['purchases.approval_threshold'] ?? 10000);
         $this->enable_purchase_requisitions = (bool) ($settings['purchases.enable_purchase_requisitions'] ?? true);
         $this->enable_grn = (bool) ($settings['purchases.enable_grn'] ?? true);
         $this->grn_validity_days = (int) ($settings['purchases.grn_validity_days'] ?? 7);

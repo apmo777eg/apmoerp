@@ -74,9 +74,9 @@ class PurchaseService implements PurchaseServiceInterface
                         continue;
                     }
 
-                    $qty = (float) $it['qty'];
+                    $qty = decimal_float($it['qty']);
                     // Accept price from multiple possible field names for API compatibility
-                    $unitPrice = (float) ($it['unit_price'] ?? $it['price'] ?? 0);
+                    $unitPrice = decimal_float($it['unit_price'] ?? $it['price'] ?? 0);
 
                     // Critical ERP: Validate positive quantities and prices
                     if ($qty <= 0) {
@@ -91,18 +91,18 @@ class PurchaseService implements PurchaseServiceInterface
                     $lineSub = bcmul((string) $qty, (string) $unitPrice, 4);
 
                     // Calculate line discount
-                    $discountPercent = (float) ($it['discount_percent'] ?? 0);
+                    $discountPercent = decimal_float($it['discount_percent'] ?? 0);
                     $lineDiscount = '0';
                     if ($discountPercent > 0) {
                         $lineDiscount = bcmul($lineSub, bcdiv((string) $discountPercent, '100', 6), 4);
                     }
 
                     // Calculate line tax (on discounted amount)
-                    $taxPercent = (float) ($it['tax_percent'] ?? 0);
-                    $lineTax = (float) ($it['tax_amount'] ?? 0);
+                    $taxPercent = decimal_float($it['tax_percent'] ?? 0);
+                    $lineTax = decimal_float($it['tax_amount'] ?? 0);
                     if ($lineTax <= 0 && $taxPercent > 0) {
                         $taxableAmount = bcsub($lineSub, $lineDiscount, 4);
-                        $lineTax = (float) bcmul($taxableAmount, bcdiv((string) $taxPercent, '100', 6), 2);
+                        $lineTax = decimal_float(bcmul($taxableAmount, bcdiv((string) $taxPercent, '100', 6), 2));
                     }
 
                     // Calculate line total: (qty * price) - discount + tax
@@ -126,27 +126,25 @@ class PurchaseService implements PurchaseServiceInterface
                         'discount_percent' => $discountPercent,
                         'tax_percent' => $taxPercent,
                         'tax_amount' => $lineTax,
-                        'line_total' => (float) $lineTotal,
+                        'line_total' => decimal_float($lineTotal),
                     ]);
                 }
 
                 // FIX U-04: Compute total_amount correctly with tax/shipping/discount
                 // Get header-level shipping if provided
-                $shippingAmount = (float) ($payload['shipping_amount'] ?? 0);
+                $shippingAmount = decimal_float($payload['shipping_amount'] ?? 0);
 
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-                $p->subtotal = (float) bcround($subtotal, 2);
-                $p->tax_amount = (float) bcround($totalTax, 2);
-                $p->discount_amount = (float) bcround($totalDiscount, 2);
-                // total_amount = subtotal + tax + shipping - discount
-                $p->total_amount = (float) bcround(
-                    bcadd(
-                        bcsub(bcadd($subtotal, $totalTax, 4), $totalDiscount, 4),
-                        (string) $shippingAmount,
-                        4
-                    ),
-                    2
-                );
+                $p->subtotal = decimal_float(bcround($subtotal, 2));
+                $p->tax_amount = decimal_float(bcround($totalTax, 2));
+                $p->discount_amount = decimal_float(bcround($totalDiscount, 2));
+                
+                // Calculate total_amount = subtotal + tax + shipping - discount
+                // Breaking into intermediate variables for clarity
+                $subtotalPlusTax = bcadd($subtotal, $totalTax, 4);
+                $afterDiscount = bcsub($subtotalPlusTax, $totalDiscount, 4);
+                $totalWithShipping = bcadd($afterDiscount, (string) $shippingAmount, 4);
+                $p->total_amount = decimal_float(bcround($totalWithShipping, 2));
 
                 // Critical ERP: Validate supplier minimum order value
                 if ($p->supplier_id) {
@@ -218,7 +216,7 @@ class PurchaseService implements PurchaseServiceInterface
                     }
 
                     // Use correct migration column names
-                    $remainingDue = max(0, (float) $p->total_amount - (float) $p->paid_amount);
+                    $remainingDue = max(0, decimal_float($p->total_amount) - decimal_float($p->paid_amount));
                     if ($amount > $remainingDue) {
                         throw new \InvalidArgumentException(sprintf(
                             'Payment amount (%.2f) exceeds remaining due (%.2f)',
@@ -251,12 +249,12 @@ class PurchaseService implements PurchaseServiceInterface
 
                     // Critical ERP: Use bcmath for precise money calculations
                     $newPaidAmount = bcadd((string) $p->paid_amount, (string) $amount, 2);
-                    $p->paid_amount = (float) $newPaidAmount;
+                    $p->paid_amount = decimal_float($newPaidAmount);
 
                     // Update payment status
-                    if ((float) $p->paid_amount >= (float) $p->total_amount) {
+                    if (decimal_float($p->paid_amount) >= decimal_float($p->total_amount)) {
                         $p->payment_status = 'paid';
-                    } elseif ((float) $p->paid_amount > 0) {
+                    } elseif (decimal_float($p->paid_amount) > 0) {
                         $p->payment_status = 'partial';
                     } else {
                         $p->payment_status = 'unpaid';
@@ -281,7 +279,7 @@ class PurchaseService implements PurchaseServiceInterface
                 if ($p->status === 'received' || $p->status === 'completed') {
                     throw new \InvalidArgumentException('Cannot cancel a received purchase. Please create a return instead.');
                 }
-                if ($p->payment_status === 'paid' || (float) $p->paid_amount > 0) {
+                if ($p->payment_status === 'paid' || decimal_float($p->paid_amount) > 0) {
                     throw new \InvalidArgumentException('Cannot cancel a paid purchase. Please refund first.');
                 }
                 if ($p->status === 'cancelled') {

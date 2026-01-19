@@ -89,7 +89,7 @@ class SalesReturnService
 
                     // Validate return quantity
                     $maxQty = $this->getMaxReturnableQty($saleItem);
-                    $qtyToReturn = (float) ($itemData['qty'] ?? 0);
+                    $qtyToReturn = decimal_float($itemData['qty'] ?? 0);
 
                     // V37-MED-01 FIX: Use DomainException instead of abort_if for testability in jobs/queues/CLI
                     if ($qtyToReturn > $maxQty) {
@@ -208,14 +208,14 @@ class SalesReturnService
                 }
 
                 // V6-CRITICAL-07 FIX: Validate refund amount doesn't exceed approved refund_amount
-                $requestedAmount = (float) ($validated['amount'] ?? $return->refund_amount);
+                $requestedAmount = decimal_float($validated['amount'] ?? $return->refund_amount);
 
                 // Calculate already refunded amount from existing completed refunds
                 $alreadyRefunded = $return->refunds
                     ->where('status', ReturnRefund::STATUS_COMPLETED)
                     ->sum('amount');
 
-                $remainingRefundable = (float) $return->refund_amount - (float) $alreadyRefunded;
+                $remainingRefundable = decimal_float($return->refund_amount) - decimal_float($alreadyRefunded);
 
                 // V37-MED-01 FIX: Use DomainException instead of abort_if for testability in jobs/queues/CLI
                 if ($requestedAmount > $remainingRefundable) {

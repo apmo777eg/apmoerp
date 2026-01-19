@@ -59,7 +59,7 @@ class SmartSuggestionsService
             : $annualDemand;
 
         // Calculate suggested order quantity
-        $suggestedQty = max((float) $eoq, (float) $product->minimum_order_quantity ?? 1);
+        $suggestedQty = max(decimal_float($eoq), decimal_float($product->minimum_order_quantity ?? 1));
 
         // Calculate days of stock coverage
         $daysOfStock = bccomp((string) $salesVelocity, '0', 2) > 0
@@ -67,21 +67,21 @@ class SmartSuggestionsService
             : '999';
 
         // Determine urgency level
-        $urgency = $this->determineReorderUrgency((float) $currentStock, (float) $reorderPoint, (float) $product->min_stock ?? 0);
+        $urgency = $this->determineReorderUrgency(decimal_float($currentStock), decimal_float($reorderPoint), decimal_float($product->min_stock ?? 0));
 
         return [
             'product_id' => $product->id,
             'product_name' => $product->name,
             'current_stock' => $currentStock,
             'min_stock' => $product->min_stock ?? 0,
-            'reorder_point' => (float) $reorderPoint,
+            'reorder_point' => decimal_float($reorderPoint),
             'suggested_quantity' => (int) $suggestedQty,
-            'sales_velocity' => (float) $salesVelocity,
-            'days_of_stock_remaining' => (float) $daysOfStock,
+            'sales_velocity' => decimal_float($salesVelocity),
+            'days_of_stock_remaining' => decimal_float($daysOfStock),
             'lead_time_days' => $leadTimeDays,
             'urgency' => $urgency,
             'estimated_cost' => bcmul((string) $suggestedQty, (string) ($product->standard_cost ?? 0), 2),
-            'recommendation' => $this->generateReorderRecommendation($urgency, (float) $daysOfStock, $suggestedQty),
+            'recommendation' => $this->generateReorderRecommendation($urgency, decimal_float($daysOfStock), $suggestedQty),
         ];
     }
 
@@ -95,7 +95,7 @@ class SmartSuggestionsService
      */
     public function suggestOptimalPricing(Product $product, ?float $targetMarginPercent = null): array
     {
-        $cost = (float) ($product->standard_cost ?? 0);
+        $cost = decimal_float($product->standard_cost ?? 0);
 
         if (bccomp((string) $cost, '0', 2) <= 0) {
             return [
@@ -119,14 +119,14 @@ class SmartSuggestionsService
             $multiplier = bcdiv(bcadd('100', (string) $margin, 2), '100', 4);
             $price = bcmul((string) $cost, $multiplier, 2);
             $pricePoints["margin_{$margin}"] = [
-                'price' => (float) $price,
+                'price' => decimal_float($price),
                 'margin_percent' => $margin,
-                'profit_per_unit' => (float) bcsub($price, (string) $cost, 2),
+                'profit_per_unit' => decimal_float(bcsub($price, (string) $cost, 2)),
             ];
         }
 
         // Get current pricing status
-        $currentPrice = (float) ($product->default_price ?? 0);
+        $currentPrice = decimal_float($product->default_price ?? 0);
         $currentMargin = bccomp((string) $currentPrice, '0', 2) > 0
             ? bcmul(bcdiv(bcsub((string) $currentPrice, (string) $cost, 2), (string) $currentPrice, 4), '100', 2)
             : '0';
@@ -139,13 +139,13 @@ class SmartSuggestionsService
             'product_name' => $product->name,
             'cost' => $cost,
             'current_price' => $currentPrice,
-            'current_margin' => (float) $currentMargin.'%',
-            'suggested_price' => (float) $suggestedPrice,
+            'current_margin' => decimal_float($currentMargin).'%',
+            'suggested_price' => decimal_float($suggestedPrice),
             'target_margin' => $targetMarginPercent.'%',
-            'profit_per_unit' => (float) bcsub($suggestedPrice, (string) $cost, 2),
+            'profit_per_unit' => decimal_float(bcsub($suggestedPrice, (string) $cost, 2)),
             'price_points' => $pricePoints,
             'market_analysis' => $marketAnalysis,
-            'recommendation' => $this->generatePricingRecommendation((float) $suggestedPrice, $currentPrice, (float) $currentMargin),
+            'recommendation' => $this->generatePricingRecommendation(decimal_float($suggestedPrice), $currentPrice, decimal_float($currentMargin)),
         ];
     }
 
@@ -195,13 +195,13 @@ class SmartSuggestionsService
                 'bundle_with' => [
                     'product_id' => $item->product_id,
                     'product_name' => $item->name,
-                    'price' => (float) $item->default_price,
+                    'price' => decimal_float($item->default_price),
                 ],
                 'frequency' => $item->frequency,
-                'avg_quantity' => (float) $item->avg_quantity,
-                'individual_total' => (float) $totalPrice,
-                'suggested_bundle_price' => (float) $suggestedBundlePrice,
-                'customer_savings' => (float) $savings,
+                'avg_quantity' => decimal_float($item->avg_quantity),
+                'individual_total' => decimal_float($totalPrice),
+                'suggested_bundle_price' => decimal_float($suggestedBundlePrice),
+                'customer_savings' => decimal_float($savings),
                 'discount_percent' => '10%',
             ];
         })->filter();
@@ -243,8 +243,8 @@ class SmartSuggestionsService
                 return [
                     'product_id' => $product->id,
                     'product_name' => $product->name,
-                    'price' => (float) $product->default_price,
-                    'margin' => (float) $margin,
+                    'price' => decimal_float($product->default_price),
+                    'margin' => decimal_float($margin),
                     'category_id' => $product->category_id,
                     'upsell_potential' => $this->calculateUpsellPotential($product, $customer),
                 ];
@@ -275,7 +275,7 @@ class SmartSuggestionsService
             ->where('sales.sale_date', '>=', now()->subDays($days))
             ->sum('sale_items.quantity');
 
-        return (float) bcdiv((string) ($totalSold ?? 0), (string) $days, 2);
+        return decimal_float(bcdiv((string) ($totalSold ?? 0), (string) $days, 2));
     }
 
     /**
@@ -291,7 +291,7 @@ class SmartSuggestionsService
             ->where('product_id', $productId)
             ->sum('quantity');
 
-        return (float) ($totalStock ?? 0);
+        return decimal_float($totalStock ?? 0);
     }
 
     /**
@@ -413,7 +413,7 @@ class SmartSuggestionsService
 
         // Higher score for products with good margins
         $margin = bccomp((string) $product->default_price, '0', 2) > 0
-            ? (float) bcmul(bcdiv(bcsub((string) $product->default_price, (string) $product->standard_cost, 2), (string) $product->default_price, 4), '100', 2)
+            ? decimal_float(bcmul(bcdiv(bcsub((string) $product->default_price, (string) $product->standard_cost, 2), (string) $product->default_price, 4), '100', 2))
             : 0;
 
         if ($margin > 30) {

@@ -86,8 +86,8 @@ class Form extends Component
             $this->email = $customer->email ?? '';
             $this->phone = $customer->phone ?? '';
             $this->tax_number = $customer->tax_number ?? '';
-            $this->credit_limit = (float) ($customer->credit_limit ?? 0);
-            $this->discount_percentage = (float) ($customer->discount_percentage ?? 0);
+            $this->credit_limit = decimal_float($customer->credit_limit ?? 0);
+            $this->discount_percentage = decimal_float($customer->discount_percentage ?? 0);
             $this->payment_terms = $customer->payment_terms ?? '';
             $this->payment_due_days = (int) ($customer->payment_due_days ?? 0);
             $this->preferred_currency = $customer->preferred_currency ?? '';

@@ -317,7 +317,7 @@ class StoreSyncService
                 'name' => $data['title'] ?? 'Unknown Product',
                 'description' => strip_tags($data['body_html'] ?? ''),
                 'sku' => $data['variants'][0]['sku'] ?? 'SHOP-'.$externalId,
-                'default_price' => (float) ($data['variants'][0]['price'] ?? 0),
+                'default_price' => decimal_float($data['variants'][0]['price'] ?? 0),
                 'branch_id' => $store->branch_id,
             ];
 
@@ -407,10 +407,10 @@ class StoreSyncService
                 'warehouse_id' => $warehouseId, // V25-HIGH-03 FIX
                 'customer_id' => $customerId,
                 'sale_date' => $orderDate, // V25-HIGH-03 FIX
-                'subtotal' => (float) ($data['subtotal_price'] ?? 0),
-                'tax_amount' => (float) ($data['total_tax'] ?? 0),
-                'discount_amount' => (float) ($data['total_discounts'] ?? 0),
-                'total_amount' => (float) ($data['total_price'] ?? 0),
+                'subtotal' => decimal_float($data['subtotal_price'] ?? 0),
+                'tax_amount' => decimal_float($data['total_tax'] ?? 0),
+                'discount_amount' => decimal_float($data['total_discounts'] ?? 0),
+                'total_amount' => decimal_float($data['total_price'] ?? 0),
                 'status' => $status,
                 'channel' => 'shopify',
                 'external_reference' => $externalId,
@@ -455,10 +455,10 @@ class StoreSyncService
                     'product_id' => $productId,
                     'warehouse_id' => $warehouseId, // V29-HIGH-03 FIX
                     'quantity' => (int) ($lineItem['quantity'] ?? 1),
-                    'unit_price' => (float) ($lineItem['price'] ?? 0),
+                    'unit_price' => decimal_float($lineItem['price'] ?? 0),
                     'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
-                    'discount_amount' => (float) ($lineItem['total_discount'] ?? 0),
-                    'line_total' => (float) ($lineItem['quantity'] ?? 1) * (float) ($lineItem['price'] ?? 0) - (float) ($lineItem['total_discount'] ?? 0),
+                    'discount_amount' => decimal_float($lineItem['total_discount'] ?? 0),
+                    'line_total' => decimal_float($lineItem['quantity'] ?? 1) * decimal_float($lineItem['price'] ?? 0) - decimal_float($lineItem['total_discount'] ?? 0),
                 ]);
             }
 
@@ -485,7 +485,7 @@ class StoreSyncService
                 'name' => $data['name'] ?? 'Unknown Product',
                 'description' => strip_tags($data['description'] ?? ''),
                 'sku' => $data['sku'] ?? 'WOO-'.$externalId,
-                'default_price' => (float) ($data['price'] ?? 0),
+                'default_price' => decimal_float($data['price'] ?? 0),
                 'branch_id' => $store->branch_id,
             ];
 
@@ -578,10 +578,10 @@ class StoreSyncService
                 'warehouse_id' => $warehouseId, // V25-HIGH-03 FIX
                 'customer_id' => $customerId,
                 'sale_date' => $orderDate, // V25-HIGH-03 FIX
-                'subtotal' => (float) ($data['total'] ?? 0) - (float) ($data['total_tax'] ?? 0),
-                'tax_amount' => (float) ($data['total_tax'] ?? 0),
-                'discount_amount' => (float) ($data['discount_total'] ?? 0),
-                'total_amount' => (float) ($data['total'] ?? 0),
+                'subtotal' => decimal_float($data['total'] ?? 0) - decimal_float($data['total_tax'] ?? 0),
+                'tax_amount' => decimal_float($data['total_tax'] ?? 0),
+                'discount_amount' => decimal_float($data['discount_total'] ?? 0),
+                'total_amount' => decimal_float($data['total'] ?? 0),
                 'status' => $status,
                 'channel' => 'woocommerce',
                 'external_reference' => $externalId,
@@ -626,10 +626,10 @@ class StoreSyncService
                     'product_id' => $productId,
                     'warehouse_id' => $warehouseId, // V29-HIGH-03 FIX
                     'quantity' => (int) ($lineItem['quantity'] ?? 1),
-                    'unit_price' => (float) ($lineItem['price'] ?? 0),
+                    'unit_price' => decimal_float($lineItem['price'] ?? 0),
                     'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
                     'discount_amount' => 0,
-                    'line_total' => (float) ($lineItem['total'] ?? 0),
+                    'line_total' => decimal_float($lineItem['total'] ?? 0),
                 ]);
             }
 
@@ -753,8 +753,8 @@ class StoreSyncService
                 'name' => $data['name'] ?? 'Unknown Product',
                 'description' => $data['description'] ?? '',
                 'sku' => $data['sku'] ?? 'LAR-'.$externalId,
-                'default_price' => (float) ($data['default_price'] ?? $data['price'] ?? 0),
-                'cost' => (float) ($data['cost'] ?? 0),
+                'default_price' => decimal_float($data['default_price'] ?? $data['price'] ?? 0),
+                'cost' => decimal_float($data['cost'] ?? 0),
                 'branch_id' => $store->branch_id,
             ];
 
@@ -823,10 +823,10 @@ class StoreSyncService
             $sale = Sale::create([
                 'branch_id' => $store->branch_id,
                 'customer_id' => $customerId,
-                'subtotal' => (float) ($data['sub_total'] ?? $data['subtotal'] ?? 0),
-                'tax_amount' => (float) ($data['tax_total'] ?? $data['tax'] ?? 0),
-                'discount_amount' => (float) ($data['discount_total'] ?? $data['discount'] ?? 0),
-                'total_amount' => (float) ($data['grand_total'] ?? $data['total'] ?? 0),
+                'subtotal' => decimal_float($data['sub_total'] ?? $data['subtotal'] ?? 0),
+                'tax_amount' => decimal_float($data['tax_total'] ?? $data['tax'] ?? 0),
+                'discount_amount' => decimal_float($data['discount_total'] ?? $data['discount'] ?? 0),
+                'total_amount' => decimal_float($data['grand_total'] ?? $data['total'] ?? 0),
                 'status' => $data['status'] ?? 'pending',
                 'channel' => 'laravel',
                 'external_reference' => $externalId,
@@ -853,10 +853,10 @@ class StoreSyncService
                 // CRITICAL-05 FIX: Use correct SaleItem schema column names
                 $sale->items()->create([
                     'product_id' => $productId,
-                    'quantity' => (float) ($lineItem['qty'] ?? $lineItem['quantity'] ?? 1),
-                    'unit_price' => (float) ($lineItem['unit_price'] ?? $lineItem['price'] ?? 0),
-                    'discount_amount' => (float) ($lineItem['discount'] ?? 0),
-                    'line_total' => (float) ($lineItem['line_total'] ?? $lineItem['total'] ?? 0),
+                    'quantity' => decimal_float($lineItem['qty'] ?? $lineItem['quantity'] ?? 1),
+                    'unit_price' => decimal_float($lineItem['unit_price'] ?? $lineItem['price'] ?? 0),
+                    'discount_amount' => decimal_float($lineItem['discount'] ?? 0),
+                    'line_total' => decimal_float($lineItem['line_total'] ?? $lineItem['total'] ?? 0),
                 ]);
             }
         });
@@ -989,6 +989,6 @@ class StoreSyncService
         }
         
         // Use standard_cost if available, otherwise fall back to cost
-        return (float) ($product->standard_cost ?? $product->cost ?? 0);
+        return decimal_float($product->standard_cost ?? $product->cost ?? 0);
     }
 }

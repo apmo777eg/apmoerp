@@ -107,7 +107,7 @@ class ProjectTimeLog extends Model
     // Business Methods
     public function getCost(): float
     {
-        return (float) ($this->hours * $this->hourly_rate);
+        return decimal_float($this->hours * $this->hourly_rate);
     }
 
     public function isBillable(): bool

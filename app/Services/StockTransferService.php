@@ -102,7 +102,7 @@ class StockTransferService
                         $validated['from_warehouse_id']
                     );
 
-                    $requestedQty = (float) ($itemData['qty'] ?? 0);
+                    $requestedQty = decimal_float($itemData['qty'] ?? 0);
 
                     abort_if(
                         $availableStock < $requestedQty,
@@ -233,7 +233,7 @@ class StockTransferService
                         // Support both indexed array with 'id' field and associative array keyed by item ID
                         $itemId = $itemData['id'] ?? $key;
                         if (is_numeric($itemId) && isset($itemData['qty_shipped'])) {
-                            $itemQuantities[(int) $itemId] = (float) $itemData['qty_shipped'];
+                            $itemQuantities[(int) $itemId] = decimal_float($itemData['qty_shipped']);
                         }
                     }
                 }
@@ -335,8 +335,8 @@ class StockTransferService
             // V28-HIGH-02 FIX: Validate qty_damaged does not exceed qty_received for each item
             if (isset($receivingData['items']) && is_array($receivingData['items'])) {
                 foreach ($receivingData['items'] as $index => $itemData) {
-                    $qtyReceived = (float) ($itemData['qty_received'] ?? 0);
-                    $qtyDamaged = (float) ($itemData['qty_damaged'] ?? 0);
+                    $qtyReceived = decimal_float($itemData['qty_received'] ?? 0);
+                    $qtyDamaged = decimal_float($itemData['qty_damaged'] ?? 0);
                     if ($qtyDamaged > $qtyReceived) {
                         $validator->errors()->add(
                             "items.{$index}.qty_damaged",
@@ -375,8 +375,8 @@ class StockTransferService
                 foreach ($transfer->items as $item) {
                     $itemReceivingData = $itemReceivingMap[$item->id] ?? [];
 
-                    $qtyReceived = (float) ($itemReceivingData['qty_received'] ?? $item->qty_shipped);
-                    $qtyDamaged = (float) ($itemReceivingData['qty_damaged'] ?? 0);
+                    $qtyReceived = decimal_float($itemReceivingData['qty_received'] ?? $item->qty_shipped);
+                    $qtyDamaged = decimal_float($itemReceivingData['qty_damaged'] ?? 0);
 
                     // V6-MEDIUM-04 FIX: Enforce qty_received <= qty_shipped
                     if ($qtyReceived > $item->qty_shipped) {

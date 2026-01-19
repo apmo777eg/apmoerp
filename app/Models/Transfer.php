@@ -217,9 +217,9 @@ class Transfer extends BaseModel
      */
     public function calculateTotalValue(): float
     {
-        return (float) $this->items()
+        return decimal_float($this->items()
             ->selectRaw('SUM(quantity * unit_cost) as total')
-            ->value('total') ?? 0.0;
+            ->value('total') ?? 0.0);
     }
 
     /**

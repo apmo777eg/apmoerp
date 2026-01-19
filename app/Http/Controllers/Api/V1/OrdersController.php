@@ -224,10 +224,10 @@ class OrdersController extends BaseApiController
                     ];
                 }
 
-                $orderDiscount = max(0, (float) ($validated['discount'] ?? 0));
+                $orderDiscount = max(0, decimal_float($validated['discount'] ?? 0));
                 $orderDiscount = min($orderDiscount, max(0, $subTotal - $itemDiscountTotal));
-                $tax = max(0, (float) ($validated['tax'] ?? 0));
-                $shipping = max(0, (float) ($validated['shipping'] ?? 0));
+                $tax = max(0, decimal_float($validated['tax'] ?? 0));
+                $shipping = max(0, decimal_float($validated['shipping'] ?? 0));
                 $grandTotal = $subTotal - ($itemDiscountTotal + $orderDiscount) + $tax + $shipping;
 
                 // V31-MED-06 FIX: Get integration user ID for store token auth

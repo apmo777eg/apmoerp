@@ -92,10 +92,10 @@ class Run extends Component
                 $model = new Payroll;
                 $model->employee_id = $employee->id;
                 $model->period = $this->period;
-                $model->basic = (float) $basic;
-                $model->allowances = (float) $allowances;
-                $model->deductions = (float) $deductions;
-                $model->net = (float) $net;
+                $model->basic = decimal_float($basic);
+                $model->allowances = decimal_float($allowances);
+                $model->deductions = decimal_float($deductions);
+                $model->net = decimal_float($net);
                 $model->status = 'draft';
                 $model->extra_attributes = [];
                 $model->save();

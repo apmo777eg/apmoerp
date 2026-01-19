@@ -46,13 +46,13 @@ class ProductObserver
     {
         // Normalize numeric fields BEFORE save
         if ($product->isDirty('default_price') && $product->default_price !== null) {
-            $product->default_price = round((float) $product->default_price, 2);
+            $product->default_price = round(decimal_float($product->default_price), 2);
         }
         if ($product->isDirty('standard_cost') && $product->standard_cost !== null) {
-            $product->standard_cost = round((float) $product->standard_cost, 2);
+            $product->standard_cost = round(decimal_float($product->standard_cost), 2);
         }
         if ($product->isDirty('cost') && $product->cost !== null) {
-            $product->cost = round((float) $product->cost, 2);
+            $product->cost = round(decimal_float($product->cost), 2);
         }
     }
 

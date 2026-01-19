@@ -68,9 +68,10 @@ class StockTransferItem extends Model
 
     /**
      * Get variance between shipped and received
+     * Note: Uses 3 decimal places for quantity variance (not currency) to preserve precision
      */
     public function getVariance(): float
     {
-        return (float) bcsub((string)$this->qty_shipped, (string)$this->qty_received, 3);
+        return decimal_float(bcsub((string)$this->qty_shipped, (string)$this->qty_received, 3), 3);
     }
 }

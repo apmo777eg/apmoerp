@@ -46,7 +46,7 @@ class UpdateStockOnSale implements ShouldQueue
             }
             
             // Calculate actual quantity to deduct in base units
-            $baseQuantity = (float) $item->quantity * (float) $conversionFactor;
+            $baseQuantity = decimal_float($item->quantity) * decimal_float($conversionFactor);
 
             // Critical ERP Logic: Check for negative stock
             $allowNegativeStock = (bool) setting('inventory.allow_negative_stock', false);

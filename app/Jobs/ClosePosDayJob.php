@@ -70,8 +70,8 @@ class ClosePosDayJob implements ShouldQueue
                 $paidString = bcadd($paidString, (string) $sale->paid_amount, 2);
             }
 
-            $gross = (float) $grossString;
-            $paid = (float) $paidString;
+            $gross = decimal_float($grossString);
+            $paid = decimal_float($paidString);
 
             // Save a closing record if you have a model/table for that
             // V31-HIGH-04 FIX: closed_by is nullable for scheduled/CLI closings

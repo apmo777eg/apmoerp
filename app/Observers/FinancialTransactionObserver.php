@@ -139,18 +139,18 @@ class FinancialTransactionObserver
             $customer = Customer::find($model->customer_id);
             if ($customer) {
                 if ($operation === 'add') {
-                    $customer->addBalance((float) $model->total_amount);
+                    $customer->addBalance(decimal_float($model->total_amount));
                 } else {
-                    $customer->subtractBalance((float) $model->total_amount);
+                    $customer->subtractBalance(decimal_float($model->total_amount));
                 }
             }
         } elseif ($model instanceof Purchase && $model->supplier_id) {
             $supplier = Supplier::find($model->supplier_id);
             if ($supplier) {
                 if ($operation === 'add') {
-                    $supplier->addBalance((float) $model->total_amount);
+                    $supplier->addBalance(decimal_float($model->total_amount));
                 } else {
-                    $supplier->subtractBalance((float) $model->total_amount);
+                    $supplier->subtractBalance(decimal_float($model->total_amount));
                 }
             }
         }

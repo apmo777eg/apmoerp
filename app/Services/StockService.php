@@ -57,8 +57,8 @@ class StockService
 
         // quantity is signed: positive = in, negative = out
         // Simply sum all quantities to get current stock
-        return (float) $query->selectRaw('COALESCE(SUM(quantity), 0) as stock')
-            ->value('stock');
+        return decimal_float($query->selectRaw('COALESCE(SUM(quantity), 0) as stock')
+            ->value('stock'));
     }
 
     /**
@@ -127,7 +127,7 @@ class StockService
 
         // Calculate value: SUM(quantity * unit_cost)
         // COALESCE handles NULL unit_cost values (cross-database compatible)
-        return (float) ($query->selectRaw('SUM(quantity * COALESCE(unit_cost, 0)) as value')
+        return decimal_float($query->selectRaw('SUM(quantity * COALESCE(unit_cost, 0)) as value')
             ->value('value') ?? 0);
     }
 
@@ -163,11 +163,11 @@ class StockService
      */
     public static function getCurrentStockForBranch(int $productId, int $branchId): float
     {
-        return (float) DB::table('stock_movements')
+        return decimal_float(DB::table('stock_movements')
             ->join('warehouses', 'stock_movements.warehouse_id', '=', 'warehouses.id')
             ->where('stock_movements.product_id', $productId)
             ->where('warehouses.branch_id', $branchId)
-            ->sum('stock_movements.quantity');
+            ->sum('stock_movements.quantity'));
     }
 
     /**
@@ -318,11 +318,11 @@ class StockService
 
             // STILL-V7-HIGH-N07 FIX: Lock the rows for this product+warehouse combination
             // and calculate stock at database level for efficiency
-            $stockBefore = (float) DB::table('stock_movements')
+            $stockBefore = decimal_float(DB::table('stock_movements')
                 ->where('product_id', $productId)
                 ->where('warehouse_id', $warehouseId)
                 ->lockForUpdate()
-                ->sum('quantity');
+                ->sum('quantity'));
 
             $stockAfter = $stockBefore + $quantity;
 
@@ -377,8 +377,8 @@ class StockService
         // The quantity column already accounts for direction:
         // - Positive values = stock added (in)
         // - Negative values = stock removed (out)
-        $totalStock = (float) StockMovement::where('product_id', $productId)
-            ->sum('quantity');
+        $totalStock = decimal_float(StockMovement::where('product_id', $productId)
+            ->sum('quantity'));
 
         // Update the product's stock_quantity field (cached/denormalized value)
         DB::table('products')

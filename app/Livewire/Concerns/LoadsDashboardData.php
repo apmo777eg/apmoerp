@@ -225,7 +225,7 @@ trait LoadsDashboardData
             $date = now()->subDays($i);
             $dateKey = $date->format('Y-m-d');
             $labels[] = $date->format('D');
-            $data[] = (float) ($salesByDate[$dateKey] ?? 0);
+            $data[] = decimal_float($salesByDate[$dateKey] ?? 0);
         }
 
         return ['labels' => $labels, 'data' => $data];

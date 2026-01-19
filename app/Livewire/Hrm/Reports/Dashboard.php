@@ -123,7 +123,7 @@ class Dashboard extends Component
             ->map(function ($group, $period) {
                 return [
                     'period' => $period,
-                    'total_net' => (float) $group->sum('net'),
+                    'total_net' => decimal_float($group->sum('net')),
                 ];
             })
             ->values()

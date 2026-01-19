@@ -126,7 +126,7 @@ class Supplier extends BaseModel
     // Business logic methods
     public function getOverallRatingAttribute(): float
     {
-        return (float) ($this->rating ?? 0);
+        return decimal_float($this->rating ?? 0);
     }
 
     public function updateRating(float $newRating): void

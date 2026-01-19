@@ -100,8 +100,8 @@ class PurchaseReturnService
                 }
 
                 // V25-HIGH-07 FIX: Validate qty_returned does not exceed purchase item quantity
-                $qtyReturned = (float) $itemData['qty_returned'];
-                $purchaseQty = (float) $purchaseItem->quantity;
+                $qtyReturned = decimal_float($itemData['qty_returned']);
+                $purchaseQty = decimal_float($purchaseItem->quantity);
                 if ($qtyReturned > $purchaseQty) {
                     throw new \InvalidArgumentException(
                         "Return quantity ({$qtyReturned}) exceeds purchase quantity ({$purchaseQty}) for product ID {$itemData['product_id']}"
@@ -310,7 +310,7 @@ class PurchaseReturnService
             }
 
             // Skip items with zero quantity
-            if ((float) $item->qty_returned <= 0) {
+            if (decimal_float($item->qty_returned) <= 0) {
                 continue;
             }
 
@@ -319,13 +319,13 @@ class PurchaseReturnService
             $stockMovementRepo->create([
                 'product_id' => $item->product_id,
                 'warehouse_id' => $return->warehouse_id,
-                'qty' => (float) $item->qty_returned,
+                'qty' => decimal_float($item->qty_returned),
                 'direction' => 'out',
                 'movement_type' => 'purchase_return',
                 'reference_type' => 'purchase_return_item',
                 'reference_id' => $item->id,
                 'notes' => "Purchase return #{$return->return_number} to supplier",
-                'unit_cost' => (float) $item->unit_cost,
+                'unit_cost' => decimal_float($item->unit_cost),
                 'created_by' => Auth::id(),
             ]);
 

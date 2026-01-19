@@ -36,7 +36,7 @@ class ProductFieldValue extends Model
 
         return match ($field->field_type) {
             'number' => (int) $this->value,
-            'decimal' => (float) $this->value,
+            'decimal' => decimal_float($this->value),
             'checkbox' => (bool) $this->value,
             'date' => $this->value ? \Carbon\Carbon::parse($this->value) : null,
             'datetime' => $this->value ? \Carbon\Carbon::parse($this->value) : null,

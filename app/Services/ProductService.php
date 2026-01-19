@@ -110,12 +110,12 @@ class ProductService implements ProductServiceInterface
 
                         $price = $this->valueOrNull($row, $normalized, 'price');
                         if ($price !== null) {
-                            $product->default_price = (float) $price;
+                            $product->default_price = decimal_float($price);
                         }
 
                         $cost = $this->valueOrNull($row, $normalized, 'cost');
                         if ($cost !== null) {
-                            $product->cost = (float) $cost;
+                            $product->cost = decimal_float($cost);
                         }
 
                         $barcode = $this->valueOrNull($row, $normalized, 'barcode');

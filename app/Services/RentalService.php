@@ -130,7 +130,7 @@ class RentalService implements RentalServiceInterface
                     'tenant_id' => $tenantId,
                     'start_date' => $payload['start_date'],
                     'end_date' => $payload['end_date'],
-                    'rent' => (float) $payload['rent'],
+                    'rent' => decimal_float($payload['rent']),
                     'status' => 'active',
                 ]);
 
@@ -151,7 +151,7 @@ class RentalService implements RentalServiceInterface
                 }
                 $c = $query->findOrFail($contractId);
                 $c->end_date = $payload['end_date'];
-                $c->rent = (float) $payload['rent'];
+                $c->rent = decimal_float($payload['rent']);
                 $c->save();
 
                 return $c;
@@ -240,7 +240,7 @@ class RentalService implements RentalServiceInterface
 
                 // Use bcmath for precise payment tracking
                 $newPaidTotal = bcadd((string) ($i->paid_total ?? 0), (string) $amount, 2);
-                $i->paid_total = (float) $newPaidTotal;
+                $i->paid_total = decimal_float($newPaidTotal);
                 $i->status = bccomp($newPaidTotal, (string) $i->amount, 2) >= 0 ? 'paid' : 'unpaid';
                 $i->save();
 
@@ -268,7 +268,7 @@ class RentalService implements RentalServiceInterface
                 // Use bcmath for precise penalty addition
                 $penaltyToAdd = bccomp((string) $penalty, '0', 2) > 0 ? $penalty : 0;
                 $newAmount = bcadd((string) $i->amount, (string) $penaltyToAdd, 2);
-                $i->amount = (float) $newAmount;
+                $i->amount = decimal_float($newAmount);
                 $i->save();
 
                 return $i;
@@ -386,7 +386,7 @@ class RentalService implements RentalServiceInterface
 
         // Use bcmath for occupancy rate calculation
         $occupancyRate = $totalUnits > 0
-            ? (float) bcmul(bcdiv((string) $occupiedUnits, (string) $totalUnits, 4), '100', 2)
+            ? decimal_float(bcmul(bcdiv((string) $occupiedUnits, (string) $totalUnits, 4), '100', 2))
             : 0;
 
         return [
@@ -517,7 +517,7 @@ class RentalService implements RentalServiceInterface
 
         // Use bcmath for collection rate calculation
         $collectionRate = $totalAmount > 0
-            ? (float) bcmul(bcdiv((string) $collectedAmount, (string) $totalAmount, 4), '100', 2)
+            ? decimal_float(bcmul(bcdiv((string) $collectedAmount, (string) $totalAmount, 4), '100', 2))
             : 0;
 
         return [

@@ -187,7 +187,7 @@ class UIHelperService
         $value = $bytes;
 
         while ($value >= 1024 && $i < count($units) - 1) {
-            $value = (float) bcdiv((string) $value, '1024', $precision + 2);
+            $value = decimal_float(bcdiv((string) $value, '1024', $precision + 2));
             $i++;
         }
 

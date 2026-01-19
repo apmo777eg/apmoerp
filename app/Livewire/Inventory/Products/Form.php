@@ -129,8 +129,8 @@ class Form extends Component
             $this->form['name'] = (string) $p->name;
             $this->form['sku'] = $p->sku ?? '';
             $this->form['barcode'] = $p->barcode ?? '';
-            $this->form['price'] = (float) ($p->default_price ?? $p->price ?? 0);
-            $this->form['cost'] = (float) ($p->standard_cost ?? $p->cost ?? 0);
+            $this->form['price'] = decimal_float($p->default_price ?? $p->price ?? 0);
+            $this->form['cost'] = decimal_float($p->standard_cost ?? $p->cost ?? 0);
             $this->form['price_currency'] = $p->price_currency ?? $defaultCurrency;
             $this->form['cost_currency'] = $p->cost_currency ?? $defaultCurrency;
             $this->form['status'] = (string) ($p->status ?? 'active');
@@ -139,10 +139,10 @@ class Form extends Component
             $this->form['module_id'] = $p->module_id;
             $this->form['category_id'] = $p->category_id;
             $this->form['unit_id'] = $p->unit_id;
-            $this->form['min_stock'] = (float) ($p->min_stock ?? 0);
-            $this->form['max_stock'] = $p->max_stock ? (float) $p->max_stock : null;
-            $this->form['reorder_point'] = (float) ($p->reorder_point ?? 0);
-            $this->form['lead_time_days'] = $p->lead_time_days ? (float) $p->lead_time_days : null;
+            $this->form['min_stock'] = decimal_float($p->min_stock ?? 0);
+            $this->form['max_stock'] = $p->max_stock ? decimal_float($p->max_stock) : null;
+            $this->form['reorder_point'] = decimal_float($p->reorder_point ?? 0);
+            $this->form['lead_time_days'] = $p->lead_time_days ? decimal_float($p->lead_time_days) : null;
             $this->form['location_code'] = $p->location_code ?? '';
             $this->form['thumbnail'] = $p->thumbnail ?? '';
             $this->selectedModuleId = $p->module_id;

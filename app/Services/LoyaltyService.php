@@ -34,7 +34,7 @@ class LoyaltyService
                 // Calculate points: (grand_total / amount_per_point) * points_per_amount
                 $ratio = bcdiv((string) $sale->grand_total, $amountPerPoint, 4);
                 $pointsDecimal = bcmul($ratio, (string) $settings->points_per_amount, 2);
-                $points = (int) floor((float) $pointsDecimal);
+                $points = (int) floor(decimal_float($pointsDecimal));
 
                 if ($points <= 0) {
                     return null;
@@ -205,7 +205,7 @@ class LoyaltyService
             return 0;
         }
 
-        return (float) bcmul((string) $points, (string) $settings->redemption_rate, 2);
+        return decimal_float(bcmul((string) $points, (string) $settings->redemption_rate, 2));
     }
 
     protected function updateCustomerTier(Customer $customer): void

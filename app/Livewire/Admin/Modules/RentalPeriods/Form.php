@@ -70,7 +70,7 @@ class Form extends Component
         $this->period_type = $period->period_type;
         $this->duration_value = $period->duration_value;
         $this->duration_unit = $period->duration_unit;
-        $this->price_multiplier = (float) $period->price_multiplier;
+        $this->price_multiplier = decimal_float($period->price_multiplier);
         $this->is_default = $period->is_default;
         $this->is_active = $period->is_active;
         $this->sort_order = $period->sort_order;

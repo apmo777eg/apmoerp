@@ -189,7 +189,7 @@ trait CommonQueryScopes
             foreach ($moneySuffixes as $suffix) {
                 // Check if attribute ends with or equals the money suffix
                 if (str_ends_with($attribute, $suffix) || $attribute === $suffix) {
-                    return number_format((float) $value, 2);
+                    return number_format(decimal_float($value), 2);
                 }
             }
         }

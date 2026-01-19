@@ -68,12 +68,12 @@ class InstallmentPlan extends Model
 
     public function getPaidAmountAttribute(): float
     {
-        return (float) $this->payments()->sum('amount_paid');
+        return decimal_float($this->payments()->sum('amount_paid'));
     }
 
     public function getRemainingBalanceAttribute(): float
     {
-        return max(0, (float) $this->total_amount - (float) $this->down_payment - $this->paid_amount);
+        return max(0, decimal_float($this->total_amount) - decimal_float($this->down_payment) - $this->paid_amount);
     }
 
     public function getNextPaymentAttribute(): ?InstallmentPayment

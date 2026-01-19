@@ -203,10 +203,10 @@ class TimeLogs extends Component
             ->first();
 
         $statsArray = [
-            'total_hours' => (float) ($stats->total_hours ?? 0),
-            'billable_hours' => (float) ($stats->billable_hours ?? 0),
-            'non_billable_hours' => (float) ($stats->non_billable_hours ?? 0),
-            'total_cost' => (float) ($stats->total_cost ?? 0),
+            'total_hours' => decimal_float($stats->total_hours ?? 0),
+            'billable_hours' => decimal_float($stats->billable_hours ?? 0),
+            'non_billable_hours' => decimal_float($stats->non_billable_hours ?? 0),
+            'total_cost' => decimal_float($stats->total_cost ?? 0),
         ];
 
         return view('livewire.projects.time-logs', [

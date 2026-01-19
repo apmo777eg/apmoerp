@@ -23,11 +23,11 @@ class CustomerResource extends JsonResource
             'tax_number' => $this->tax_number,
             'credit_limit' => $this->when(
                 $request->user()?->can('customers.view-financial'),
-                (float) ($this->credit_limit ?? 0.0)
+                decimal_float($this->credit_limit ?? 0.0)
             ),
             'discount_percentage' => $this->when(
                 $request->user()?->can('customers.view-financial'),
-                (float) ($this->discount_percentage ?? 0.0)
+                decimal_float($this->discount_percentage ?? 0.0)
             ),
             'payment_terms' => $this->payment_terms,
             'payment_due_days' => (int) ($this->payment_due_days ?? 30),
@@ -35,7 +35,7 @@ class CustomerResource extends JsonResource
             'preferred_currency' => $this->preferred_currency,
             'balance' => $this->when(
                 $request->user()?->can('customers.view-financial'),
-                (float) ($this->balance ?? 0.0)
+                decimal_float($this->balance ?? 0.0)
             ),
             'status' => $this->status,
             'loyalty_points' => $this->loyalty_points,
@@ -47,7 +47,7 @@ class CustomerResource extends JsonResource
             ),
             'total_purchases' => $this->when(
                 $request->user()?->can('customers.view-financial'),
-                (float) ($this->total_purchases ?? 0.0)
+                decimal_float($this->total_purchases ?? 0.0)
             ),
             'notes' => $this->notes,
             'created_at' => $this->created_at?->toIso8601String(),

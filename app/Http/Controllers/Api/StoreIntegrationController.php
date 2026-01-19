@@ -113,7 +113,7 @@ class StoreIntegrationController extends Controller
                     'id' => $product->getKey(),
                     'sku' => $product->sku,
                     'name' => $product->name,
-                    'current_stock' => (float) ($product->current_stock ?? 0),
+                    'current_stock' => decimal_float($product->current_stock ?? 0),
                 ];
             })
             ->values()

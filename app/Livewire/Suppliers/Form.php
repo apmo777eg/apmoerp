@@ -112,11 +112,11 @@ class Form extends Component
             $this->company_name = $supplier->company_name ?? '';
             $this->contact_person = $supplier->contact_person ?? '';
             $this->payment_terms = $supplier->payment_terms ?? '';
-            $this->minimum_order_value = (float) ($supplier->minimum_order_value ?? 0);
+            $this->minimum_order_value = decimal_float($supplier->minimum_order_value ?? 0);
             $this->supplier_rating = $supplier->supplier_rating ?? '';
-            $this->quality_rating = (float) ($supplier->quality_rating ?? 0);
-            $this->delivery_rating = (float) ($supplier->delivery_rating ?? 0);
-            $this->service_rating = (float) ($supplier->service_rating ?? 0);
+            $this->quality_rating = decimal_float($supplier->quality_rating ?? 0);
+            $this->delivery_rating = decimal_float($supplier->delivery_rating ?? 0);
+            $this->service_rating = decimal_float($supplier->service_rating ?? 0);
             $this->notes = $supplier->notes ?? '';
             $this->is_active = (bool) ($supplier->is_active ?? true);
         }

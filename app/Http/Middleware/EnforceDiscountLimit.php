@@ -40,14 +40,14 @@ class EnforceDiscountLimit
         // Validate line discounts
         $items = (array) ($payload['items'] ?? []);
         foreach ($items as $idx => $row) {
-            $disc = (float) ($row['discount'] ?? 0);
+            $disc = decimal_float($row['discount'] ?? 0);
             if ($disc > $maxLine) {
                 return $this->error('Line #'.($idx + 1)." discount exceeds your limit ($maxLine%).", 422);
             }
         }
 
         // Validate invoice-level discount
-        $invDisc = (float) ($payload['invoice_discount'] ?? 0);
+        $invDisc = decimal_float($payload['invoice_discount'] ?? 0);
         if ($invDisc > $maxInvoice) {
             return $this->error("Invoice discount exceeds your limit ($maxInvoice%).", 422);
         }

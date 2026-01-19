@@ -64,10 +64,10 @@ class OrdersDashboard extends Component
         $ordersForStats = (clone $query)->get();
 
         $totalOrders = $ordersForStats->count();
-        $totalRevenue = (float) $ordersForStats->sum('total');
-        $totalDiscount = (float) $ordersForStats->sum('discount_total');
-        $totalShipping = (float) $ordersForStats->sum('shipping_total');
-        $totalTax = (float) $ordersForStats->sum('tax_total');
+        $totalRevenue = decimal_float($ordersForStats->sum('total'));
+        $totalDiscount = decimal_float($ordersForStats->sum('discount_total'));
+        $totalShipping = decimal_float($ordersForStats->sum('shipping_total'));
+        $totalTax = decimal_float($ordersForStats->sum('tax_total'));
 
         $sources = [];
         foreach ($ordersForStats as $order) {
@@ -81,7 +81,7 @@ class OrdersDashboard extends Component
             }
 
             $sources[$source]['count']++;
-            $sources[$source]['revenue'] += (float) $order->total;
+            $sources[$source]['revenue'] += decimal_float($order->total);
         }
 
         $sources = collect($sources)
@@ -118,7 +118,7 @@ class OrdersDashboard extends Component
                 return ucfirst($s['source']);
             }, $sources),
             'values' => array_map(static function (array $s): float {
-                return (float) $s['revenue'];
+                return decimal_float($s['revenue']);
             }, $sources),
         ];
 
@@ -136,7 +136,7 @@ class OrdersDashboard extends Component
             }
 
             $dayLabels[] = $date;
-            $dayValues[] = (float) $items->sum('total');
+            $dayValues[] = decimal_float($items->sum('total'));
         }
 
         $chartOrdersByDay = [

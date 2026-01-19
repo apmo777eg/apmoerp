@@ -192,7 +192,7 @@ class Project extends Model
 
     public function getTotalBudget(): float
     {
-        return (float) $this->budget;
+        return decimal_float($this->budget);
     }
 
     public function getTotalActualCost(): float
@@ -205,7 +205,7 @@ class Project extends Model
             ->where('status', 'approved')
             ->sum('amount') ?? 0;
 
-        return (float) ($timeLogsCost + $expensesCost);
+        return decimal_float($timeLogsCost + $expensesCost);
     }
 
     public function getBudgetVariance(): float

@@ -80,7 +80,7 @@ class InventoryReportsExportController extends Controller
 
         $rows = $products->map(function (Product $product) use ($validated, $columns, $stockData) {
             // STILL-V14-CRITICAL-01 FIX: Use stock from stock_movements (source of truth)
-            $stock = (float) ($stockData[$product->id] ?? 0);
+            $stock = decimal_float($stockData[$product->id] ?? 0);
             $reorder = $product->reorder_point ?? 0;
 
             if (! empty($validated['only_low']) && $reorder > 0 && $stock > $reorder) {

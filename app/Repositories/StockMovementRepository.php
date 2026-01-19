@@ -138,7 +138,7 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             ];
 
             // Handle quantity: direction 'out' should be negative
-            $qty = abs((float) ($data['qty'] ?? $data['quantity'] ?? 0));
+            $qty = abs(decimal_float($data['qty'] ?? $data['quantity'] ?? 0));
             $direction = $data['direction'] ?? 'in';
 
             if ($direction === 'out') {

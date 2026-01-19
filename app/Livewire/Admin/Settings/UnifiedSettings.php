@@ -253,19 +253,19 @@ class UnifiedSettings extends Component
 
         // Load HRM settings
         $this->hrm_working_days_per_week = (int) ($settings['hrm.working_days_per_week'] ?? 5);
-        $this->hrm_working_hours_per_day = (float) ($settings['hrm.working_hours_per_day'] ?? 8.0);
+        $this->hrm_working_hours_per_day = decimal_float($settings['hrm.working_hours_per_day'] ?? 8.0);
         $this->hrm_late_arrival_threshold = (int) ($settings['hrm.late_arrival_threshold'] ?? 15);
         $this->hrm_transport_allowance_type = $settings['hrm.transport_allowance_type'] ?? 'percentage';
-        $this->hrm_transport_allowance_value = (float) ($settings['hrm.transport_allowance_value'] ?? 10.0);
+        $this->hrm_transport_allowance_value = decimal_float($settings['hrm.transport_allowance_value'] ?? 10.0);
         $this->hrm_housing_allowance_type = $settings['hrm.housing_allowance_type'] ?? 'percentage';
-        $this->hrm_housing_allowance_value = (float) ($settings['hrm.housing_allowance_value'] ?? 0.0);
-        $this->hrm_meal_allowance = (float) ($settings['hrm.meal_allowance'] ?? 0.0);
-        $this->hrm_health_insurance_deduction = (float) ($settings['hrm.health_insurance_deduction'] ?? 0.0);
+        $this->hrm_housing_allowance_value = decimal_float($settings['hrm.housing_allowance_value'] ?? 0.0);
+        $this->hrm_meal_allowance = decimal_float($settings['hrm.meal_allowance'] ?? 0.0);
+        $this->hrm_health_insurance_deduction = decimal_float($settings['hrm.health_insurance_deduction'] ?? 0.0);
 
         // Load rental settings
         $this->rental_grace_period_days = (int) ($settings['rental.grace_period_days'] ?? 5);
         $this->rental_penalty_type = $settings['rental.penalty_type'] ?? 'percentage';
-        $this->rental_penalty_value = (float) ($settings['rental.penalty_value'] ?? 5.0);
+        $this->rental_penalty_value = decimal_float($settings['rental.penalty_value'] ?? 5.0);
 
         // Load sales settings
         $this->sales_payment_terms_days = (int) ($settings['sales.payment_terms_days'] ?? 30);

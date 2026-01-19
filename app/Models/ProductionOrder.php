@@ -172,13 +172,13 @@ class ProductionOrder extends BaseModel
      */
     public function getCompletionPercentageAttribute(): float
     {
-        $plannedQty = (float) ($this->planned_quantity ?? 0);
+        $plannedQty = decimal_float($this->planned_quantity ?? 0);
         // Prevent division by zero
         if ($plannedQty <= 0) {
             return 0.0;
         }
 
-        return ((float) ($this->produced_quantity ?? 0) / $plannedQty) * 100;
+        return (decimal_float($this->produced_quantity ?? 0) / $plannedQty) * 100;
     }
 
     /**
@@ -186,7 +186,7 @@ class ProductionOrder extends BaseModel
      */
     public function getRemainingQuantityAttribute(): float
     {
-        return (float) $this->planned_quantity - (float) $this->produced_quantity - (float) $this->rejected_quantity;
+        return decimal_float($this->planned_quantity) - decimal_float($this->produced_quantity) - decimal_float($this->rejected_quantity);
     }
 
     /**

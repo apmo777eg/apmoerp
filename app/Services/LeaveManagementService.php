@@ -618,7 +618,7 @@ class LeaveManagementService
                 );
                 
                 // Use the pre-calculated days_count which already excludes holidays
-                $daysToDeduct = (float) $leaveRequest->days_count;
+                $daysToDeduct = decimal_float($leaveRequest->days_count);
                 
                 // Verify balance is still sufficient
                 if ($balance->available_balance < $daysToDeduct) {

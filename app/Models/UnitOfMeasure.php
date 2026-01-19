@@ -84,9 +84,9 @@ class UnitOfMeasure extends Model
             return $value;
         }
 
-        $baseValue = $value * (float) $this->conversion_factor;
+        $baseValue = $value * decimal_float($this->conversion_factor);
 
-        $targetFactor = (float) $targetUnit->conversion_factor;
+        $targetFactor = decimal_float($targetUnit->conversion_factor);
 
         // Prevent division by zero - conversion factors should be positive for inventory units
         if ($targetFactor == 0) {

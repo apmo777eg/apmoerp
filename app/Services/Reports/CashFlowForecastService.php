@@ -36,11 +36,11 @@ class CashFlowForecastService
         );
 
         return [
-            'current_cash' => (float) $currentCash,
+            'current_cash' => decimal_float($currentCash),
             'forecast_period_days' => $daysAhead,
-            'total_expected_inflows' => (float) $expectedInflows->sum('amount'),
-            'total_expected_outflows' => (float) $expectedOutflows->sum('amount'),
-            'ending_cash_forecast' => (float) $dailyForecast->last()['ending_balance'],
+            'total_expected_inflows' => decimal_float($expectedInflows->sum('amount')),
+            'total_expected_outflows' => decimal_float($expectedOutflows->sum('amount')),
+            'ending_cash_forecast' => decimal_float($dailyForecast->last()['ending_balance']),
             'daily_forecast' => $dailyForecast,
             'cash_shortage_dates' => $this->identifyCashShortages($dailyForecast),
             'recommendations' => $this->getRecommendations($dailyForecast),
@@ -135,10 +135,10 @@ class CashFlowForecastService
             $forecast->push([
                 'date' => $dateStr,
                 'day' => $i + 1,
-                'inflows' => (float) $dailyInflowsStr,
-                'outflows' => (float) $dailyOutflowsStr,
-                'net_flow' => (float) $netFlow,
-                'ending_balance' => (float) $runningBalance,
+                'inflows' => decimal_float($dailyInflowsStr),
+                'outflows' => decimal_float($dailyOutflowsStr),
+                'net_flow' => decimal_float($netFlow),
+                'ending_balance' => decimal_float($runningBalance),
                 'status' => bccomp($runningBalance, '0', 2) >= 0 ? 'healthy' : 'shortage',
             ]);
         }

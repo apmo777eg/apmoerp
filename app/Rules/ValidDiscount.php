@@ -32,7 +32,7 @@ class ValidDiscount implements ValidationRule
 
             return;
         }
-        $num = (float) $value;
+        $num = decimal_float($value);
         if ($this->percentage) {
             if ($num < 0 || $num > $this->maxPercent) {
                 $fail('Discount percent out of range.');

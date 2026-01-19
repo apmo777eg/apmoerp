@@ -343,7 +343,7 @@ class InventoryController extends BaseApiController
 
         // quantity is signed: positive = in, negative = out
         // SECURITY: Uses parameter binding for SUM calculation (no user input in SQL)
-        return (float) ($query->selectRaw('SUM(quantity) as balance')
+        return decimal_float($query->selectRaw('SUM(quantity) as balance')
             ->value('balance') ?? 0);
     }
 

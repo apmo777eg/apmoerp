@@ -160,18 +160,18 @@ class Form extends Component
             $this->expected_delivery_date = $purchase->expected_delivery_date?->format('Y-m-d') ?? '';
             $this->actual_delivery_date = $purchase->actual_delivery_date?->format('Y-m-d') ?? '';
             $this->shipping_method = $purchase->shipping_method ?? '';
-            $this->discount_total = (float) ($purchase->discount_total ?? 0);
-            $this->shipping_total = (float) ($purchase->shipping_total ?? 0);
+            $this->discount_total = decimal_float($purchase->discount_total ?? 0);
+            $this->shipping_total = decimal_float($purchase->shipping_total ?? 0);
 
             $this->items = $purchase->items->map(fn ($item) => [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
                 'product_name' => $item->product?->name ?? '',
                 'sku' => $item->product?->sku ?? '',
-                'qty' => (float) $item->qty,
-                'unit_cost' => (float) $item->unit_cost,
-                'discount' => (float) ($item->discount ?? 0),
-                'tax_rate' => (float) ($item->tax_rate ?? 0),
+                'qty' => decimal_float($item->qty),
+                'unit_cost' => decimal_float($item->unit_cost),
+                'discount' => decimal_float($item->discount ?? 0),
+                'tax_rate' => decimal_float($item->tax_rate ?? 0),
             ])->toArray();
         }
     }
@@ -236,7 +236,7 @@ class Form extends Component
                 'product_name' => $product->name,
                 'sku' => $product->sku ?? '',
                 'qty' => 1,
-                'unit_cost' => (float) ($product->cost ?? 0),
+                'unit_cost' => decimal_float($product->cost ?? 0),
                 'discount' => 0,
                 'tax_rate' => 0,
             ];
@@ -354,7 +354,7 @@ class Form extends Component
                             // V22-HIGH-05 FIX: Calculate discount_percent from discount amount
                             // The UI allows entering a discount amount, which needs to be converted to percentage
                             $lineSubtotal = $item['qty'] * $item['unit_cost'];
-                            $discountAmount = max(0, (float) ($item['discount'] ?? 0));
+                            $discountAmount = max(0, decimal_float($item['discount'] ?? 0));
 
                             // Calculate discount_percent from the discount amount (if lineSubtotal > 0)
                             $discountPercent = 0;

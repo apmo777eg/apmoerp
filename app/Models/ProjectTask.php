@@ -147,13 +147,13 @@ class ProjectTask extends Model
 
     public function getTimeSpent(): float
     {
-        return (float) $this->timeLogs()->sum('hours');
+        return decimal_float($this->timeLogs()->sum('hours'));
     }
 
     public function getTimeRemaining(): float
     {
         $spent = $this->getTimeSpent();
-        $estimated = (float) $this->estimated_hours;
+        $estimated = decimal_float($this->estimated_hours);
 
         return max(0, $estimated - $spent);
     }

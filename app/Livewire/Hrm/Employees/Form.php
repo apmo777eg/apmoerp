@@ -90,7 +90,7 @@ class Form extends Component
             $this->form['code'] = (string) $employeeModel->code;
             $this->form['name'] = (string) $employeeModel->name;
             $this->form['position'] = $employeeModel->position ?? '';
-            $this->form['salary'] = (float) ($employeeModel->salary ?? 0);
+            $this->form['salary'] = decimal_float($employeeModel->salary ?? 0);
             $this->form['is_active'] = (bool) ($employeeModel->is_active ?? true);
             $this->form['branch_id'] = (int) ($employeeModel->branch_id ?? $this->form['branch_id']);
             $this->form['user_id'] = $employeeModel->user_id ? (int) $employeeModel->user_id : null;
@@ -175,7 +175,7 @@ class Form extends Component
         $employee->code = (string) $this->form['code'];
         $employee->name = (string) $this->form['name'];
         $employee->position = $this->form['position'] !== '' ? (string) $this->form['position'] : null;
-        $employee->salary = (float) $this->form['salary'];
+        $employee->salary = decimal_float($this->form['salary']);
         $employee->is_active = (bool) $this->form['is_active'];
         $employee->user_id = $this->form['user_id'] ? (int) $this->form['user_id'] : null;
 

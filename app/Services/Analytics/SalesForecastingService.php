@@ -124,8 +124,8 @@ class SalesForecastingService
         return $query->get()->map(fn ($row) => [
             'period' => $row->period,
             'order_count' => (int) $row->order_count,
-            'revenue' => (float) $row->revenue,
-            'avg_order_value' => (float) $row->avg_order_value,
+            'revenue' => decimal_float($row->revenue),
+            'avg_order_value' => decimal_float($row->avg_order_value),
         ])->toArray();
     }
 
@@ -296,7 +296,7 @@ class SalesForecastingService
             ->map(fn ($row) => [
                 'period' => $row->period,
                 'order_count' => (int) $row->quantity,
-                'revenue' => (float) $row->revenue,
+                'revenue' => decimal_float($row->revenue),
                 'avg_order_value' => $row->quantity > 0 ? $row->revenue / $row->quantity : 0,
             ])
             ->toArray();

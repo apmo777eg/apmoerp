@@ -42,7 +42,7 @@ class InstallmentPayment extends Model
 
     public function getRemainingAmountAttribute(): float
     {
-        return max(0, (float) $this->amount_due - (float) ($this->amount_paid ?? 0));
+        return max(0, decimal_float($this->amount_due) - decimal_float($this->amount_paid ?? 0));
     }
 
     public function isOverdue(): bool

@@ -564,8 +564,8 @@ class ImportService
             'name' => $data['name'],
             'sku' => $data['sku'] ?? null,
             'barcode' => $data['barcode'] ?? null,
-            'default_price' => (float) ($data['default_price'] ?? 0),
-            'cost' => (float) ($data['cost'] ?? 0),
+            'default_price' => decimal_float($data['default_price'] ?? 0),
+            'cost' => decimal_float($data['cost'] ?? 0),
             'min_stock' => (int) ($data['min_stock'] ?? 0),
             'status' => $isActive ? 'active' : 'inactive', // V21-HIGH-07 Fix
             'branch_id' => $branchId,
@@ -584,7 +584,7 @@ class ImportService
             'city' => $data['city'] ?? null,
             'country' => $data['country'] ?? null,
             'tax_id' => $data['tax_id'] ?? null,
-            'credit_limit' => (float) ($data['credit_limit'] ?? 0),
+            'credit_limit' => decimal_float($data['credit_limit'] ?? 0),
             'branch_id' => $branchId,
             'is_active' => true,
         ];

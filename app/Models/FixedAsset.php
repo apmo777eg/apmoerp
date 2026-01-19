@@ -153,8 +153,8 @@ class FixedAsset extends BaseModel
      */
     public function isFullyDepreciated(): bool
     {
-        $currentValue = (float) ($this->current_value ?? 0);
-        $salvageValue = (float) ($this->salvage_value ?? 0);
+        $currentValue = decimal_float($this->current_value ?? 0);
+        $salvageValue = decimal_float($this->salvage_value ?? 0);
 
         return $currentValue <= $salvageValue;
     }
@@ -172,8 +172,8 @@ class FixedAsset extends BaseModel
      */
     public function getMonthlyDepreciation(): float
     {
-        $purchaseCost = (float) ($this->purchase_cost ?? 0);
-        $salvageValue = (float) ($this->salvage_value ?? 0);
+        $purchaseCost = decimal_float($this->purchase_cost ?? 0);
+        $salvageValue = decimal_float($this->salvage_value ?? 0);
 
         // Prevent negative depreciable amounts when salvage exceeds purchase cost
         $depreciableAmount = max(0, $purchaseCost - $salvageValue);
