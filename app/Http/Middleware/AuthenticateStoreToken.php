@@ -15,20 +15,24 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Store Token Authentication Middleware
  *
- * SECURITY (V37-HIGH-03): API Token Security
- * ==========================================
+ * SECURITY (V40-HIGH-39/40): API Token Security
+ * ==============================================
  * This middleware handles API token authentication for store integrations.
  *
  * Token Extraction Priority:
- * 1. Authorization: Bearer header (SECURE - recommended)
- * 2. Query parameter 'api_token' (DEPRECATED - leaks via logs/referrers)
- * 3. Request body 'api_token' (DEPRECATED - still insecure)
+ * 1. Authorization: Bearer header (SECURE - required by default)
+ * 2. Query parameter 'api_token' (DEPRECATED - disabled by default, leaks via logs/referrers)
+ * 3. Request body 'api_token' (DEPRECATED - disabled by default, still insecure)
  *
- * Security can be tightened via config/auth.php 'store_token' settings:
- * - allow_deprecated_methods: false → Rejects query/body tokens, header only
+ * Security Configuration (config/auth.php 'store_token' settings):
+ * - allow_deprecated_methods: false (default) → Only Authorization: Bearer header accepted
+ * - allow_deprecated_methods: true → Also accepts query/body tokens (legacy mode)
  *
- * When deprecated methods are used, a warning is logged and X-Deprecation-Warning
+ * When deprecated methods are enabled and used, a warning is logged and X-Deprecation-Warning
  * header is added to the response to inform clients to migrate.
+ *
+ * V40-HIGH-39/40 FIX: Default changed to reject query/body tokens to prevent token leakage
+ * via logs, referrers, and browser history.
  */
 class AuthenticateStoreToken
 {
@@ -184,10 +188,11 @@ class AuthenticateStoreToken
             return [substr($authHeader, 7), 'header'];
         }
 
-        // V37-HIGH-03 FIX: Security configuration for deprecated token methods
-        // When both options are false, deprecated methods (query/body) are rejected.
-        // Default: allow_deprecated = true, so legacy clients continue to work.
-        $allowDeprecated = config('auth.store_token.allow_deprecated_methods', true);
+        // V40-HIGH-39/40 FIX: Security configuration for deprecated token methods
+        // When allow_deprecated is false, deprecated methods (query/body) are rejected.
+        // Default: allow_deprecated = false for secure posture. Set to true only for legacy migration.
+        // Tokens in query strings leak via logs, referrers, and browser history.
+        $allowDeprecated = config('auth.store_token.allow_deprecated_methods', false);
 
         if (! $allowDeprecated) {
             // Strict mode: only Authorization: Bearer header is accepted

@@ -134,7 +134,10 @@ return [
     */
 
     'store_token' => [
-        'allow_deprecated_methods' => env('STORE_TOKEN_ALLOW_DEPRECATED', true),
+        // V40-HIGH-39/40 FIX: Default to false for secure posture
+        // Tokens in query strings leak via logs, referrers, and browser history.
+        // Set STORE_TOKEN_ALLOW_DEPRECATED=true only if legacy clients need migration time.
+        'allow_deprecated_methods' => env('STORE_TOKEN_ALLOW_DEPRECATED', false),
     ],
 
 ];

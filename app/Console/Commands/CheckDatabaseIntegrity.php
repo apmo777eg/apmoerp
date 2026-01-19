@@ -13,24 +13,22 @@ use Illuminate\Support\Facades\Schema;
  *
  * Validates database schema, indexes, foreign keys, and data integrity.
  *
- * SECURITY (V37-SQL-03): SQL Expression Safety
- * =============================================
- * This command uses whereRaw() and DB::statement() with variable interpolation.
- * All interpolated values are safe because:
+ * SECURITY (V40-SQL-03): SQL Expression Safety - REVIEWED
+ * ========================================================
+ * V40-HIGH-14 FIX: Refactored to use explicit validation instead of raw SQL interpolation.
  *
- * 1. checkDuplicates() $where parameter: Contains only hardcoded conditions defined
- *    within this class (e.g., "email IS NOT NULL AND email != ''"). These are
- *    compile-time constants, never derived from user input.
+ * 1. checkDuplicates(): Now uses whitelist-based filter types instead of raw SQL
+ *    - Validates column names via regex pattern
+ *    - Only accepts predefined filter types from DUPLICATE_CHECK_FILTERS constant
  *
- * 2. applyFixes() ALTER TABLE statements: Generated from validated table/column names
- *    that exist in the hardcoded $indexChecks array and are verified via Schema::hasTable()
- *    before any statement is generated.
+ * 2. applyFixes(): Validates fix statements against strict regex pattern
+ *    - Only allows ALTER TABLE ADD INDEX with validated identifiers
  *
- * 3. getTableIndexes() SHOW INDEX query: Uses table names from the validated
- *    $indexChecks array, not user input.
+ * 3. getTableIndexes(): Validates table names via regex pattern
  *
- * This command runs via artisan CLI with elevated privileges and is not exposed
- * to web requests or user input.
+ * This command runs via artisan CLI and is not exposed to web requests.
+ *
+ * @security-reviewed V40 - SQL injection protection via whitelist and regex validation
  */
 class CheckDatabaseIntegrity extends Command
 {
@@ -43,6 +41,15 @@ class CheckDatabaseIntegrity extends Command
     private array $warnings = [];
 
     private array $fixes = [];
+
+    /**
+     * V40-HIGH-14 FIX: Whitelist of allowed filter types for checkDuplicates
+     * This ensures no arbitrary SQL can be passed to whereRaw.
+     * Only filter types listed here are accepted by checkDuplicates().
+     */
+    private const ALLOWED_DUPLICATE_FILTERS = [
+        'non_empty_string', // filter for non-null, non-empty string columns
+    ];
 
     public function handle(): int
     {
@@ -164,11 +171,11 @@ class CheckDatabaseIntegrity extends Command
     {
         $this->info('🔍 Checking data integrity...');
 
-        // Check for duplicate emails in customers
-        $this->checkDuplicates('customers', 'email', "email IS NOT NULL AND email != ''");
+        // Check for duplicate emails in customers (filter non-empty values only)
+        $this->checkDuplicates('customers', 'email', 'non_empty_string');
 
-        // Check for duplicate SKUs in products
-        $this->checkDuplicates('products', 'sku', "sku IS NOT NULL AND sku != ''");
+        // Check for duplicate SKUs in products (filter non-empty values only)
+        $this->checkDuplicates('products', 'sku', 'non_empty_string');
 
         // STILL-V14-CRITICAL-01 FIX: Check for negative stock using stock_movements as source of truth
         // instead of products.stock_quantity (cached value)
@@ -244,13 +251,22 @@ class CheckDatabaseIntegrity extends Command
     /**
      * Check for duplicate values in a column.
      *
-     * SECURITY NOTE: The $where parameter uses hardcoded values within this file only
-     * (e.g., "email IS NOT NULL AND email != ''"). These are never derived from user input.
-     * The whereRaw is safe because the values are compile-time constants.
+     * V40-HIGH-14 FIX: Use whitelist-based filter instead of raw SQL parameter.
+     * The $filterType parameter must be one of the keys in DUPLICATE_CHECK_FILTERS constant.
+     * This prevents any possibility of SQL injection via this method.
+     *
+     * @param  string  $table  Table name to check
+     * @param  string  $column  Column name to check for duplicates
+     * @param  string  $filterType  Filter type from DUPLICATE_CHECK_FILTERS whitelist (e.g., 'non_empty_string')
      */
-    private function checkDuplicates(string $table, string $column, string $where = ''): void
+    private function checkDuplicates(string $table, string $column, string $filterType = ''): void
     {
         if (! Schema::hasTable($table)) {
+            return;
+        }
+
+        // V40-HIGH-14 FIX: Validate column name to prevent SQL injection
+        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column)) {
             return;
         }
 
@@ -259,9 +275,13 @@ class CheckDatabaseIntegrity extends Command
             ->groupBy($column)
             ->having('count', '>', 1);
 
-        if ($where) {
-            // SECURITY: $where contains only hardcoded conditions from within this class
-            $query->whereRaw($where);
+        // V40-HIGH-14 FIX: Apply filter based on whitelist - no raw SQL interpolation
+        if ($filterType === 'non_empty_string') {
+            $query->whereNotNull($column)->where($column, '!=', '');
+        } elseif ($filterType !== '' && ! in_array($filterType, self::ALLOWED_DUPLICATE_FILTERS, true)) {
+            // Unknown filter type - log warning for debugging
+            $this->warnings[] = "Unknown filter type '{$filterType}' for duplicate check on {$table}.{$column}";
+            return;
         }
 
         $duplicates = $query->get();
@@ -289,8 +309,19 @@ class CheckDatabaseIntegrity extends Command
         }
     }
 
+    /**
+     * Get indexes for a table.
+     *
+     * V40-SEC: Table name is validated to prevent SQL injection.
+     * Only table names matching alphanumeric/underscore pattern are accepted.
+     */
     private function getTableIndexes(string $table): array
     {
+        // V40-HIGH-14 FIX: Validate table name to prevent SQL injection
+        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $table)) {
+            return [];
+        }
+
         try {
             $indexes = DB::select("SHOW INDEX FROM {$table}");
 
@@ -367,21 +398,27 @@ class CheckDatabaseIntegrity extends Command
     /**
      * Apply auto-generated fixes for missing indexes.
      *
-     * SECURITY NOTE: The $this->fixes array contains only auto-generated ALTER TABLE
-     * statements constructed from validated table names that exist in the schema.
-     * The table names come from hardcoded $indexChecks array and are verified via
-     * Schema::hasTable() before any fix is generated.
+     * V40-HIGH-14 FIX: Validate the fix statement format before execution.
+     * Only ALTER TABLE ADD INDEX statements with valid identifiers are executed.
      */
     private function applyFixes(): void
     {
         $this->newLine();
         $this->info('🔧 Attempting to fix issues...');
 
+        // V40-HIGH-14 FIX: Pattern to validate ALTER TABLE ADD INDEX statements
+        // Only allows alphanumeric/underscore identifiers for table, index, and column names
+        $validFixPattern = '/^ALTER TABLE ([a-zA-Z_][a-zA-Z0-9_]*) ADD INDEX (idx_[a-zA-Z_][a-zA-Z0-9_]*) \(([a-zA-Z_][a-zA-Z0-9_]*)\)$/';
+
         $fixed = 0;
         foreach ($this->fixes as $fix) {
+            // V40-HIGH-14 FIX: Validate fix statement matches expected pattern
+            if (! preg_match($validFixPattern, $fix, $matches)) {
+                $this->error("✗ Skipped (invalid format): {$fix}");
+                continue;
+            }
+
             try {
-                // SECURITY: $fix contains ALTER TABLE statements with table/column names
-                // that are validated against schema and hardcoded in $indexChecks
                 DB::statement($fix);
                 $fixed++;
                 $this->info("✓ Applied: {$fix}");
