@@ -99,7 +99,7 @@ class Form extends Component
             $this->category_id = (string) ($income->category_id ?? '');
             $this->reference_number = $income->reference_number ?? '';
             $this->income_date = $income->income_date->format('Y-m-d');
-            $this->amount = (float) $income->amount;
+            $this->amount = decimal_float($income->amount);
             $this->payment_method = $income->payment_method ?? 'cash';
             $this->description = $income->description ?? '';
             $this->attachment = $income->attachment ?? null;

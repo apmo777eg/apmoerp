@@ -141,7 +141,7 @@ class Form extends Component
                 $validator->errors()->add(
                     'lines',
                     __('Total debits must equal total credits. Difference: :amount', [
-                        'amount' => number_format((float) ltrim($difference, '-'), 2),
+                        'amount' => number_format(decimal_float(ltrim($difference, '-')), 2),
                     ])
                 );
             }

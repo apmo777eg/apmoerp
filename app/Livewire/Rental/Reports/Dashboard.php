@@ -66,7 +66,7 @@ class Dashboard extends Component
         // Status 'available' is the standard. Handle legacy 'vacant' for backwards compatibility
         $vacant = $statusCounts['available'] ?? $statusCounts['vacant'] ?? ($total - $occupied);
 
-        $occupancyRate = $total > 0 ? (float) bcdiv(bcmul((string) $occupied, '100', 4), (string) $total, 1) : 0;
+        $occupancyRate = $total > 0 ? decimal_float(bcdiv(bcmul((string) $occupied, '100', 4), (string) $total, 1)) : 0;
 
         $this->unitsSummary = [
             'total' => $total,

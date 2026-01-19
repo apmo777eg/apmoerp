@@ -42,7 +42,7 @@ class Index extends Component
     {
         $payment = InstallmentPayment::findOrFail($paymentId);
         $this->selectedPaymentId = $paymentId;
-        $this->paymentAmount = (float) $payment->remaining_amount;
+        $this->paymentAmount = decimal_float($payment->remaining_amount);
         $this->paymentMethod = 'cash';
         $this->paymentReference = '';
         $this->showPaymentModal = true;

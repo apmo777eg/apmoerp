@@ -55,7 +55,7 @@ class BomOperation extends BaseModel
      */
     public function getTotalTimeAttribute(): float
     {
-        return (float) $this->duration_minutes + (float) $this->setup_time_minutes;
+        return decimal_float($this->duration_minutes) + decimal_float($this->setup_time_minutes);
     }
 
     /**
@@ -64,8 +64,8 @@ class BomOperation extends BaseModel
     public function calculateCost(float $quantity = 1.0): float
     {
         $timeHours = $this->total_time / 60;
-        $workCenterCost = $timeHours * (float) $this->workCenter->cost_per_hour;
-        $laborCost = (float) $this->labor_cost;
+        $workCenterCost = $timeHours * decimal_float($this->workCenter->cost_per_hour);
+        $laborCost = decimal_float($this->labor_cost);
 
         return ($workCenterCost + $laborCost) * $quantity;
     }

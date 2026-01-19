@@ -120,14 +120,14 @@ class BillOfMaterial extends BaseModel
 
         foreach ($this->items as $item) {
             $productCost = $item->product->cost ?? 0.0;
-            $itemQuantity = (float) $item->quantity;
-            $scrapFactor = 1 + ((float) ($item->scrap_percentage ?? 0) / 100);
+            $itemQuantity = decimal_float($item->quantity);
+            $scrapFactor = 1 + (decimal_float($item->scrap_percentage ?? 0) / 100);
 
             $cost += $productCost * $itemQuantity * $scrapFactor;
         }
 
         // Apply BOM-level yield percentage (default to 100% if not set or 0)
-        $yieldFactor = (float) ($this->yield_percentage ?? 100) / 100;
+        $yieldFactor = decimal_float($this->yield_percentage ?? 100) / 100;
         // Prevent division by zero - if yield is 0 or negative, return raw cost
         if ($yieldFactor > 0) {
             $cost = $cost / $yieldFactor;
@@ -142,10 +142,10 @@ class BillOfMaterial extends BaseModel
     public function calculateLaborCost(): float
     {
         return $this->operations->sum(function ($operation) {
-            $durationHours = (float) ($operation->duration_minutes ?? 0) / 60;
-            $costPerHour = (float) ($operation->workCenter->cost_per_hour ?? 0);
+            $durationHours = decimal_float($operation->duration_minutes ?? 0) / 60;
+            $costPerHour = decimal_float($operation->workCenter->cost_per_hour ?? 0);
 
-            return $durationHours * $costPerHour + (float) ($operation->labor_cost ?? 0);
+            return $durationHours * $costPerHour + decimal_float($operation->labor_cost ?? 0);
         });
     }
 

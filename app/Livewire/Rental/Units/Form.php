@@ -93,8 +93,8 @@ class Form extends Component
             $this->form['code'] = (string) $unitModel->code;
             $this->form['type'] = $unitModel->type ?? '';
             $this->form['status'] = (string) $unitModel->status;
-            $this->form['rent'] = (float) $unitModel->rent;
-            $this->form['deposit'] = (float) $unitModel->deposit;
+            $this->form['rent'] = decimal_float($unitModel->rent);
+            $this->form['deposit'] = decimal_float($unitModel->deposit);
 
             $this->dynamicData = (array) ($unitModel->extra_attributes ?? []);
         } else {
@@ -152,8 +152,8 @@ class Form extends Component
         $unit->code = (string) $this->form['code'];
         $unit->type = $this->form['type'] !== '' ? (string) $this->form['type'] : null;
         $unit->status = (string) $this->form['status'];
-        $unit->rent = (float) $this->form['rent'];
-        $unit->deposit = (float) $this->form['deposit'];
+        $unit->rent = decimal_float($this->form['rent']);
+        $unit->deposit = decimal_float($this->form['deposit']);
         $unit->extra_attributes = $this->dynamicData;
 
         $unit->save();

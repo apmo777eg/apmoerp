@@ -15,7 +15,7 @@ class SupplierResource extends JsonResource
      */
     private function formatRating($value): ?float
     {
-        return $value ? (float) $value : null;
+        return $value ? decimal_float($value) : null;
     }
 
     public function toArray(Request $request): array
@@ -34,7 +34,7 @@ class SupplierResource extends JsonResource
             'payment_due_days' => (int) ($this->payment_due_days ?? 30),
             'minimum_order_value' => $this->when(
                 $request->user()?->can('suppliers.view-financial'),
-                (float) ($this->minimum_order_value ?? 0.0)
+                decimal_float($this->minimum_order_value ?? 0.0)
             ),
             'supplier_rating' => $this->supplier_rating,
             'quality_rating' => $this->formatRating($this->quality_rating),
@@ -51,7 +51,7 @@ class SupplierResource extends JsonResource
             ),
             'total_purchases_amount' => $this->when(
                 $request->user()?->can('suppliers.view-financial') && $this->relationLoaded('purchases'),
-                fn () => (float) $this->purchases->sum('total_amount')
+                fn () => decimal_float($this->purchases->sum('total_amount'))
             ),
             'notes' => $this->notes,
             'created_at' => $this->created_at?->toIso8601String(),

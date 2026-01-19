@@ -202,14 +202,14 @@ class Sale extends BaseModel
     public function getTotalPaidAttribute(): float
     {
         // STILL-MEDIUM-09 FIX: Only count completed/posted payments, exclude pending/failed/cancelled
-        return (float) $this->payments()
+        return decimal_float($this->payments()
             ->whereIn('status', ['completed', 'posted', 'paid'])
-            ->sum('amount');
+            ->sum('amount'));
     }
 
     public function getRemainingAmountAttribute(): float
     {
-        return max(0, (float) $this->total_amount - $this->total_paid);
+        return max(0, decimal_float($this->total_amount) - $this->total_paid);
     }
 
     public function isPaid(): bool
@@ -232,7 +232,7 @@ class Sale extends BaseModel
     public function updatePaymentStatus(): void
     {
         $totalPaid = $this->total_paid;
-        $totalAmount = (float) $this->total_amount;
+        $totalAmount = decimal_float($this->total_amount);
 
         if ($totalPaid >= $totalAmount) {
             $this->payment_status = 'paid';

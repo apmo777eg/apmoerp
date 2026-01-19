@@ -174,8 +174,8 @@ class Form extends Component
             $this->form['custom_days'] = $model->custom_days ? (int) $model->custom_days : null;
             $this->form['start_date'] = $model->start_date ? $model->start_date->format('Y-m-d') : null;
             $this->form['end_date'] = $model->end_date ? $model->end_date->format('Y-m-d') : null;
-            $this->form['rent'] = (float) $model->rent;
-            $this->form['deposit'] = (float) $model->deposit;
+            $this->form['rent'] = decimal_float($model->rent);
+            $this->form['deposit'] = decimal_float($model->deposit);
             $this->form['status'] = (string) $model->status;
 
             // Check if custom days should be shown
@@ -336,8 +336,8 @@ class Form extends Component
         $contract->custom_days = $this->form['custom_days'] ? (int) $this->form['custom_days'] : null;
         $contract->start_date = $this->form['start_date'] ?: null;
         $contract->end_date = $this->form['end_date'] ?: null;
-        $contract->rent = (float) $this->form['rent'];
-        $contract->deposit = (float) $this->form['deposit'];
+        $contract->rent = decimal_float($this->form['rent']);
+        $contract->deposit = decimal_float($this->form['deposit']);
         $contract->status = (string) $this->form['status'];
         $contract->extra_attributes = $this->dynamicData;
 

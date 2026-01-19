@@ -178,7 +178,7 @@ class POSController extends Controller
             $session = $this->posService->openSession(
                 $branch->id,
                 $userId,
-                (float) ($request->input('opening_cash') ?? 0)
+                decimal_float($request->input('opening_cash') ?? 0)
             );
 
             return response()->json([
@@ -215,7 +215,7 @@ class POSController extends Controller
         try {
             $session = $this->posService->closeSession(
                 $session->id,
-                (float) $request->input('closing_cash'),
+                decimal_float($request->input('closing_cash')),
                 $request->input('notes')
             );
 

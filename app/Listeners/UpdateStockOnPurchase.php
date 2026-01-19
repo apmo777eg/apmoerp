@@ -24,7 +24,7 @@ class UpdateStockOnPurchase implements ShouldQueue
 
         foreach ($purchase->items as $item) {
             // Validate quantity is positive (use quantity column)
-            $itemQty = (float) $item->quantity;
+            $itemQty = decimal_float($item->quantity);
             if ($itemQty <= 0) {
                 Log::error('Invalid purchase quantity', [
                     'purchase_id' => $purchase->getKey(),

@@ -50,7 +50,7 @@ class ModuleSetting extends Model
         return match ($this->setting_type) {
             'boolean' => filter_var($this->setting_value, FILTER_VALIDATE_BOOLEAN),
             'integer' => (int) $this->setting_value,
-            'float', 'decimal' => (float) $this->setting_value,
+            'float', 'decimal' => decimal_float($this->setting_value),
             'array', 'json' => json_decode($this->setting_value, true),
             default => $this->setting_value,
         };

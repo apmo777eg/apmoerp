@@ -100,7 +100,7 @@ class SystemSetting extends Model
         return match ($type) {
             'boolean', 'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
             'integer', 'int' => is_numeric($value) ? (int) $value : $default,
-            'float', 'decimal' => is_numeric($value) ? (float) $value : $default,
+            'float', 'decimal' => is_numeric($value) ? decimal_float($value) : $default,
             default => $value,
         };
     }

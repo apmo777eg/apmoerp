@@ -111,7 +111,7 @@ class ProductHistory extends Component
             : collect($stockMovements);
 
         $this->auditLogs = collect($auditLogs);
-        $this->currentStock = (float) $currentStock;
+        $this->currentStock = decimal_float($currentStock);
 
         $movementTypes = [
             'all' => __('All Activity'),

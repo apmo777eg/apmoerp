@@ -99,9 +99,9 @@ class Index extends Component
         $this->returnItems = $this->selectedPurchase->items->map(fn ($item) => [
             'product_id' => $item->product_id,
             'product_name' => $item->product?->name ?? 'Unknown',
-            'max_qty' => (float) $item->qty,
+            'max_qty' => decimal_float($item->qty),
             'qty' => 0,
-            'cost' => (float) $item->unit_cost,
+            'cost' => decimal_float($item->unit_cost),
         ])->toArray();
     }
 
@@ -157,9 +157,9 @@ class Index extends Component
                     if (! $pi) {
                         continue;
                     }
-                    $qty = min((float) $it['qty'], (float) $pi->qty);
+                    $qty = min(decimal_float($it['qty']), decimal_float($pi->qty));
                     // V23-CRIT-01 FIX: Use unit_cost accessor (maps to unit_price) instead of non-existent cost
-                    $unitCost = (float) $pi->unit_cost;
+                    $unitCost = decimal_float($pi->unit_cost);
                     $line = $qty * $unitCost;
                     $refund += $line;
 

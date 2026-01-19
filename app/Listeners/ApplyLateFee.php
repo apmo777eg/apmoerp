@@ -40,7 +40,7 @@ class ApplyLateFee implements ShouldQueue
         $minPenaltyString = (string) $this->minPenalty;
         $penalty = bccomp($penaltyFromRate, $minPenaltyString, 2) >= 0 ? $penaltyFromRate : $minPenaltyString;
         $newAmount = bcadd($base, $penalty, 2);
-        $invoice->amount = (float) $newAmount;
+        $invoice->amount = decimal_float($newAmount);
         $invoice->save();
     }
 }

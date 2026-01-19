@@ -133,8 +133,8 @@ class Form extends Component
         $this->name = $product->name;
         $this->code = $product->code ?? '';
         $this->sku = $product->sku ?? '';
-        $this->defaultPrice = (float) $product->default_price;
-        $this->cost = (float) ($product->cost ?: $product->standard_cost);
+        $this->defaultPrice = decimal_float($product->default_price);
+        $this->cost = decimal_float($product->cost ?: $product->standard_cost);
         $this->hourlyRate = $product->hourly_rate;
         $this->serviceDuration = $product->service_duration;
         $this->durationUnit = $product->duration_unit ?? 'hours';
@@ -231,7 +231,7 @@ class Form extends Component
             };
             $calculated = bcmul((string) $this->hourlyRate, $hours, 4);
             // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-            $this->defaultPrice = (float) bcround($calculated, 2);
+            $this->defaultPrice = decimal_float(bcround($calculated, 2));
         }
     }
 

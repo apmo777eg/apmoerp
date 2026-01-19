@@ -186,12 +186,12 @@ class Purchase extends BaseModel
 
     public function getTotalPaidAttribute(): float
     {
-        return (float) $this->paid_amount;
+        return decimal_float($this->paid_amount);
     }
 
     public function getRemainingAmountAttribute(): float
     {
-        return max(0, (float) $this->total_amount - (float) $this->paid_amount);
+        return max(0, decimal_float($this->total_amount) - decimal_float($this->paid_amount));
     }
 
     public function isPaid(): bool
@@ -226,8 +226,8 @@ class Purchase extends BaseModel
 
     public function updatePaymentStatus(): void
     {
-        $paidAmount = (float) $this->paid_amount;
-        $totalAmount = (float) $this->total_amount;
+        $paidAmount = decimal_float($this->paid_amount);
+        $totalAmount = decimal_float($this->total_amount);
 
         if ($paidAmount >= $totalAmount) {
             $this->payment_status = 'paid';

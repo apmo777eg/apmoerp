@@ -71,6 +71,6 @@ class StockTransferItem extends Model
      */
     public function getVariance(): float
     {
-        return (float) bcsub((string)$this->qty_shipped, (string)$this->qty_received, 3);
+        return decimal_float(bcsub((string)$this->qty_shipped, (string)$this->qty_received, 3), 3);
     }
 }
