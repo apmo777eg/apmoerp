@@ -138,15 +138,13 @@ class PurchaseService implements PurchaseServiceInterface
                 $p->subtotal = decimal_float(bcround($subtotal, 2));
                 $p->tax_amount = decimal_float(bcround($totalTax, 2));
                 $p->discount_amount = decimal_float(bcround($totalDiscount, 2));
-                // total_amount = subtotal + tax + shipping - discount
-                $p->total_amount = decimal_float(bcround(
-                    bcadd(
-                        bcsub(bcadd($subtotal, $totalTax, 4), $totalDiscount, 4),
-                        (string) $shippingAmount,
-                        4
-                    ),
-                    2
-                );
+                
+                // Calculate total_amount = subtotal + tax + shipping - discount
+                // Breaking into intermediate variables for clarity
+                $subtotalPlusTax = bcadd($subtotal, $totalTax, 4);
+                $afterDiscount = bcsub($subtotalPlusTax, $totalDiscount, 4);
+                $totalWithShipping = bcadd($afterDiscount, (string) $shippingAmount, 4);
+                $p->total_amount = decimal_float(bcround($totalWithShipping, 2));
 
                 // Critical ERP: Validate supplier minimum order value
                 if ($p->supplier_id) {

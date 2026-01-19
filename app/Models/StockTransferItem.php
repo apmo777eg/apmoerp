@@ -68,6 +68,7 @@ class StockTransferItem extends Model
 
     /**
      * Get variance between shipped and received
+     * Note: Uses 3 decimal places for quantity variance (not currency) to preserve precision
      */
     public function getVariance(): float
     {
