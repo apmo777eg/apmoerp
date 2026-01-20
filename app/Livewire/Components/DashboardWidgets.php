@@ -108,9 +108,13 @@ class DashboardWidgets extends Component
                 // FIX U-07: Use subquery to correctly count grouped results
                 // Laravel's count() on a grouped query returns the count of the first group
                 // Use a subquery and count the rows instead
+                // V46-HIGH-01 FIX: Exclude soft-deleted stock_movements
                 'low_stock_count' => DB::table(
                     DB::table('products')
-                        ->leftJoin('stock_movements', 'stock_movements.product_id', '=', 'products.id')
+                        ->leftJoin('stock_movements', function ($join) {
+                            $join->on('stock_movements.product_id', '=', 'products.id')
+                                ->whereNull('stock_movements.deleted_at');
+                        })
                         ->whereNull('products.deleted_at')
                         ->whereNotNull('products.min_stock')
                         ->where('products.min_stock', '>', 0)

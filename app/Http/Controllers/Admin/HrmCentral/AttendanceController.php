@@ -13,7 +13,8 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         $per = min(max($request->integer('per_page', 20), 1), 100);
-        $q = Attendance::query()->orderByDesc('logged_at');
+        // V46-CRIT-01 FIX: Use canonical column name 'attendance_date' instead of 'logged_at'
+        $q = Attendance::query()->orderByDesc('attendance_date');
         if ($request->filled('employee_id')) {
             $q->where('employee_id', $request->integer('employee_id'));
         }
@@ -26,20 +27,24 @@ class AttendanceController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: Store a new attendance record
+     * V46-CRIT-01 FIX: Use canonical column names from Attendance model
+     * and correct table name 'hr_employees' instead of 'employees'
      */
     public function store(Request $request)
     {
         $validated = $this->validate($request, [
-            'employee_id' => ['required', 'integer', 'exists:employees,id'],
-            'logged_at' => ['required', 'date'],
-            'type' => ['required', 'string', 'in:check_in,check_out'],
+            'employee_id' => ['required', 'integer', 'exists:hr_employees,id'],
+            'attendance_date' => ['required', 'date'],
+            'clock_in' => ['nullable', 'date_format:H:i:s'],
+            'clock_out' => ['nullable', 'date_format:H:i:s'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $attendance = Attendance::create([
             'employee_id' => $validated['employee_id'],
-            'logged_at' => $validated['logged_at'],
-            'type' => $validated['type'],
+            'attendance_date' => $validated['attendance_date'],
+            'clock_in' => $validated['clock_in'] ?? null,
+            'clock_out' => $validated['clock_out'] ?? null,
             'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
             // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
@@ -51,14 +56,16 @@ class AttendanceController extends Controller
 
     /**
      * NEW-V15-CRITICAL-02 FIX: Update an attendance record
+     * V46-CRIT-01 FIX: Use canonical column names from Attendance model
      */
     public function update(Request $request, Attendance $attendance)
     {
         $validated = $this->validate($request, [
-            'logged_at' => ['sometimes', 'date'],
-            'type' => ['sometimes', 'string', 'in:check_in,check_out'],
+            'attendance_date' => ['sometimes', 'date'],
+            'clock_in' => ['nullable', 'date_format:H:i:s'],
+            'clock_out' => ['nullable', 'date_format:H:i:s'],
             'notes' => ['nullable', 'string', 'max:500'],
-            'status' => ['sometimes', 'string', 'in:pending,approved,rejected'],
+            'status' => ['sometimes', 'string', 'in:pending,approved,rejected,present,absent,late,on_leave'],
         ]);
 
         $attendance->update($validated);

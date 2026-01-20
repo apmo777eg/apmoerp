@@ -80,13 +80,14 @@ class Index extends Component
             ->when($this->status, function ($q) {
                 $q->where('status', $this->status);
             })
+            // V46-CRIT-01 FIX: Use canonical column name 'attendance_date' instead of 'date'
             ->when($this->fromDate, function ($q) {
-                $q->whereDate('date', '>=', $this->fromDate);
+                $q->whereDate('attendance_date', '>=', $this->fromDate);
             })
             ->when($this->toDate, function ($q) {
-                $q->whereDate('date', '<=', $this->toDate);
+                $q->whereDate('attendance_date', '<=', $this->toDate);
             })
-            ->orderByDesc('date')
+            ->orderByDesc('attendance_date')
             ->orderByDesc('id');
 
         $attendance = $query->paginate(20);

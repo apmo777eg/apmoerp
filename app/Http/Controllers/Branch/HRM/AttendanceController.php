@@ -19,10 +19,12 @@ class AttendanceController extends Controller
     {
         $per = min(max($request->integer('per_page', 20), 1), 100);
 
+        // V46-CRIT-01 FIX: Use canonical column names from Attendance model
+        // Model uses: attendance_date, clock_in, clock_out (not date, check_in, check_out)
         $query = Attendance::query()
             ->where('branch_id', $branch->getKey())
-            ->orderByDesc('date')
-            ->orderByDesc('check_in');
+            ->orderByDesc('attendance_date')
+            ->orderByDesc('clock_in');
 
         // Apply filters
         if ($request->has('employee_id')) {
@@ -70,15 +72,17 @@ class AttendanceController extends Controller
         // Ensure employee belongs to branch
         HREmployee::where('branch_id', $branch->getKey())->findOrFail($data['employee_id']);
 
+        // V46-CRIT-01 FIX: Use canonical column names from Attendance model
+        // Model uses: attendance_date, clock_in, clock_out (not date, check_in, check_out)
         $attendance = Attendance::updateOrCreate(
             [
                 'employee_id' => $data['employee_id'],
-                'date' => $data['date'],
+                'attendance_date' => $data['date'],
             ],
             [
                 'branch_id' => $branch->getKey(),
-                'check_in' => $data['check_in'],
-                'check_out' => $data['check_out'] ?? null,
+                'clock_in' => $data['check_in'],
+                'clock_out' => $data['check_out'] ?? null,
                 'status' => $data['status'] ?? 'pending',
             ]
         );

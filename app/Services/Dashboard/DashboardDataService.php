@@ -343,10 +343,12 @@ class DashboardDataService
 
     /**
      * Generate tickets summary data.
+     * V46-MED-01 FIX: Exclude soft-deleted tickets (Ticket model uses SoftDeletes)
      */
     public function generateTicketsSummaryData(?int $branchId): array
     {
-        $query = DB::table('tickets');
+        $query = DB::table('tickets')
+            ->whereNull('deleted_at');
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -363,11 +365,15 @@ class DashboardDataService
 
     /**
      * Generate attendance snapshot data.
+     * V46-HIGH-03 FIX: Use canonical column names from Attendance model
+     * - Use 'attendance_date' instead of 'date'
+     * - Use 'late_minutes > 0' instead of 'is_late' (which is an accessor, not a column)
+     * - Use 'on_leave' consistently for leave status
      */
     public function generateAttendanceSnapshotData(?int $branchId): array
     {
         $query = DB::table('attendances')
-            ->whereDate('date', today());
+            ->whereDate('attendance_date', today());
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
@@ -382,8 +388,10 @@ class DashboardDataService
         return [
             'present' => (clone $query)->where('status', 'present')->count(),
             'absent' => (clone $query)->where('status', 'absent')->count(),
-            'late' => (clone $query)->where('is_late', true)->count(),
-            'on_leave' => (clone $query)->where('status', 'leave')->count(),
+            // V46-HIGH-03 FIX: Use late_minutes column instead of is_late accessor
+            'late' => (clone $query)->where('late_minutes', '>', 0)->count(),
+            // V46-HIGH-03 FIX: Use consistent 'on_leave' status value
+            'on_leave' => (clone $query)->where('status', 'on_leave')->count(),
             'total_employees' => $totalEmployees,
         ];
     }

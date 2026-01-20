@@ -33,6 +33,7 @@ class InventoryTurnoverService
      * V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost) instead of products.cost
      * V35-HIGH-02 FIX: Use sale_date instead of created_at
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getTurnoverAnalysis(?int $branchId = null, int $days = 30): array
     {
@@ -42,10 +43,12 @@ class InventoryTurnoverService
         // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost at time of sale)
         // V35-HIGH-02 FIX: Use sale_date instead of created_at
         // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+        // V46-HIGH-02 FIX: Exclude soft-deleted sale_items
         $cogsQuery = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', $startDate);
 
@@ -86,6 +89,7 @@ class InventoryTurnoverService
      * V35-HIGH-02 FIX: Use sale_date instead of created_at
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getProductTurnover(?int $branchId = null, int $days = 30, int $limit = 20): array
     {
@@ -101,6 +105,7 @@ class InventoryTurnoverService
                 DB::raw('SUM(sale_items.quantity * COALESCE(sale_items.cost_price, p.cost, 0)) as cogs')
             )
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->groupBy('sale_items.product_id');
@@ -144,6 +149,7 @@ class InventoryTurnoverService
      * V35-HIGH-02 FIX: Use sale_date instead of created_at
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getDeadStock(?int $branchId = null, int $days = 90, int $limit = 20): array
     {
@@ -154,6 +160,7 @@ class InventoryTurnoverService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select('sale_items.product_id')
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->distinct();
@@ -198,6 +205,7 @@ class InventoryTurnoverService
      * V35-HIGH-02 FIX: Use sale_date instead of created_at
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getOverstockedItems(?int $branchId = null, float $threshold = 3.0, int $limit = 20): array
     {
@@ -212,6 +220,7 @@ class InventoryTurnoverService
                 DB::raw('SUM(sale_items.quantity) as monthly_sales')
             )
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $monthlySalesStart)
             ->groupBy('sale_items.product_id');
@@ -257,6 +266,7 @@ class InventoryTurnoverService
      * V35-HIGH-02 FIX: Use sale_date instead of created_at
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
      * V35-MED-07 FIX: Use proper bindings instead of raw SQL string interpolation
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getCategoryTurnover(?int $branchId = null, int $days = 30): array
     {
@@ -271,6 +281,7 @@ class InventoryTurnoverService
                 DB::raw('SUM(sale_items.quantity * COALESCE(sale_items.cost_price, p.cost, 0)) as cogs')
             )
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->groupBy('sale_items.product_id');

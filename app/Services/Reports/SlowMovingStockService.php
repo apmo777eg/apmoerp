@@ -72,10 +72,11 @@ class SlowMovingStockService
             ->orderBy('days_since_sale', 'desc')
             ->get();
 
+        // V46-MED-02 FIX: Pass the analysis window days to calculateDailySalesRate
         return [
-            'slow_moving_products' => $products->map(function ($product) {
+            'slow_moving_products' => $products->map(function ($product) use ($days) {
                 $stockValue = bcmul((string) $product->stock_quantity, (string) ($product->default_price ?? 0), 2);
-                $dailyRate = $this->calculateDailySalesRate($product);
+                $dailyRate = $this->calculateDailySalesRate($product, $days);
 
                 return [
                     'id' => $product->id,
@@ -141,19 +142,19 @@ class SlowMovingStockService
 
     /**
      * Calculate daily sales rate using bcmath
+     * V46-MED-02 FIX: Use a fixed analysis window (90 days by default) instead of
+     * days_since_sale (which is "days since last sale" and creates inconsistent results)
      */
-    private function calculateDailySalesRate($product)
+    private function calculateDailySalesRate($product, int $analysisWindowDays = 90)
     {
         if (! $product->total_sold || $product->total_sold == 0) {
             return '0';
         }
 
-        $daysSinceFirstSale = $product->days_since_sale ?? 90;
-        if ($daysSinceFirstSale == 0) {
-            return '0';
-        }
-
-        return bcdiv((string) $product->total_sold, (string) $daysSinceFirstSale, 4);
+        // V46-MED-02 FIX: Use fixed analysis window for consistent daily rate calculation
+        // The analysis window should match the period used to calculate total_sold
+        // Previously this used days_since_sale which is misleading and inconsistent
+        return bcdiv((string) $product->total_sold, (string) $analysisWindowDays, 4);
     }
 
     /**

@@ -48,6 +48,7 @@ class InventoryController extends BaseApiController
         $warehouseId = $validated['warehouse_id'] ?? null;
 
         // quantity is signed: positive = in, negative = out
+        // V46-CRIT-02 FIX: Add soft-delete filter to exclude deleted stock_movements
         $query = Product::query()
             ->select([
                 'products.id',
@@ -58,7 +59,9 @@ class InventoryController extends BaseApiController
                 DB::raw('COALESCE(SUM(sm.quantity), 0) as current_quantity'),
             ])
             ->leftJoin('stock_movements as sm', function ($join) use ($warehouseId) {
-                $join->on('products.id', '=', 'sm.product_id');
+                $join->on('products.id', '=', 'sm.product_id')
+                    // V46-CRIT-02 FIX: Exclude soft-deleted stock movements
+                    ->whereNull('sm.deleted_at');
                 // Apply warehouse filter inside the join to keep LEFT JOIN semantics
                 if ($warehouseId !== null) {
                     $join->where('sm.warehouse_id', '=', $warehouseId);

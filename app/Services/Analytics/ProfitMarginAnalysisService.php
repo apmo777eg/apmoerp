@@ -45,6 +45,7 @@ class ProfitMarginAnalysisService
      * SECURITY NOTE: All raw SQL expressions use only hardcoded column names.
      * Parameters like $branchId are passed through where() with proper binding.
      * No user input is interpolated into the SQL expressions.
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getProductProfitability(?int $branchId = null, ?Carbon $startDate = null, ?Carbon $endDate = null, int $limit = 20): array
     {
@@ -55,6 +56,7 @@ class ProfitMarginAnalysisService
         // This ensures profit calculations remain accurate even when product costs change later
         // V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
         // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+        // V46-HIGH-02 FIX: Exclude soft-deleted sale_items
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
@@ -71,6 +73,7 @@ class ProfitMarginAnalysisService
                     ELSE 0 END as margin_percent'),
             ])
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [$startDate, $endDate])
             ->groupBy('products.id', 'products.name', 'products.sku')
@@ -112,6 +115,7 @@ class ProfitMarginAnalysisService
      * SECURITY NOTE: All raw SQL expressions use only hardcoded column names.
      * Parameters like $branchId are passed through where() with proper binding.
      * No user input is interpolated into the SQL expressions.
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     public function getCategoryProfitability(?int $branchId = null, ?Carbon $startDate = null, ?Carbon $endDate = null): array
     {
@@ -121,6 +125,7 @@ class ProfitMarginAnalysisService
         // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost at time of sale) instead of products.cost
         // V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
         // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+        // V46-HIGH-02 FIX: Exclude soft-deleted sale_items
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
@@ -138,6 +143,7 @@ class ProfitMarginAnalysisService
                     ELSE 0 END as margin_percent'),
             ])
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [$startDate, $endDate])
             ->groupBy('product_categories.id', 'product_categories.name')
@@ -196,6 +202,7 @@ class ProfitMarginAnalysisService
         // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost)
         // V35-HIGH-02 FIX: Use sale_date instead of created_at
         // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+        // V46-HIGH-02 FIX: Exclude soft-deleted sale_items
         // @phpstan-ignore-next-line - $periodExpr is regex-validated by DatabaseCompatibilityService
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -207,6 +214,7 @@ class ProfitMarginAnalysisService
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) - COALESCE(SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)), 0) as profit'),
             ])
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', $startDate)
             ->groupBy(DB::raw($periodExpr))
@@ -229,6 +237,7 @@ class ProfitMarginAnalysisService
      * V35-HIGH-03 FIX: Use sale_items.cost_price instead of products.cost
      * V35-HIGH-02 FIX: Use sale_date instead of created_at
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      *
      * SECURITY NOTE: All raw SQL expressions use only hardcoded column names.
      * No user input is interpolated into the SQL expressions.
@@ -250,6 +259,7 @@ class ProfitMarginAnalysisService
                     ELSE 0 END as margin_percent'),
             ])
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', now()->subDays(30))
             ->groupBy('products.id', 'products.name', 'products.sku', 'products.cost', 'products.price')

@@ -41,12 +41,13 @@ class ReportsController extends Controller
             $query->where('branch_id', $validated['branch_id']);
         }
 
+        // V46-CRIT-01 FIX: Use canonical column name 'attendance_date' instead of 'date'
         if (! empty($validated['from'])) {
-            $query->whereDate('date', '>=', $validated['from']);
+            $query->whereDate('attendance_date', '>=', $validated['from']);
         }
 
         if (! empty($validated['to'])) {
-            $query->whereDate('date', '<=', $validated['to']);
+            $query->whereDate('attendance_date', '<=', $validated['to']);
         }
 
         $filename = 'hrm_attendance_'.now()->format('Ymd_His').'.xlsx';

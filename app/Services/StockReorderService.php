@@ -148,6 +148,7 @@ class StockReorderService
      * V10-CRITICAL-01 FIX: Add optional branch filter for branch-specific calculations
      * V35-HIGH-02 FIX: Use sale_date instead of created_at for accurate period filtering
      * V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     * V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     private function calculateSalesVelocity(int $productId, int $days = 30, ?int $branchId = null): float
     {
@@ -155,6 +156,7 @@ class StockReorderService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sale_items.product_id', $productId)
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', now()->subDays($days));
 

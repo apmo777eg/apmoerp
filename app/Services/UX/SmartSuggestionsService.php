@@ -272,6 +272,7 @@ class SmartSuggestionsService
      * @return float Average daily sales using bcmath
      *               V35-HIGH-02 FIX: Use sale_date instead of created_at
      *               V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+     *               V46-HIGH-02 FIX: Exclude soft-deleted sale_items
      */
     protected function calculateSalesVelocity(int $productId, int $days): float
     {
@@ -279,6 +280,7 @@ class SmartSuggestionsService
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sale_items.product_id', $productId)
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', now()->subDays($days))
             ->sum('sale_items.quantity');

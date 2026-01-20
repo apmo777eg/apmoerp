@@ -186,9 +186,14 @@ class CheckDatabaseIntegrity extends Command
         $this->checkStockConsistency();
 
         // Check for sales with no items
+        // V46-MED-04 FIX: Filter soft-deleted sale_items in the join to correctly identify
+        // sales that have no non-deleted items (soft-deleted items are treated as "removed")
         if (Schema::hasTable('sales') && Schema::hasTable('sale_items')) {
             $salesWithoutItems = DB::table('sales')
-                ->leftJoin('sale_items', 'sales.id', '=', 'sale_items.sale_id')
+                ->leftJoin('sale_items', function ($join) {
+                    $join->on('sales.id', '=', 'sale_items.sale_id')
+                        ->whereNull('sale_items.deleted_at');
+                })
                 ->whereNull('sale_items.id')
                 ->count();
 
@@ -206,6 +211,7 @@ class CheckDatabaseIntegrity extends Command
     /**
      * STILL-V14-CRITICAL-01 FIX: Check for negative stock using stock_movements table
      * (the single source of truth for inventory)
+     * V46-MED-03 FIX: Exclude soft-deleted stock_movements to avoid false positives
      */
     private function checkNegativeStockFromMovements(): void
     {
@@ -214,8 +220,10 @@ class CheckDatabaseIntegrity extends Command
         }
 
         // Count products with negative stock from stock_movements (source of truth)
+        // V46-MED-03 FIX: Exclude soft-deleted movements
         $negativeStock = DB::table('stock_movements')
             ->select('product_id')
+            ->whereNull('deleted_at')
             ->selectRaw('SUM(quantity) as total_stock')
             ->groupBy('product_id')
             ->havingRaw('SUM(quantity) < 0')
@@ -229,6 +237,7 @@ class CheckDatabaseIntegrity extends Command
     /**
      * STILL-V14-CRITICAL-01 FIX: Check for stock inconsistency between cached value
      * (products.stock_quantity) and source of truth (stock_movements)
+     * V46-MED-03 FIX: Exclude soft-deleted stock_movements to avoid false positives
      */
     private function checkStockConsistency(): void
     {
@@ -238,8 +247,9 @@ class CheckDatabaseIntegrity extends Command
 
         // Get products with stock_quantity that doesn't match stock_movements sum
         // Allow for small floating-point differences (0.0001)
+        // V46-MED-03 FIX: Exclude soft-deleted stock_movements
         $inconsistentProducts = DB::table('products')
-            ->leftJoin(DB::raw('(SELECT product_id, SUM(quantity) as calculated_stock FROM stock_movements GROUP BY product_id) as sm'), 'products.id', '=', 'sm.product_id')
+            ->leftJoin(DB::raw('(SELECT product_id, SUM(quantity) as calculated_stock FROM stock_movements WHERE deleted_at IS NULL GROUP BY product_id) as sm'), 'products.id', '=', 'sm.product_id')
             ->whereRaw('ABS(COALESCE(products.stock_quantity, 0) - COALESCE(sm.calculated_stock, 0)) > 0.0001')
             ->count();
 
