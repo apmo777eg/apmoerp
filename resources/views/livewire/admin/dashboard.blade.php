@@ -23,9 +23,10 @@
 
         $employeeModel = '\\App\\Models\\HREmployee';
         $attendanceModel = '\\App\\Models\\Attendance';
+        // NEW-V49-CRITICAL-01 FIX: Use 'attendance_date' (actual DB column) instead of 'date' (accessor only)
         $hrStats = [
             'employees' => class_exists($employeeModel) ? $employeeModel::count() : 0,
-            'today_attendance' => class_exists($attendanceModel) ? $attendanceModel::whereDate('date', $today)->count() : 0,
+            'today_attendance' => class_exists($attendanceModel) ? $attendanceModel::whereDate('attendance_date', $today)->count() : 0,
         ];
 
         $unitModel = '\\App\\Models\\RentalUnit';
