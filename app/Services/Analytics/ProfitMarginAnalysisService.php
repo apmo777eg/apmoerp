@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
+use App\Enums\SaleStatus;
 use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
-use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
