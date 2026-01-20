@@ -56,7 +56,8 @@
 
         $salesChart = [
             'labels' => $salesSeries->pluck('day')->toArray(),
-            'data' => $salesSeries->pluck('total')->map(fn ($v) => (float) $v)->toArray(),
+            // V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding
+            'data' => $salesSeries->pluck('total')->map(fn ($v) => decimal_float($v))->toArray(),
         ];
 
         // SECURITY: The selectRaw uses only hardcoded column/function names (status, COUNT)

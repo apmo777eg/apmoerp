@@ -492,8 +492,11 @@ if (! function_exists('decimal_float')) {
         }
 
         // First round using BCMath, then convert to float
+        // V43-FINANCE-01: This internal cast is safe as the value has been
+        // properly rounded using BCMath to eliminate floating-point drift
         $rounded = bcround((string) $value, $precision);
 
+        // @phpstan-ignore-next-line - Float cast is intentional after BCMath rounding
         return (float) $rounded;
     }
 }

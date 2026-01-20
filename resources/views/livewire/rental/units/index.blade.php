@@ -80,11 +80,12 @@
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-600 dark:text-slate-300">
                             {{ $unit->type ?? '—' }}
                         </td>
+                        {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-700 dark:text-slate-200">
-                            {{ number_format((float) $unit->rent, 2) }}
+                            {{ number_format(decimal_float($unit->rent), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-700 dark:text-slate-200">
-                            {{ number_format((float) $unit->deposit, 2) }}
+                            {{ number_format(decimal_float($unit->deposit), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-center">
                             @php $status = $unit->status; @endphp

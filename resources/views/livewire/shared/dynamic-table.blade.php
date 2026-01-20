@@ -223,7 +223,8 @@ when the content is passed through sanitize_svg_icon().
                                             @php
                                                 $currency = $column['currency'] ?? '$';
                                             @endphp
-                                            <span class="font-medium">{{ $currency }}{{ number_format((float)$value, 2) }}</span>
+                                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                                            <span class="font-medium">{{ $currency }}{{ number_format(decimal_float($value), 2) }}</span>
                                             @break
 
                                         @case('image')

@@ -195,7 +195,8 @@
                             </td>
                             <td class="px-4 py-3 text-end">
                                 <div class="text-sm font-semibold text-slate-800 dark:text-white tabular-nums">
-                                    {{ number_format((float) $employee->salary, 2) }}
+                                    {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                                    {{ number_format(decimal_float($employee->salary), 2) }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-center">
