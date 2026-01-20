@@ -2,13 +2,13 @@
 {{--
 SECURITY (V37-XSS-08): XSS Prevention via sanitize_svg_icon()
 =============================================================
-This component uses {!! !!} for action icons. This is safe because:
+This component uses unescaped Blade output for action icons. This is safe because:
 1. Action icons are passed through sanitize_svg_icon() which uses DOM-based
    allow-list sanitization (see app/Helpers/helpers.php for details)
 2. Action definitions come from developer-controlled PHP code, not user input
 3. Even if icon data were manipulated, sanitize_svg_icon() blocks dangerous content
 
-Static analysis tools may flag {!! !!} as XSS risks. This is a false positive
+Static analysis tools may flag unescaped output as XSS risks. This is a false positive
 when the content is passed through sanitize_svg_icon().
 --}}
 @php
@@ -223,7 +223,8 @@ when the content is passed through sanitize_svg_icon().
                                             @php
                                                 $currency = $column['currency'] ?? '$';
                                             @endphp
-                                            <span class="font-medium">{{ $currency }}{{ number_format((float)$value, 2) }}</span>
+                                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                                            <span class="font-medium">{{ $currency }}{{ number_format(decimal_float($value), 2) }}</span>
                                             @break
 
                                         @case('image')

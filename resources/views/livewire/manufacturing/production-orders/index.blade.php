@@ -148,8 +148,9 @@
                                 @endif
                             </td>
                             <td>{{ $order->bom->bom_number ?? '-' }}</td>
-                            <td>{{ number_format((float)$order->quantity_planned, 2) }}</td>
-                            <td>{{ number_format((float)$order->quantity_produced, 2) }}</td>
+                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                            <td>{{ number_format(decimal_float($order->quantity_planned), 2) }}</td>
+                            <td>{{ number_format(decimal_float($order->quantity_produced), 2) }}</td>
                             <td>
                                 @php
                                     $progress = $order->quantity_planned > 0 

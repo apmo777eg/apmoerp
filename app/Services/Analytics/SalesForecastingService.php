@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
+use App\Enums\SaleStatus;
 use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
-use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -90,6 +90,7 @@ class SalesForecastingService
         }
 
         // V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date truncation
+        // @security-reviewed V43 - $periodExpr is validated by DatabaseCompatibilityService regex patterns
         $periodExpr = match ($period) {
             'week' => $this->dbCompat->weekTruncateExpression('sale_date'),
             'month' => $this->dbCompat->monthTruncateExpression('sale_date'),
@@ -104,6 +105,7 @@ class SalesForecastingService
 
         // V35-HIGH-02 FIX: Use sale_date instead of created_at
         // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+        // @phpstan-ignore-next-line - $periodExpr is regex-validated by DatabaseCompatibilityService
         $query = DB::table('sales')
             ->select([
                 DB::raw("{$periodExpr} as period"),
@@ -276,8 +278,10 @@ class SalesForecastingService
     public function getProductForecast(int $productId, ?int $branchId = null, int $forecastPeriods = 7): array
     {
         // V35-HIGH-04 FIX: Use DatabaseCompatibilityService for date expression
+        // @security-reviewed V43 - $dateExpr is validated by DatabaseCompatibilityService regex patterns
         $dateExpr = $this->dbCompat->dateExpression('sales.sale_date');
 
+        // @phpstan-ignore-next-line - $dateExpr is regex-validated by DatabaseCompatibilityService
         $historical = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select([

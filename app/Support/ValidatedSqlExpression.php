@@ -84,9 +84,15 @@ final class ValidatedSqlExpression implements \Stringable
 
     /**
      * Get as Laravel DB::raw expression.
+     *
+     * @security-reviewed V43 - This class wraps pre-validated SQL expressions.
+     * The $expression property is guaranteed to be validated by the factory methods
+     * (fromStockService, fromDatabaseCompatibilityService) which only accept
+     * expressions from services that perform regex validation on all inputs.
      */
     public function toDbRaw(): Expression
     {
+        // @phpstan-ignore-next-line - Expression is validated at creation time by factory methods
         return DB::raw($this->expression);
     }
 

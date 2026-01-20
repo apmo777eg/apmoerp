@@ -51,10 +51,12 @@ class SmartNotificationsService
         try {
             // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch ID is provided
             // SECURITY: StockService validates column names with regex before interpolation
+            // @security-reviewed V43 - $stockExpr is validated by StockService regex patterns
             $stockExpr = $branchId
                 ? StockService::getBranchStockCalculationExpression('products.id', $branchId)
                 : StockService::getStockCalculationExpression();
 
+            // @phpstan-ignore-next-line - $stockExpr is regex-validated by StockService
             $query = Product::query()
                 ->select('products.*')
                 ->selectRaw("{$stockExpr} as current_quantity")

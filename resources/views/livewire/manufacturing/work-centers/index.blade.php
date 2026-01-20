@@ -144,8 +144,9 @@
                                     </span>
                                 @endif
                             </td>
-                            <td>{{ number_format((float)$workCenter->capacity_per_hour, 2) }}</td>
-                            <td>{{ number_format((float)$workCenter->cost_per_hour, 2) }}</td>
+                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                            <td>{{ number_format(decimal_float($workCenter->capacity_per_hour), 2) }}</td>
+                            <td>{{ number_format(decimal_float($workCenter->cost_per_hour), 2) }}</td>
                             <td>
                                 <div class="text-xs">
                                     {{ $workCenter->working_hours_start ?? '-' }} - {{ $workCenter->working_hours_end ?? '-' }}

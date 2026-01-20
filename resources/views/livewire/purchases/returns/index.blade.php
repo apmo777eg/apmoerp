@@ -59,7 +59,8 @@
                                 </td>
                                 <td>{{ $return->purchase?->supplier?->name ?? '-' }}</td>
                                 <td class="max-w-xs truncate">{{ $return->reason ?? '-' }}</td>
-                                <td class="font-mono text-orange-600">{{ number_format((float)$return->total, 2) }}</td>
+                                {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                                <td class="font-mono text-orange-600">{{ number_format(decimal_float($return->total), 2) }}</td>
                                 <td class="text-sm text-slate-500">{{ $return->created_at?->format('Y-m-d H:i') }}</td>
                                 <td class="text-center">
                                     @can('purchases.return')
@@ -106,9 +107,10 @@
                                 <option value="">{{ __('Choose a purchase...') }}</option>
                                 @foreach($purchases as $purchase)
                                     <option value="{{ $purchase->id }}">
+                                        {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
                                         {{ $purchase->reference_no ?: '#' . $purchase->id }} - 
                                         {{ $purchase->supplier?->name ?? __('Unknown Supplier') }} - 
-                                        {{ number_format((float)$purchase->grand_total, 2) }}
+                                        {{ number_format(decimal_float($purchase->grand_total), 2) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -117,7 +119,8 @@
                         <div class="mb-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
                             <p class="text-sm"><strong>{{ __('Reference') }}:</strong> {{ $selectedPurchase->reference_no ?: '#' . $selectedPurchase->id }}</p>
                             <p class="text-sm"><strong>{{ __('Supplier') }}:</strong> {{ $selectedPurchase->supplier?->name ?? __('Unknown Supplier') }}</p>
-                            <p class="text-sm"><strong>{{ __('Total') }}:</strong> {{ number_format((float)$selectedPurchase->grand_total, 2) }}</p>
+                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                            <p class="text-sm"><strong>{{ __('Total') }}:</strong> {{ number_format(decimal_float($selectedPurchase->grand_total), 2) }}</p>
                         </div>
 
                         <div class="mb-4">

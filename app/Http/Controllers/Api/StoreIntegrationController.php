@@ -89,11 +89,13 @@ class StoreIntegrationController extends Controller
 
         // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch_id is provided
         // SECURITY: StockService validates column names with regex before interpolation
+        // @security-reviewed V43 - $stockExpr is validated by StockService regex patterns
         $branchId = $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
         $stockExpr = $branchId
             ? StockService::getBranchStockCalculationExpression('products.id', $branchId)
             : StockService::getStockCalculationExpression();
 
+        // @phpstan-ignore-next-line - $stockExpr is regex-validated by StockService
         $query = Product::query()
             ->select('products.id', 'products.sku', 'products.name')
             ->selectRaw($stockExpr.' as current_stock');

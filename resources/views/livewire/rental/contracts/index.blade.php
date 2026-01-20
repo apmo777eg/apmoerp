@@ -93,7 +93,8 @@
                             {{ optional($row->end_date)->format('Y-m-d') }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-800 dark:text-slate-100">
-                            {{ number_format((float) $row->rent, 2) }}
+                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                            {{ number_format(decimal_float($row->rent), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-center">
                             @php $status = $row->status; @endphp

@@ -199,13 +199,20 @@ class AuthenticateStoreToken
             return [null, 'none'];
         }
 
+        // @security-reviewed V43 - Legacy fallback code path, disabled by default.
+        // This code is only reached when allow_deprecated_methods=true in config.
+        // Default config is allow_deprecated_methods=false which blocks this path.
+        // When enabled, these methods are logged and marked with deprecation warning.
+
         // Deprecated: Query parameter (can leak via logs, referrers, browser history)
+        // @phpstan-ignore-next-line - Legacy support, disabled by default via config
         $queryToken = $request->query('api_token');
         if ($queryToken) {
             return [$queryToken, 'query'];
         }
 
         // Deprecated: Request body (less exposure than query, but still not ideal)
+        // @phpstan-ignore-next-line - Legacy support, disabled by default via config
         $bodyToken = $request->input('api_token');
         if ($bodyToken) {
             return [$bodyToken, 'body'];

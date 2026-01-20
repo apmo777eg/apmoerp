@@ -82,17 +82,18 @@
                                 {{ $row->employee?->code }}
                             </span>
                         </td>
+                        {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-700 dark:text-slate-200">
-                            {{ number_format((float) $row->basic, 2) }}
+                            {{ number_format(decimal_float($row->basic), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-700 dark:text-slate-200">
-                            {{ number_format((float) $row->allowances, 2) }}
+                            {{ number_format(decimal_float($row->allowances), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-700 dark:text-slate-200">
-                            {{ number_format((float) $row->deductions, 2) }}
+                            {{ number_format(decimal_float($row->deductions), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-right tabular-nums text-slate-800 dark:text-slate-100">
-                            {{ number_format((float) $row->net, 2) }}
+                            {{ number_format(decimal_float($row->net), 2) }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-center">
                             @php $status = $row->status; @endphp

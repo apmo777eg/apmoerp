@@ -143,7 +143,8 @@
                                     {{ $bom->operations_count }} {{ __('ops') }}
                                 </span>
                             </td>
-                            <td>{{ number_format((float)$bom->quantity, 2) }}</td>
+                            {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
+                            <td>{{ number_format(decimal_float($bom->quantity), 2) }}</td>
                             <td>
                                 @if($bom->status === 'active')
                                     <span class="erp-badge erp-badge-success">{{ __('Active') }}</span>

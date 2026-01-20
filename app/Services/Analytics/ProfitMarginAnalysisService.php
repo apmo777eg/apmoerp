@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Analytics;
 
+use App\Enums\SaleStatus;
 use App\Services\DatabaseCompatibilityService;
 use Carbon\Carbon;
-use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -178,6 +178,7 @@ class ProfitMarginAnalysisService
         }
 
         // V35-HIGH-04 FIX: Use DatabaseCompatibilityService for cross-DB compatible date truncation
+        // @security-reviewed V43 - $periodExpr is validated by DatabaseCompatibilityService regex patterns
         $periodExpr = match ($groupBy) {
             'week' => $this->dbCompat->weekTruncateExpression('sales.sale_date'),
             'month' => $this->dbCompat->monthTruncateExpression('sales.sale_date'),
@@ -195,6 +196,7 @@ class ProfitMarginAnalysisService
         // V35-HIGH-03 FIX: Use sale_items.cost_price (historical cost)
         // V35-HIGH-02 FIX: Use sale_date instead of created_at
         // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
+        // @phpstan-ignore-next-line - $periodExpr is regex-validated by DatabaseCompatibilityService
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')

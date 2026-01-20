@@ -67,18 +67,20 @@ final class Money
 
     /**
      * Format the money amount for display
+     * V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding before display
      */
     public function format(int $decimals = 2): string
     {
-        return number_format((float) $this->amount, $decimals).' '.$this->currency;
+        return number_format(decimal_float($this->amount, $decimals), $decimals).' '.$this->currency;
     }
 
     /**
      * Convert to float
+     * V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding
      */
     public function toFloat(): float
     {
-        return (float) $this->amount;
+        return decimal_float($this->amount);
     }
 
     /**

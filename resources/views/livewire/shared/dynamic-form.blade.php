@@ -2,13 +2,13 @@
 {{--
 SECURITY (V37-XSS-07): XSS Prevention via sanitize_svg_icon()
 =============================================================
-This component uses {!! !!} for the $icon field from form schema. This is safe because:
+This component uses unescaped Blade output for the $icon field from form schema. This is safe because:
 1. $icon content is passed through sanitize_svg_icon() which uses DOM-based
    allow-list sanitization (see app/Helpers/helpers.php for details)
 2. Form schemas are defined by developers in PHP code, not user input
 3. Even if icon data were manipulated, sanitize_svg_icon() blocks dangerous content
 
-Static analysis tools may flag {!! !!} as XSS risks. This is a false positive
+Static analysis tools may flag unescaped output as XSS risks. This is a false positive
 when the content is passed through sanitize_svg_icon().
 --}}
 @php

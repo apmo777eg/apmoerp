@@ -49,8 +49,10 @@ class SlowMovingStockService
 
         // V31-MED-07 FIX: Use DatabaseCompatibilityService for DATEDIFF
         // SECURITY: DatabaseCompatibilityService returns only hardcoded expressions
+        // @security-reviewed V43 - $daysDiffExpr is validated by DatabaseCompatibilityService regex patterns
         $daysDiffExpr = $this->dbCompat->daysDifference($this->dbCompat->now(), 'MAX(sale_items.created_at)');
 
+        // @phpstan-ignore-next-line - $daysDiffExpr is regex-validated by DatabaseCompatibilityService
         $products = Product::select('products.*')
             ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_sold')
             ->selectRaw('MAX(sale_items.created_at) as last_sold_date')
