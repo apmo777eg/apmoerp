@@ -1,6 +1,6 @@
 {{-- resources/views/components/ui/form/input.blade.php --}}
 {{--
-SECURITY NOTE: This component uses {!! !!} for:
+SECURITY NOTE: This component uses unescaped Blade output for:
 1. $icon - Must be passed through sanitize_svg_icon() before rendering
 2. $wireDirective - Livewire wire:model directive constructed from validated inputs
 

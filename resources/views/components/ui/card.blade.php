@@ -1,6 +1,6 @@
 {{-- resources/views/components/ui/card.blade.php --}}
 {{--
-SECURITY NOTE: This component uses {!! !!} for two types of content:
+SECURITY NOTE: This component uses unescaped Blade output for two types of content:
 1. $icon - Must be passed through sanitize_svg_icon() before rendering
 2. $actions - Slot content from developer code, not user input (buttons, links, etc.)
 

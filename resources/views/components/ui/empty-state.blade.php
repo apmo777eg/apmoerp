@@ -2,12 +2,12 @@
 {{--
 SECURITY (V37-XSS-03): XSS Prevention via sanitize_svg_icon()
 =============================================================
-This component uses {!! !!} for SVG icons. This is safe because:
+This component uses unescaped Blade output for SVG icons. This is safe because:
 1. Content containing HTML/SVG markup is detected and passed through sanitize_svg_icon()
 2. sanitize_svg_icon() uses DOM-based allow-list sanitization
-3. Plain text/emoji content is rendered with {{ }} which auto-escapes
+3. Plain text/emoji content is rendered with escaped output which auto-escapes
 
-Static analysis tools may flag {!! !!} as XSS risks. This is a false positive
+Static analysis tools may flag unescaped output as XSS risks. This is a false positive
 when the content is passed through sanitize_svg_icon().
 --}}
 @props([
