@@ -13,6 +13,12 @@ class BackupService implements BackupServiceInterface
 {
     use HandlesServiceErrors;
 
+    /**
+     * Regex pattern for valid backup filenames.
+     * Matches: backup_YYYYMMDD_HHMMSS.sql.gz or pre_restore_YYYYMMDD_HHMMSS.sql.gz
+     */
+    protected const FILENAME_PATTERN = '/^(backup|pre_restore)_\d{8}_\d{6}\.sql(\.gz)?$/';
+
     protected string $disk;
 
     protected string $dir;
@@ -311,8 +317,7 @@ class BackupService implements BackupServiceInterface
 
         // Validate filename matches expected backup pattern:
         // backup_YYYYMMDD_HHMMSS.sql.gz or pre_restore_YYYYMMDD_HHMMSS.sql.gz
-        $validPattern = '/^(backup|pre_restore)_\d{8}_\d{6}\.sql(\.gz)?$/';
-        if (! preg_match($validPattern, $filename)) {
+        if (! preg_match(self::FILENAME_PATTERN, $filename)) {
             throw new \InvalidArgumentException('Invalid backup path: filename does not match expected pattern');
         }
 

@@ -84,11 +84,25 @@ class BackupDatabaseJob implements ShouldQueue
                     $disk->makeDirectory(trim($backupDir, '/'));
                 }
 
-                // Upload temp file to the configured disk
-                $disk->put($path, file_get_contents($tempFile));
+                // Upload temp file to the configured disk using stream to avoid memory issues
+                $stream = fopen($tempFile, 'rb');
+                if ($stream === false) {
+                    throw new \RuntimeException('Failed to open temp backup file for reading');
+                }
 
-                // Clean up temp file
-                @unlink($tempFile);
+                try {
+                    $disk->writeStream($path, $stream);
+                } finally {
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+
+                // Clean up temp file with proper error handling
+                if (file_exists($tempFile) && ! unlink($tempFile)) {
+                    // Log warning but don't fail - the backup was successful
+                    report(new \RuntimeException('Failed to clean up temp backup file: '.$tempFile));
+                }
             } finally {
                 // Clear the password from environment
                 putenv('MYSQL_PWD');
