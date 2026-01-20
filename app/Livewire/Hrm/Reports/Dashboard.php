@@ -46,6 +46,29 @@ class Dashboard extends Component
         $this->loadPayrollData();
     }
 
+    /**
+     * Get the authenticated user's branch ID for scoping queries.
+     * V48-CRIT-02 FIX: Centralize branch scoping logic to prevent code duplication.
+     */
+    protected function getUserBranchId(): ?int
+    {
+        $user = auth()->user();
+
+        return $user?->branch_id;
+    }
+
+    /**
+     * Apply branch scoping to a query builder.
+     * V48-CRIT-02 FIX: Prevent cross-branch data leakage in multi-branch ERP.
+     */
+    protected function applyBranchScope($builder): void
+    {
+        $branchId = $this->getUserBranchId();
+        if ($branchId) {
+            $builder->where('branch_id', $branchId);
+        }
+    }
+
     protected function loadAttendanceData(): void
     {
         $model = '\\App\\Models\\Attendance';
@@ -60,15 +83,22 @@ class Dashboard extends Component
         $days = (int) ($this->filters['attendance_days'] ?? 14);
         $fromDate = now()->subDays($days)->toDateString();
 
+        // V48-CRIT-02 FIX: Use canonical column 'attendance_date' instead of 'date'
+        // and add branch scoping for multi-branch security
         $builder = $model::query();
-        $builder->whereDate('date', '>=', $fromDate);
+        $builder->whereDate('attendance_date', '>=', $fromDate);
+
+        // V48-CRIT-02 FIX: Add branch scoping to prevent cross-branch data leakage
+        $this->applyBranchScope($builder);
 
         $summary = [
             'total' => (clone $builder)->count(),
-            'today' => (clone $builder)->whereDate('date', now()->toDateString())->count(),
+            // V48-CRIT-02 FIX: Use canonical column 'attendance_date'
+            'today' => (clone $builder)->whereDate('attendance_date', now()->toDateString())->count(),
         ];
 
-        $attendanceRecords = (clone $builder)->get(['status', 'date']);
+        // V48-CRIT-02 FIX: Use canonical column 'attendance_date'
+        $attendanceRecords = (clone $builder)->get(['status', 'attendance_date']);
 
         $statusCounts = $attendanceRecords->groupBy('status')
             ->map->count()
@@ -76,7 +106,8 @@ class Dashboard extends Component
 
         $summary['by_status'] = $statusCounts;
 
-        $series = $attendanceRecords->groupBy('date')
+        // V48-CRIT-02 FIX: Use canonical column 'attendance_date'
+        $series = $attendanceRecords->groupBy('attendance_date')
             ->sortKeys()
             ->map(function ($group, $day) {
                 return [
@@ -106,6 +137,9 @@ class Dashboard extends Component
         }
 
         $builder = $model::query();
+
+        // V48-CRIT-02 FIX: Add branch scoping to prevent cross-branch data leakage
+        $this->applyBranchScope($builder);
 
         if (! empty($this->filters['payroll_period'])) {
             $builder->where('period', $this->filters['payroll_period']);

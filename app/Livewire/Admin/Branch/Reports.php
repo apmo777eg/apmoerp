@@ -159,6 +159,9 @@ class Reports extends Component
             ->where('sales.branch_id', $this->branch->id)
             // V35-MED-06 FIX: Exclude soft-deleted sales and non-revenue statuses
             ->whereNull('sales.deleted_at')
+            // V48-HIGH-01 FIX: Exclude soft-deleted sale_items and products
+            ->whereNull('sale_items.deleted_at')
+            ->whereNull('products.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             // V35-HIGH-02 FIX: Use sale_date instead of created_at
             ->whereBetween('sales.sale_date', [$this->fromDate, $this->toDate])

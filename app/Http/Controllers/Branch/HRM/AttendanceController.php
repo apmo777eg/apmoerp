@@ -100,7 +100,20 @@ class AttendanceController extends Controller
             'status' => ['nullable', 'string', 'in:present,absent,late,on_leave,pending,inactive'],
         ]);
 
-        $record->fill($data);
+        // V48-CRIT-01 FIX: Map validated input keys to canonical column names
+        // Model uses: clock_in, clock_out (not check_in, check_out) in $fillable
+        $mappedData = [];
+        if (array_key_exists('check_in', $data)) {
+            $mappedData['clock_in'] = $data['check_in'];
+        }
+        if (array_key_exists('check_out', $data)) {
+            $mappedData['clock_out'] = $data['check_out'];
+        }
+        if (array_key_exists('status', $data)) {
+            $mappedData['status'] = $data['status'];
+        }
+
+        $record->fill($mappedData);
         $record->save();
 
         return $this->ok($record->fresh());

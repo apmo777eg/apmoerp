@@ -282,6 +282,7 @@ class SalesForecastingService
         $dateExpr = $this->dbCompat->dateExpression('sales.sale_date');
 
         // @phpstan-ignore-next-line - $dateExpr is regex-validated by DatabaseCompatibilityService
+        // V48-MED-01 FIX: Exclude soft-deleted sale_items in addition to sales
         $historical = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select([
@@ -291,6 +292,8 @@ class SalesForecastingService
             ])
             ->where('sale_items.product_id', $productId)
             ->whereNull('sales.deleted_at')
+            // V48-MED-01 FIX: Exclude soft-deleted sale_items (DB::table bypasses SoftDeletes)
+            ->whereNull('sale_items.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->where('sales.sale_date', '>=', now()->subDays(30))
             ->when($branchId, fn ($q) => $q->where('sales.branch_id', $branchId))

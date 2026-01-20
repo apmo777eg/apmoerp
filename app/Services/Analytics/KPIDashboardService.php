@@ -308,6 +308,7 @@ class KPIDashboardService
         $avgFulfillmentTime = 0; // Placeholder - implement based on your order tracking
 
         // V34-CRIT-02 FIX: Use sale_date instead of created_at for business reporting
+        // V48-HIGH-02 FIX: Exclude soft-deleted sales, sale_items, and products
         // Top selling products
         $topProducts = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -320,6 +321,10 @@ class KPIDashboardService
             ->when($branchId, fn ($q) => $q->where('sales.branch_id', $branchId))
             ->whereBetween('sales.sale_date', [$dates['start'], $dates['end']])
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
+            // V48-HIGH-02 FIX: Exclude soft-deleted records (DB::table bypasses SoftDeletes)
+            ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
+            ->whereNull('products.deleted_at')
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_revenue')
             ->limit(5)
