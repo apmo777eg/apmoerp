@@ -46,6 +46,29 @@ class Dashboard extends Component
         $this->loadPayrollData();
     }
 
+    /**
+     * Get the authenticated user's branch ID for scoping queries.
+     * V48-CRIT-02 FIX: Centralize branch scoping logic to prevent code duplication.
+     */
+    protected function getUserBranchId(): ?int
+    {
+        $user = auth()->user();
+
+        return $user?->branch_id;
+    }
+
+    /**
+     * Apply branch scoping to a query builder.
+     * V48-CRIT-02 FIX: Prevent cross-branch data leakage in multi-branch ERP.
+     */
+    protected function applyBranchScope($builder): void
+    {
+        $branchId = $this->getUserBranchId();
+        if ($branchId) {
+            $builder->where('branch_id', $branchId);
+        }
+    }
+
     protected function loadAttendanceData(): void
     {
         $model = '\\App\\Models\\Attendance';
@@ -66,9 +89,7 @@ class Dashboard extends Component
         $builder->whereDate('attendance_date', '>=', $fromDate);
 
         // V48-CRIT-02 FIX: Add branch scoping to prevent cross-branch data leakage
-        if (auth()->check() && auth()->user()->branch_id) {
-            $builder->where('branch_id', auth()->user()->branch_id);
-        }
+        $this->applyBranchScope($builder);
 
         $summary = [
             'total' => (clone $builder)->count(),
@@ -118,9 +139,7 @@ class Dashboard extends Component
         $builder = $model::query();
 
         // V48-CRIT-02 FIX: Add branch scoping to prevent cross-branch data leakage
-        if (auth()->check() && auth()->user()->branch_id) {
-            $builder->where('branch_id', auth()->user()->branch_id);
-        }
+        $this->applyBranchScope($builder);
 
         if (! empty($this->filters['payroll_period'])) {
             $builder->where('period', $this->filters['payroll_period']);
