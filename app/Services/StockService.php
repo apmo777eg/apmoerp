@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\DB;
  * and has been security-reviewed for V40.
  *
  * @security-reviewed V40 - SQL injection protection via regex validation
+ *
  * @see getBranchStockCalculationExpression() for the primary calculation method
  * @see getStockCalculationExpression() for global (non-branch-scoped) calculations
  */
@@ -45,11 +46,14 @@ class StockService
      * Migration schema uses signed `quantity` column:
      * - Positive values = stock in (purchases, returns, adjustments+)
      * - Negative values = stock out (sales, adjustments-)
+     *
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      */
     public static function getCurrentStock(int $productId, ?int $warehouseId = null): float
     {
         $query = DB::table('stock_movements')
-            ->where('product_id', $productId);
+            ->where('product_id', $productId)
+            ->whereNull('deleted_at'); // V45-CRIT-02 FIX: Exclude soft-deleted rows
 
         if ($warehouseId !== null) {
             $query->where('warehouse_id', $warehouseId);
@@ -64,11 +68,14 @@ class StockService
     /**
      * Get current stock for multiple products
      * Returns array keyed by product_id
+     *
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      */
     public static function getBulkCurrentStock(array $productIds, ?int $warehouseId = null): array
     {
         $query = DB::table('stock_movements')
-            ->whereIn('product_id', $productIds);
+            ->whereIn('product_id', $productIds)
+            ->whereNull('deleted_at'); // V45-CRIT-02 FIX: Exclude soft-deleted rows
 
         if ($warehouseId !== null) {
             $query->where('warehouse_id', $warehouseId);
@@ -89,6 +96,7 @@ class StockService
      * Aggregates stock_movements through warehouses.branch_id
      *
      * STILL-V14-CRITICAL-01 FIX: Add branch-scoped bulk stock calculation
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      *
      * @param  array  $productIds  Array of product IDs
      * @param  int  $branchId  The branch ID to filter by
@@ -104,6 +112,7 @@ class StockService
             ->join('warehouses', 'stock_movements.warehouse_id', '=', 'warehouses.id')
             ->whereIn('stock_movements.product_id', $productIds)
             ->where('warehouses.branch_id', $branchId)
+            ->whereNull('stock_movements.deleted_at') // V45-CRIT-02 FIX: Exclude soft-deleted rows
             ->select('stock_movements.product_id')
             ->selectRaw('COALESCE(SUM(stock_movements.quantity), 0) as stock')
             ->groupBy('stock_movements.product_id')
@@ -115,11 +124,14 @@ class StockService
     /**
      * Get stock value for a product from stock_movements table
      * Calculates value based on quantity * unit_cost
+     *
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      */
     public static function getStockValue(int $productId, ?int $warehouseId = null): float
     {
         $query = DB::table('stock_movements')
-            ->where('product_id', $productId);
+            ->where('product_id', $productId)
+            ->whereNull('deleted_at'); // V45-CRIT-02 FIX: Exclude soft-deleted rows
 
         if ($warehouseId !== null) {
             $query->where('warehouse_id', $warehouseId);
@@ -156,6 +168,7 @@ class StockService
      * Aggregates stock_movements through warehouses.branch_id
      *
      * V10-CRITICAL-01 FIX: Add branch-scoped stock calculation
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      *
      * @param  int  $productId  The product ID
      * @param  int  $branchId  The branch ID to filter by
@@ -167,6 +180,7 @@ class StockService
             ->join('warehouses', 'stock_movements.warehouse_id', '=', 'warehouses.id')
             ->where('stock_movements.product_id', $productId)
             ->where('warehouses.branch_id', $branchId)
+            ->whereNull('stock_movements.deleted_at') // V45-CRIT-02 FIX: Exclude soft-deleted rows
             ->sum('stock_movements.quantity'));
     }
 
@@ -177,6 +191,8 @@ class StockService
      * SECURITY NOTE: The $productIdColumn is validated against SQL injection using regex.
      * Only valid table.column format identifiers are accepted.
      * The resulting expression is safe to use in selectRaw/whereRaw.
+     *
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      *
      * @param  string  $productIdColumn  Table.column reference (e.g., 'products.id')
      *
@@ -190,7 +206,8 @@ class StockService
         }
 
         // quantity is signed: positive = in, negative = out
-        return "COALESCE((SELECT SUM(quantity) FROM stock_movements WHERE stock_movements.product_id = {$productIdColumn}), 0)";
+        // V45-CRIT-02 FIX: Exclude soft-deleted rows
+        return "COALESCE((SELECT SUM(quantity) FROM stock_movements WHERE stock_movements.product_id = {$productIdColumn} AND stock_movements.deleted_at IS NULL), 0)";
     }
 
     /**
@@ -199,6 +216,8 @@ class StockService
      * SECURITY NOTE: Both column parameters are validated against SQL injection using regex.
      * Only valid table.column format identifiers are accepted.
      * The resulting expression is safe to use in selectRaw/whereRaw.
+     *
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      *
      * @param  string  $productIdColumn  Table.column reference (e.g., 'products.id')
      * @param  string  $warehouseIdColumn  Table.column reference (e.g., 'warehouses.id')
@@ -216,7 +235,8 @@ class StockService
         }
 
         // quantity is signed: positive = in, negative = out
-        return "COALESCE((SELECT SUM(quantity) FROM stock_movements WHERE stock_movements.product_id = {$productIdColumn} AND stock_movements.warehouse_id = {$warehouseIdColumn}), 0)";
+        // V45-CRIT-02 FIX: Exclude soft-deleted rows
+        return "COALESCE((SELECT SUM(quantity) FROM stock_movements WHERE stock_movements.product_id = {$productIdColumn} AND stock_movements.warehouse_id = {$warehouseIdColumn} AND stock_movements.deleted_at IS NULL), 0)";
     }
 
     /**
@@ -224,6 +244,7 @@ class StockService
      * Joins stock_movements through warehouses.branch_id
      *
      * V10-CRITICAL-01 FIX: Add branch-scoped stock calculation expression
+     * V45-CRIT-02 FIX: Exclude soft-deleted stock movements
      *
      * SECURITY NOTE: Both the column parameter and branch ID are validated:
      * - $productIdColumn: Validated using regex for valid table.column format
@@ -262,7 +283,8 @@ class StockService
 
         // quantity is signed: positive = in, negative = out
         // Join through warehouses to filter by branch
-        return "COALESCE((SELECT SUM(sm.quantity) FROM stock_movements sm INNER JOIN warehouses w ON sm.warehouse_id = w.id WHERE sm.product_id = {$productIdColumn} AND {$branchCondition}), 0)";
+        // V45-CRIT-02 FIX: Exclude soft-deleted rows
+        return "COALESCE((SELECT SUM(sm.quantity) FROM stock_movements sm INNER JOIN warehouses w ON sm.warehouse_id = w.id WHERE sm.product_id = {$productIdColumn} AND {$branchCondition} AND sm.deleted_at IS NULL), 0)";
     }
 
     /**
@@ -318,9 +340,11 @@ class StockService
 
             // STILL-V7-HIGH-N07 FIX: Lock the rows for this product+warehouse combination
             // and calculate stock at database level for efficiency
+            // V45-CRIT-02 FIX: Exclude soft-deleted rows from stock calculation
             $stockBefore = decimal_float(DB::table('stock_movements')
                 ->where('product_id', $productId)
                 ->where('warehouse_id', $warehouseId)
+                ->whereNull('deleted_at')
                 ->lockForUpdate()
                 ->sum('quantity'));
 

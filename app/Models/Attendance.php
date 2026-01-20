@@ -49,14 +49,32 @@ class Attendance extends BaseModel
         return $this->attendance_date;
     }
 
+    // V45-CRIT-01 FIX: Add setter for backward compatibility with controllers using 'date'
+    public function setDateAttribute($value): void
+    {
+        $this->attributes['attendance_date'] = $value;
+    }
+
     public function getCheckInAttribute()
     {
         return $this->clock_in;
     }
 
+    // V45-CRIT-01 FIX: Add setter for backward compatibility with controllers using 'check_in'
+    public function setCheckInAttribute($value): void
+    {
+        $this->attributes['clock_in'] = $value;
+    }
+
     public function getCheckOutAttribute()
     {
         return $this->clock_out;
+    }
+
+    // V45-CRIT-01 FIX: Add setter for backward compatibility with controllers using 'check_out'
+    public function setCheckOutAttribute($value): void
+    {
+        $this->attributes['clock_out'] = $value;
     }
 
     public function getIsLateAttribute(): bool

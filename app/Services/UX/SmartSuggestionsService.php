@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\UX;
 
+use App\Enums\SaleStatus;
 use App\Models\Customer;
 use App\Models\Product;
 use Illuminate\Support\Collection;
-use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -54,8 +54,9 @@ class SmartSuggestionsService
         $holdingCost = bcmul((string) ($product->standard_cost ?? 0), '0.25', 2); // 25% of cost per year
 
         $eoqNumerator = bcmul(bcmul('2', $annualDemand, 2), $orderCost, 2);
+        // V45-HIGH-01 FIX: Apply sqrt() to the EOQ formula as per the standard formula
         $eoq = bccomp($holdingCost, '0', 2) > 0
-            ? bcdiv($eoqNumerator, $holdingCost, 0)
+            ? (string) sqrt((float) bcdiv($eoqNumerator, $holdingCost, 4))
             : $annualDemand;
 
         // Calculate suggested order quantity
