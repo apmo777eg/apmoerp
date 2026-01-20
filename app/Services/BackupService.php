@@ -110,10 +110,13 @@ class BackupService implements BackupServiceInterface
 
     public function delete(string $path): bool
     {
+        // Validate path before any operation
+        $validPath = $this->validatePath($path);
+
         return $this->handleServiceOperation(
-            callback: fn () => Storage::disk($this->disk)->delete($path),
+            callback: fn () => Storage::disk($this->disk)->delete($validPath),
             operation: 'delete',
-            context: ['path' => $path],
+            context: ['path' => $validPath],
             defaultValue: false
         );
     }
@@ -126,18 +129,21 @@ class BackupService implements BackupServiceInterface
      */
     public function restore(string $path): array
     {
+        // Validate path before any operation
+        $validPath = $this->validatePath($path);
+
         return $this->handleServiceOperation(
-            callback: function () use ($path) {
+            callback: function () use ($validPath) {
                 // Validate the backup file exists
-                if (! Storage::disk($this->disk)->exists($path)) {
-                    throw new \RuntimeException('Backup file not found: '.$path);
+                if (! Storage::disk($this->disk)->exists($validPath)) {
+                    throw new \RuntimeException('Backup file not found: '.$validPath);
                 }
 
                 // Get the full path
-                $fullPath = Storage::disk($this->disk)->path($path);
+                $fullPath = Storage::disk($this->disk)->path($validPath);
 
                 // Determine if file is compressed
-                $isCompressed = str_ends_with($path, '.gz');
+                $isCompressed = str_ends_with($validPath, '.gz');
 
                 // Get database connection settings
                 $connection = config('database.default');
@@ -151,27 +157,49 @@ class BackupService implements BackupServiceInterface
                 $port = $config['port'] ?? 3306;
                 $database = $config['database'];
                 $username = $config['username'];
-                $password = $config['password'];
+                $password = $config['password'] ?? '';
 
-                // Build the mysql command
-                $command = sprintf(
-                    '%s mysql -h %s -P %s -u %s %s %s < %s 2>&1',
-                    $isCompressed ? "gunzip -c {$fullPath} |" : '',
-                    escapeshellarg($host),
-                    escapeshellarg((string) $port),
-                    escapeshellarg($username),
-                    $password ? '-p'.escapeshellarg($password) : '',
-                    escapeshellarg($database),
-                    $isCompressed ? '-' : escapeshellarg($fullPath)
-                );
+                // Set password via environment variable to avoid exposure in process list
+                if ($password !== '') {
+                    putenv('MYSQL_PWD='.$password);
+                }
 
-                // Execute restore
-                $output = [];
-                $returnVar = 0;
-                exec($command, $output, $returnVar);
+                try {
+                    // Build the mysql restore command properly
+                    // Use separate commands connected by pipe for compressed files
+                    if ($isCompressed) {
+                        // For compressed files: gunzip -c file.sql.gz | mysql ...
+                        $command = sprintf(
+                            'gunzip -c %s | mysql -h %s -P %s -u %s %s 2>&1',
+                            escapeshellarg($fullPath),
+                            escapeshellarg($host),
+                            escapeshellarg((string) $port),
+                            escapeshellarg($username),
+                            escapeshellarg($database)
+                        );
+                    } else {
+                        // For uncompressed files: mysql ... < file.sql
+                        $command = sprintf(
+                            'mysql -h %s -P %s -u %s %s < %s 2>&1',
+                            escapeshellarg($host),
+                            escapeshellarg((string) $port),
+                            escapeshellarg($username),
+                            escapeshellarg($database),
+                            escapeshellarg($fullPath)
+                        );
+                    }
 
-                if ($returnVar !== 0) {
-                    throw new \RuntimeException('Restore failed: '.implode("\n", $output));
+                    // Execute restore
+                    $output = [];
+                    $returnVar = 0;
+                    exec($command, $output, $returnVar);
+
+                    if ($returnVar !== 0) {
+                        throw new \RuntimeException('Restore failed: '.implode("\n", $output));
+                    }
+                } finally {
+                    // Always clear the password from environment
+                    putenv('MYSQL_PWD');
                 }
 
                 // Clear all caches after restore
@@ -180,12 +208,12 @@ class BackupService implements BackupServiceInterface
 
                 return [
                     'success' => true,
-                    'path' => $path,
+                    'path' => $validPath,
                     'restored_at' => now()->toISOString(),
                 ];
             },
             operation: 'restore',
-            context: ['path' => $path]
+            context: ['path' => $validPath]
         );
     }
 
@@ -194,16 +222,19 @@ class BackupService implements BackupServiceInterface
      */
     public function download(string $path): ?string
     {
+        // Validate path before any operation
+        $validPath = $this->validatePath($path);
+
         return $this->handleServiceOperation(
-            callback: function () use ($path) {
-                if (! Storage::disk($this->disk)->exists($path)) {
+            callback: function () use ($validPath) {
+                if (! Storage::disk($this->disk)->exists($validPath)) {
                     throw new \RuntimeException('Backup file not found');
                 }
 
-                return Storage::disk($this->disk)->path($path);
+                return Storage::disk($this->disk)->path($validPath);
             },
             operation: 'download',
-            context: ['path' => $path],
+            context: ['path' => $validPath],
             defaultValue: null
         );
     }
@@ -213,25 +244,28 @@ class BackupService implements BackupServiceInterface
      */
     public function getInfo(string $path): ?array
     {
+        // Validate path before any operation
+        $validPath = $this->validatePath($path);
+
         return $this->handleServiceOperation(
-            callback: function () use ($path) {
-                if (! Storage::disk($this->disk)->exists($path)) {
+            callback: function () use ($validPath) {
+                if (! Storage::disk($this->disk)->exists($validPath)) {
                     return null;
                 }
 
                 $disk = Storage::disk($this->disk);
 
                 return [
-                    'path' => $path,
-                    'filename' => basename($path),
-                    'size' => $disk->size($path),
-                    'size_human' => $this->formatBytes($disk->size($path)),
-                    'modified' => $disk->lastModified($path),
-                    'modified_human' => \Carbon\Carbon::createFromTimestamp($disk->lastModified($path))->diffForHumans(),
+                    'path' => $validPath,
+                    'filename' => basename($validPath),
+                    'size' => $disk->size($validPath),
+                    'size_human' => $this->formatBytes($disk->size($validPath)),
+                    'modified' => $disk->lastModified($validPath),
+                    'modified_human' => \Carbon\Carbon::createFromTimestamp($disk->lastModified($validPath))->diffForHumans(),
                 ];
             },
             operation: 'getInfo',
-            context: ['path' => $path],
+            context: ['path' => $validPath],
             defaultValue: null
         );
     }
@@ -248,6 +282,41 @@ class BackupService implements BackupServiceInterface
         $bytes /= (1 << (10 * $pow));
 
         return round($bytes, $precision).' '.$units[$pow];
+    }
+
+    /**
+     * Validate and sanitize the backup file path.
+     *
+     * Ensures path is within allowed directory and matches expected patterns.
+     *
+     * @throws \InvalidArgumentException if path is invalid
+     */
+    protected function validatePath(string $path): string
+    {
+        // Reject paths with directory traversal attempts
+        if (str_contains($path, '..') || str_contains($path, "\0")) {
+            throw new \InvalidArgumentException('Invalid backup path: directory traversal not allowed');
+        }
+
+        // Normalize directory
+        $dir = trim($this->dir, '/').'/';
+
+        // Path must start with the configured backup directory
+        if (! str_starts_with($path, $dir)) {
+            throw new \InvalidArgumentException('Invalid backup path: must be within backup directory');
+        }
+
+        // Extract filename from path
+        $filename = basename($path);
+
+        // Validate filename matches expected backup pattern:
+        // backup_YYYYMMDD_HHMMSS.sql.gz or pre_restore_YYYYMMDD_HHMMSS.sql.gz
+        $validPattern = '/^(backup|pre_restore)_\d{8}_\d{6}\.sql(\.gz)?$/';
+        if (! preg_match($validPattern, $filename)) {
+            throw new \InvalidArgumentException('Invalid backup path: filename does not match expected pattern');
+        }
+
+        return $path;
     }
 
     /**

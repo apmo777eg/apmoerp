@@ -24,44 +24,74 @@ class BackupDatabaseJob implements ShouldQueue
 
     public function handle(): void
     {
-        // You can replace with spatie/laravel-backup if installed
+        // Get configured disk and path
+        $diskName = (string) config('backup.disk', 'local');
+        $backupDir = (string) config('backup.dir', 'backups');
+        $disk = Storage::disk($diskName);
+
         $filename = 'backup_'.now()->format('Ymd_His').'.sql.gz';
-        $disk = Storage::disk(config('backup.disk', 'local'));
-        $path = 'backups/'.$filename;
+        $path = trim($backupDir, '/').'/'.$filename;
 
         // Try using an artisan command if exists; fallback to mysqldump
         if (Artisan::has('db:dump')) {
             Artisan::call('db:dump', ['--path' => $path]);
         } else {
+            // Get the current default database connection
+            $connection = config('database.default');
+            $db = config("database.connections.{$connection}");
+
+            if ($db['driver'] !== 'mysql') {
+                throw new \RuntimeException(
+                    "Database backup fallback only supports MySQL. Current driver: {$db['driver']}. ".
+                    'Consider installing spatie/laravel-backup for multi-database support.'
+                );
+            }
+
             // Minimal portable fallback using mysqldump with environment variable for password
             // Using MYSQL_PWD env var to avoid password exposure in process list
             // For production, consider using spatie/laravel-backup or .my.cnf config files
-            $db = config('database.connections.mysql');
 
             // Set password via environment variable instead of command line
-            putenv('MYSQL_PWD='.($db['password'] ?? ''));
+            $password = $db['password'] ?? '';
+            if ($password !== '') {
+                putenv('MYSQL_PWD='.$password);
+            }
 
-            // All values are from config and properly escaped - no user input
-            $cmd = sprintf(
-                'mysqldump -h%s -u%s %s | gzip > %s',
-                escapeshellarg($db['host'] ?? '127.0.0.1'),
-                escapeshellarg($db['username'] ?? ''),
-                escapeshellarg($db['database'] ?? ''),
-                escapeshellarg(storage_path('app/'.$path))
-            );
+            try {
+                // Create temp file for the dump, then move to disk
+                $tempFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql.gz';
 
-            @mkdir(dirname(storage_path('app/'.$path)), 0775, true);
+                // All values are from config and properly escaped - no user input
+                $cmd = sprintf(
+                    'mysqldump -h%s -u%s %s | gzip > %s',
+                    escapeshellarg($db['host'] ?? '127.0.0.1'),
+                    escapeshellarg($db['username'] ?? ''),
+                    escapeshellarg($db['database'] ?? ''),
+                    escapeshellarg($tempFile)
+                );
 
-            // Execute with proper error handling
-            $output = [];
-            $returnCode = 0;
-            exec($cmd, $output, $returnCode);
+                // Execute with proper error handling
+                $output = [];
+                $returnCode = 0;
+                exec($cmd, $output, $returnCode);
 
-            // Clear the password from environment
-            putenv('MYSQL_PWD');
+                if ($returnCode !== 0) {
+                    throw new \RuntimeException('Backup command failed with exit code: '.$returnCode);
+                }
 
-            if ($returnCode !== 0) {
-                throw new \RuntimeException('Backup command failed with exit code: '.$returnCode);
+                // Ensure backup directory exists on disk
+                if (! $disk->exists(trim($backupDir, '/'))) {
+                    $disk->makeDirectory(trim($backupDir, '/'));
+                }
+
+                // Upload temp file to the configured disk
+                $disk->put($path, file_get_contents($tempFile));
+
+                // Clean up temp file
+                @unlink($tempFile);
+            } finally {
+                // Clear the password from environment
+                putenv('MYSQL_PWD');
             }
         }
 
