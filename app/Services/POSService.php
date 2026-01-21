@@ -139,8 +139,8 @@ class POSService implements POSServiceInterface
                         abort(422, __('Product ":product" is no longer available for sale.', ['product' => $product->name]));
                     }
 
-                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                    $price = isset($it['price']) ? decimal_float($it['price']) : decimal_float($product->default_price ?? 0);
+                    // V51-CRIT-04 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+                    $price = isset($it['price']) ? decimal_float($it['price'], 4) : decimal_float($product->default_price ?? 0, 4);
 
                     // Check stock availability for physical products (not services)
                     // Respect the allow_negative_stock setting from system configuration
@@ -157,12 +157,12 @@ class POSService implements POSServiceInterface
                         }
                     }
 
-                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                    if ($user && ! $user->can_modify_price && abs($price - decimal_float($product->default_price ?? 0)) > 0.001) {
+                    // V51-CRIT-04 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+                    if ($user && ! $user->can_modify_price && abs($price - decimal_float($product->default_price ?? 0, 4)) > 0.001) {
                         abort(422, __('You are not allowed to modify prices'));
                     }
 
-                    (new ValidPriceOverride(decimal_float($product->cost), 0.0))->validate('price', $price, function ($m) {
+                    (new ValidPriceOverride(decimal_float($product->cost, 4), 0.0))->validate('price', $price, function ($m) {
                         abort(422, $m);
                     });
 

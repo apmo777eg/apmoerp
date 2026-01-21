@@ -157,9 +157,10 @@ class Index extends Component
                     if (! $pi) {
                         continue;
                     }
-                    $qty = min(decimal_float($it['qty']), decimal_float($pi->qty));
+                    // V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for quantities and costs
+                    $qty = min(decimal_float($it['qty'], 4), decimal_float($pi->qty, 4));
                     // V23-CRIT-01 FIX: Use unit_cost accessor (maps to unit_price) instead of non-existent cost
-                    $unitCost = decimal_float($pi->unit_cost);
+                    $unitCost = decimal_float($pi->unit_cost, 4);
                     $line = $qty * $unitCost;
                     $refund += $line;
 

@@ -151,8 +151,8 @@ class Index extends Component
             ->filter(fn ($item) => $item['qty'] > 0)
             ->map(fn ($item) => [
                 'product_id' => $item['product_id'],
-                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                'qty' => min(decimal_float($item['qty']), decimal_float($item['max_qty'])),
+                // V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for quantities
+                'qty' => min(decimal_float($item['qty'], 4), decimal_float($item['max_qty'], 4)),
             ])
             ->values()
             ->toArray();

@@ -74,9 +74,9 @@ class ProductsController extends BaseApiController
                 'name' => $product->name,
                 'label' => $product->name, // Frontend fallback
                 'sku' => $product->sku,
-                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                'price' => decimal_float($product->default_price),
-                'sale_price' => decimal_float($product->default_price), // Frontend fallback
+                // V51-HIGH-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+                'price' => decimal_float($product->default_price, 4),
+                'sale_price' => decimal_float($product->default_price, 4), // Frontend fallback
                 'barcode' => $product->barcode,
                 'tax_id' => $product->tax_id,
             ];

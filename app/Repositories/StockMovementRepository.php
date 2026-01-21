@@ -230,9 +230,9 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
         // - Positive values = stock added (in)
         // - Negative values = stock removed (out)
         // So sum(quantity) gives the correct net stock level
-        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+        // V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for stock quantities
         $totalStock = decimal_float(StockMovement::where('product_id', $productId)
-            ->sum('quantity'));
+            ->sum('quantity'), 4);
 
         // Update the product's stock_quantity field (cached/denormalized value)
         // V50-MED-02 FIX: Exclude soft-deleted products

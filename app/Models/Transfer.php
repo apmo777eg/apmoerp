@@ -215,11 +215,14 @@ class Transfer extends BaseModel
     /**
      * Calculate total value from items
      */
+    /**
+     * V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match total_value's decimal:4 cast
+     */
     public function calculateTotalValue(): float
     {
         return decimal_float($this->items()
             ->selectRaw('SUM(quantity * unit_cost) as total')
-            ->value('total') ?? 0.0);
+            ->value('total') ?? 0.0, 4);
     }
 
     /**
