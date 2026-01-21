@@ -15,12 +15,12 @@ class OrderItemResource extends JsonResource
             'id' => $this->id,
             'product_id' => $this->product_id,
             'product' => $this->whenLoaded('product', fn () => new ProductResource($this->product)),
-            'quantity' => (int) $this->qty,
-            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            'unit_price' => decimal_float($this->unit_price),
-            'discount' => decimal_float($this->discount),
-            'tax' => decimal_float($this->tax ?? 0),
-            'total' => decimal_float($this->line_total),
+            // V52-HIGH-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for quantities and prices
+            'quantity' => decimal_float($this->qty, 4),
+            'unit_price' => decimal_float($this->unit_price, 4),
+            'discount' => decimal_float($this->discount, 4),
+            'tax' => decimal_float($this->tax ?? 0, 4),
+            'total' => decimal_float($this->line_total, 4),
             'notes' => $this->notes,
         ];
     }

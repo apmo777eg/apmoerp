@@ -621,16 +621,15 @@ class StoreSyncService
                     continue;
                 }
 
-                // CRITICAL-05 FIX: Use correct SaleItem schema column names
-                // V29-HIGH-03 FIX: Include warehouse_id and cost_price for ERP consistency
+                // V52-CRIT-02 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
                 $sale->items()->create([
                     'product_id' => $productId,
                     'warehouse_id' => $warehouseId, // V29-HIGH-03 FIX
                     'quantity' => (int) ($lineItem['quantity'] ?? 1),
-                    'unit_price' => decimal_float($lineItem['price'] ?? 0),
+                    'unit_price' => decimal_float($lineItem['price'] ?? 0, 4),
                     'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
                     'discount_amount' => 0,
-                    'line_total' => decimal_float($lineItem['total'] ?? 0),
+                    'line_total' => decimal_float($lineItem['total'] ?? 0, 4),
                 ]);
             }
 
@@ -764,12 +763,13 @@ class StoreSyncService
                 ->where('external_id', $externalId)
                 ->first();
 
+            // V52-CRIT-02 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
             $productData = [
                 'name' => $data['name'] ?? 'Unknown Product',
                 'description' => $data['description'] ?? '',
                 'sku' => $data['sku'] ?? 'LAR-'.$externalId,
-                'default_price' => decimal_float($data['default_price'] ?? $data['price'] ?? 0),
-                'cost' => decimal_float($data['cost'] ?? 0),
+                'default_price' => decimal_float($data['default_price'] ?? $data['price'] ?? 0, 4),
+                'cost' => decimal_float($data['cost'] ?? 0, 4),
                 'branch_id' => $store->branch_id,
             ];
 

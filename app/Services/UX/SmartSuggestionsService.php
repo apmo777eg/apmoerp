@@ -96,7 +96,8 @@ class SmartSuggestionsService
      */
     public function suggestOptimalPricing(Product $product, ?float $targetMarginPercent = null): array
     {
-        $cost = decimal_float($product->standard_cost ?? 0);
+        // V52-MED-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for costs
+        $cost = decimal_float($product->standard_cost ?? 0, 4);
 
         if (bccomp((string) $cost, '0', 2) <= 0) {
             return [

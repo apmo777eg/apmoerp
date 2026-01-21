@@ -36,7 +36,8 @@ class WoodService implements WoodServiceInterface
                     'input_qty' => $payload['input_qty'],
                     'output_uom' => $payload['output_uom'],
                     'output_qty' => $payload['output_qty'],
-                    'efficiency' => $this->efficiency(decimal_float($payload['input_qty']), decimal_float($payload['output_qty'])),
+                    // V52-HIGH-02 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for quantities
+                    'efficiency' => $this->efficiency(decimal_float($payload['input_qty'], 4), decimal_float($payload['output_qty'], 4)),
                     'created_at' => now(), 'updated_at' => now(),
                 ]);
             },

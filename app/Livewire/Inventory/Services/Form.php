@@ -231,8 +231,8 @@ class Form extends Component
                 default => (string) $this->serviceDuration,
             };
             $calculated = bcmul((string) $this->hourlyRate, $hours, 4);
-            // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
-            $this->defaultPrice = decimal_float(bcround($calculated, 2));
+            // V51-CRIT-02 FIX: Use bcround() with scale 4 to match decimal:4 schema for prices
+            $this->defaultPrice = decimal_float(bcround($calculated, 4), 4);
         }
     }
 

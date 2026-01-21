@@ -564,8 +564,9 @@ class ImportService
             'name' => $data['name'],
             'sku' => $data['sku'] ?? null,
             'barcode' => $data['barcode'] ?? null,
-            'default_price' => decimal_float($data['default_price'] ?? 0),
-            'cost' => decimal_float($data['cost'] ?? 0),
+            // V52-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+            'default_price' => decimal_float($data['default_price'] ?? 0, 4),
+            'cost' => decimal_float($data['cost'] ?? 0, 4),
             'min_stock' => (int) ($data['min_stock'] ?? 0),
             'status' => $isActive ? 'active' : 'inactive', // V21-HIGH-07 Fix
             'branch_id' => $branchId,
@@ -584,7 +585,8 @@ class ImportService
             'city' => $data['city'] ?? null,
             'country' => $data['country'] ?? null,
             'tax_id' => $data['tax_id'] ?? null,
-            'credit_limit' => decimal_float($data['credit_limit'] ?? 0),
+            // V52-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for credit limits
+            'credit_limit' => decimal_float($data['credit_limit'] ?? 0, 4),
             'branch_id' => $branchId,
             'is_active' => true,
         ];
