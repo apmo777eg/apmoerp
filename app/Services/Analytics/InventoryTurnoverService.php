@@ -59,7 +59,9 @@ class InventoryTurnoverService
         $cogs = $cogsQuery->sum(DB::raw('sale_items.quantity * COALESCE(sale_items.cost_price, products.cost, 0)'));
 
         // Get average inventory value
+        // V50-HIGH-10 FIX: Exclude soft-deleted products
         $inventoryQuery = DB::table('products')
+            ->whereNull('products.deleted_at')
             ->where('status', 'active');
 
         if ($branchId) {
@@ -110,6 +112,7 @@ class InventoryTurnoverService
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->groupBy('sale_items.product_id');
 
+        // V50-HIGH-10 FIX: Exclude soft-deleted products
         $query = DB::table('products')
             ->leftJoinSub($salesSubquery, 'sales_data', function ($join) {
                 $join->on('products.id', '=', 'sales_data.product_id');
@@ -129,6 +132,7 @@ class InventoryTurnoverService
                     ELSE 0 
                 END as turnover_rate'),
             ])
+            ->whereNull('products.deleted_at')
             ->where('products.status', 'active')
             ->orderByDesc('turnover_rate')
             ->limit($limit);
@@ -165,6 +169,7 @@ class InventoryTurnoverService
             ->whereDate('sales.sale_date', '>=', $startDate)
             ->distinct();
 
+        // V50-HIGH-10 FIX: Exclude soft-deleted products
         $query = DB::table('products')
             ->leftJoinSub($recentSalesSubquery, 'recent_sales', function ($join) {
                 $join->on('products.id', '=', 'recent_sales.product_id');
@@ -179,6 +184,7 @@ class InventoryTurnoverService
                 'products.created_at',
             ])
             ->whereNull('recent_sales.product_id')
+            ->whereNull('products.deleted_at')
             ->where('products.status', 'active')
             ->where('products.stock_quantity', '>', 0)
             ->orderByDesc(DB::raw('COALESCE(products.stock_quantity, 0) * COALESCE(products.cost, 0)'))
@@ -225,6 +231,7 @@ class InventoryTurnoverService
             ->whereDate('sales.sale_date', '>=', $monthlySalesStart)
             ->groupBy('sale_items.product_id');
 
+        // V50-HIGH-10 FIX: Exclude soft-deleted products
         $query = DB::table('products')
             ->leftJoinSub($monthlySalesSubquery, 'sales_data', function ($join) {
                 $join->on('products.id', '=', 'sales_data.product_id');
@@ -243,6 +250,7 @@ class InventoryTurnoverService
                     ELSE 999
                 END as months_of_supply'),
             ])
+            ->whereNull('products.deleted_at')
             ->where('products.status', 'active')
             ->where('products.stock_quantity', '>', 0)
             ->having('months_of_supply', '>', $threshold)

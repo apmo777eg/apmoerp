@@ -164,8 +164,10 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             // V32-CRIT-02 FIX: Validate warehouse belongs to the same branch as the product
             // In a multi-branch ERP, allowing stock movements across branches corrupts
             // stock totals, aging reports, and audit trails.
+            // V50-HIGH-11 FIX: Exclude soft-deleted products
             $product = DB::table('products')
                 ->where('id', $data['product_id'])
+                ->whereNull('deleted_at')
                 ->first();
 
             if ($product === null) {
@@ -233,8 +235,10 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             ->sum('quantity'));
 
         // Update the product's stock_quantity field (cached/denormalized value)
+        // V50-MED-02 FIX: Exclude soft-deleted products
         DB::table('products')
             ->where('id', $productId)
+            ->whereNull('deleted_at')
             ->update([
                 'stock_quantity' => $totalStock,
                 'updated_at' => now(),

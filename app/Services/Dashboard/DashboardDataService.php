@@ -149,6 +149,7 @@ class DashboardDataService
      * Generate top selling products data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
      * V35-MED-06 FIX: Exclude all non-revenue statuses and soft-deleted sales
+     * V50-HIGH-08 FIX: Exclude soft-deleted sale_items and products
      */
     public function generateTopSellingProductsData(?int $branchId, int $limit = 5): array
     {
@@ -162,6 +163,8 @@ class DashboardDataService
                 DB::raw('COALESCE(SUM(sale_items.line_total), 0) as total_revenue')
             )
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_items.deleted_at')
+            ->whereNull('products.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [now()->subDays(30)->toDateString(), now()->toDateString()])
             ->groupBy('products.id', 'products.name')
@@ -182,6 +185,7 @@ class DashboardDataService
      * Generate top customers data.
      * V25-MED-01 FIX: Use sale_date instead of created_at for business reporting
      * V35-MED-06 FIX: Exclude all non-revenue statuses and soft-deleted sales
+     * V50-MED-01 FIX: Exclude soft-deleted customers
      */
     public function generateTopCustomersData(?int $branchId, int $limit = 5): array
     {
@@ -194,6 +198,7 @@ class DashboardDataService
                 DB::raw('COALESCE(SUM(sales.total_amount), 0) as total_spent')
             )
             ->whereNull('sales.deleted_at')
+            ->whereNull('customers.deleted_at')
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [now()->subDays(30)->toDateString(), now()->toDateString()])
             ->groupBy('customers.id', 'customers.name')
@@ -369,17 +374,21 @@ class DashboardDataService
      * - Use 'attendance_date' instead of 'date'
      * - Use 'late_minutes > 0' instead of 'is_late' (which is an accessor, not a column)
      * - Use 'on_leave' consistently for leave status
+     * V50-HIGH-09 FIX: Exclude soft-deleted attendances and employees
      */
     public function generateAttendanceSnapshotData(?int $branchId): array
     {
         $query = DB::table('attendances')
-            ->whereDate('attendance_date', today());
+            ->whereDate('attendance_date', today())
+            ->whereNull('attendances.deleted_at');
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
         }
 
-        $total = DB::table('hr_employees')->where('is_active', true);
+        $total = DB::table('hr_employees')
+            ->where('is_active', true)
+            ->whereNull('hr_employees.deleted_at');
         if ($branchId) {
             $total->where('branch_id', $branchId);
         }

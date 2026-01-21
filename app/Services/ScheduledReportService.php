@@ -136,8 +136,10 @@ class ScheduledReportService
     protected function fetchInventoryReportData(array $filters): array
     {
         try {
+            // V50-HIGH-05 FIX: Exclude soft-deleted products
             $query = DB::table('products')
                 ->select(['name', 'sku', 'default_price', 'cost', 'reorder_qty', 'status'])
+                ->whereNull('products.deleted_at')
                 ->where('status', 'active');
 
             if (! empty($filters['category_id'])) {
@@ -175,6 +177,7 @@ class ScheduledReportService
     {
         try {
             // V31-MED-05 FIX: Add proper filtering for sales status and deleted_at
+            // V50-HIGH-06 FIX: Exclude soft-deleted customers
             $query = DB::table('customers')
                 ->leftJoin('sales', function ($join) {
                     $join->on('customers.id', '=', 'sales.customer_id')
@@ -188,6 +191,7 @@ class ScheduledReportService
                     DB::raw('COUNT(sales.id) as total_orders'),
                     DB::raw('COALESCE(SUM(sales.total_amount), 0) as total_spent'),
                 ])
+                ->whereNull('customers.deleted_at')
                 ->groupBy('customers.id', 'customers.name', 'customers.email', 'customers.phone');
 
             if (! empty($filters['branch_id'])) {
@@ -258,6 +262,7 @@ class ScheduledReportService
     protected function fetchProductsReportData(array $filters): array
     {
         try {
+            // V50-HIGH-07 FIX: Exclude soft-deleted products
             $query = DB::table('products')
                 ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
                 ->select([
@@ -266,18 +271,21 @@ class ScheduledReportService
                     'product_categories.name as category',
                     'products.default_price as price',
                     'products.cost',
-                ]);
+                ])
+                ->whereNull('products.deleted_at');
 
             // V21-HIGH-04 Fix: Use branch-scoped stock calculation to prevent cross-branch data leakage
             // The stock calculation now respects branch_id filter for multi-branch ERP systems
+            // V50-CRIT-02 FIX: Exclude soft-deleted stock movements in subquery
             if (! empty($filters['branch_id'])) {
                 $branchId = (int) $filters['branch_id'];
-                $query->selectRaw('COALESCE((SELECT SUM(quantity) FROM stock_movements sm INNER JOIN warehouses w ON sm.warehouse_id = w.id WHERE sm.product_id = products.id AND w.branch_id = ?), 0) as quantity', [$branchId]);
+                $query->selectRaw('COALESCE((SELECT SUM(quantity) FROM stock_movements sm INNER JOIN warehouses w ON sm.warehouse_id = w.id WHERE sm.product_id = products.id AND w.branch_id = ? AND sm.deleted_at IS NULL), 0) as quantity', [$branchId]);
                 $query->where('products.branch_id', $branchId);
             } else {
                 // When no branch filter, sum all stock movements but still scope to product's own branch
                 // quantity is signed: positive = in, negative = out
-                $query->selectRaw('COALESCE((SELECT SUM(quantity) FROM stock_movements sm INNER JOIN warehouses w ON sm.warehouse_id = w.id WHERE sm.product_id = products.id AND w.branch_id = products.branch_id), 0) as quantity');
+                // V50-CRIT-02 FIX: Exclude soft-deleted stock movements in subquery
+                $query->selectRaw('COALESCE((SELECT SUM(quantity) FROM stock_movements sm INNER JOIN warehouses w ON sm.warehouse_id = w.id WHERE sm.product_id = products.id AND w.branch_id = products.branch_id AND sm.deleted_at IS NULL), 0) as quantity');
             }
 
             if (! empty($filters['category_id'])) {

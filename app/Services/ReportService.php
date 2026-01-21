@@ -324,10 +324,12 @@ class ReportService implements ReportServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($filters, $user) {
+                // V50-HIGH-01 FIX: Exclude soft-deleted expenses
                 $query = DB::table('expenses')
                     ->select(['expenses.*', 'expense_categories.name as category_name', 'branches.name as branch_name'])
                     ->leftJoin('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
-                    ->leftJoin('branches', 'expenses.branch_id', '=', 'branches.id');
+                    ->leftJoin('branches', 'expenses.branch_id', '=', 'branches.id')
+                    ->whereNull('expenses.deleted_at');
 
                 if ($user && ! $user->hasAnyRole(['Super Admin', 'super-admin'])) {
                     $branchIds = $this->branchAccessService->getUserBranches($user)->pluck('id');
@@ -362,10 +364,12 @@ class ReportService implements ReportServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($filters, $user) {
+                // V50-HIGH-02 FIX: Exclude soft-deleted incomes
                 $query = DB::table('incomes')
                     ->select(['incomes.*', 'income_categories.name as category_name', 'branches.name as branch_name'])
                     ->leftJoin('income_categories', 'incomes.category_id', '=', 'income_categories.id')
-                    ->leftJoin('branches', 'incomes.branch_id', '=', 'branches.id');
+                    ->leftJoin('branches', 'incomes.branch_id', '=', 'branches.id')
+                    ->whereNull('incomes.deleted_at');
 
                 if ($user && ! $user->hasAnyRole(['Super Admin', 'super-admin'])) {
                     $branchIds = $this->branchAccessService->getUserBranches($user)->pluck('id');
@@ -399,7 +403,10 @@ class ReportService implements ReportServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($filters, $user) {
-                $query = DB::table('customers')->select('customers.*');
+                // V50-HIGH-03 FIX: Exclude soft-deleted customers
+                $query = DB::table('customers')
+                    ->select('customers.*')
+                    ->whereNull('customers.deleted_at');
 
                 if ($user && ! $user->hasAnyRole(['Super Admin', 'super-admin'])) {
                     $branchIds = $this->branchAccessService->getUserBranches($user)->pluck('id');
@@ -424,7 +431,10 @@ class ReportService implements ReportServiceInterface
     {
         return $this->handleServiceOperation(
             callback: function () use ($filters, $user) {
-                $query = DB::table('suppliers')->select('suppliers.*');
+                // V50-HIGH-04 FIX: Exclude soft-deleted suppliers
+                $query = DB::table('suppliers')
+                    ->select('suppliers.*')
+                    ->whereNull('suppliers.deleted_at');
 
                 if ($user && ! $user->hasAnyRole(['Super Admin', 'super-admin'])) {
                     $branchIds = $this->branchAccessService->getUserBranches($user)->pluck('id');
@@ -463,9 +473,11 @@ class ReportService implements ReportServiceInterface
 
                 // V34-MED-02 FIX: Use sale_date instead of created_at for business reporting
                 // Also filter out non-revenue statuses
+                // V50-CRIT-01 FIX: Exclude soft-deleted sales
                 $salesByBranch = DB::table('sales')
                     ->select('branch_id', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
                     ->whereIn('branch_id', $branches->pluck('id'))
+                    ->whereNull('sales.deleted_at')
                     ->whereBetween('sale_date', [$dateFrom->toDateString(), $dateTo->toDateString()])
                     ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
                     ->groupBy('branch_id')
@@ -473,17 +485,21 @@ class ReportService implements ReportServiceInterface
 
                 // V34-MED-02 FIX: Use purchase_date instead of created_at for business reporting
                 // Also filter out non-relevant statuses
+                // V50-CRIT-01 FIX: Exclude soft-deleted purchases
                 $purchasesByBranch = DB::table('purchases')
                     ->select('branch_id', DB::raw('COUNT(*) as count'), DB::raw('SUM(total_amount) as total'))
                     ->whereIn('branch_id', $branches->pluck('id'))
+                    ->whereNull('purchases.deleted_at')
                     ->whereBetween('purchase_date', [$dateFrom->toDateString(), $dateTo->toDateString()])
                     ->whereNotIn('status', PurchaseStatus::nonRelevantStatuses())
                     ->groupBy('branch_id')
                     ->get()->keyBy('branch_id');
 
+                // V50-CRIT-01 FIX: Exclude soft-deleted expenses
                 $expensesByBranch = DB::table('expenses')
                     ->select('branch_id', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
                     ->whereIn('branch_id', $branches->pluck('id'))
+                    ->whereNull('expenses.deleted_at')
                     ->whereBetween('expense_date', [$dateFrom, $dateTo])
                     ->groupBy('branch_id')
                     ->get()->keyBy('branch_id');
