@@ -48,7 +48,8 @@ class Form extends Component
         $rate = CurrencyRate::findOrFail($this->rateId);
         $this->fromCurrency = $rate->from_currency;
         $this->toCurrency = $rate->to_currency;
-        $this->rate = decimal_float($rate->rate);
+        // V51-CRIT-01 FIX: Use decimal_float() with scale 6 to match CurrencyRate::rate's decimal:6 cast
+        $this->rate = decimal_float($rate->rate, 6);
         $this->effectiveDate = $rate->effective_date->format('Y-m-d');
     }
 

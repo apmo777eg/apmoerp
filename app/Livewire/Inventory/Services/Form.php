@@ -133,8 +133,9 @@ class Form extends Component
         $this->name = $product->name;
         $this->code = $product->code ?? '';
         $this->sku = $product->sku ?? '';
-        $this->defaultPrice = decimal_float($product->default_price);
-        $this->cost = decimal_float($product->cost ?: $product->standard_cost);
+        // V51-CRIT-02 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+        $this->defaultPrice = decimal_float($product->default_price, 4);
+        $this->cost = decimal_float($product->cost ?: $product->standard_cost, 4);
         $this->hourlyRate = $product->hourly_rate;
         $this->serviceDuration = $product->service_duration;
         $this->durationUnit = $product->duration_unit ?? 'hours';

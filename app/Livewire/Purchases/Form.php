@@ -236,7 +236,8 @@ class Form extends Component
                 'product_name' => $product->name,
                 'sku' => $product->sku ?? '',
                 'qty' => 1,
-                'unit_cost' => decimal_float($product->cost ?? 0),
+                // V51-CRIT-03 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for unit_cost
+                'unit_cost' => decimal_float($product->cost ?? 0, 4),
                 'discount' => 0,
                 'tax_rate' => 0,
             ];

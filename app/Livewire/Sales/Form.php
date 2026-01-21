@@ -268,8 +268,8 @@ class Form extends Component
                 'product_name' => $product->name,
                 'sku' => $product->sku ?? '',
                 'qty' => 1,
-                // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                'unit_price' => decimal_float($product->default_price ?? 0),
+                // V51-CRIT-04 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+                'unit_price' => decimal_float($product->default_price ?? 0, 4),
                 'discount' => 0,
                 'tax_rate' => 0,
             ];
@@ -450,8 +450,8 @@ class Form extends Component
                             }
 
                             // Use the database price, not the client-provided price
-                            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                            $validatedPrice = decimal_float($product->default_price ?? 0);
+                            // V51-CRIT-04 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
+                            $validatedPrice = decimal_float($product->default_price ?? 0, 4);
 
                             // Optional: Check if user has permission to override prices
                             if (abs($validatedPrice - ($item['unit_price'] ?? 0)) > PRICE_COMPARISON_TOLERANCE) {
@@ -461,7 +461,7 @@ class Form extends Component
                                     ]);
                                 }
                                 // If user can modify prices, use their price but log it for audit
-                                $validatedPrice = decimal_float($item['unit_price']);
+                                $validatedPrice = decimal_float($item['unit_price'], 4);
                             }
 
                             // Use bcmath for precise financial calculations

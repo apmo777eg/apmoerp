@@ -65,8 +65,8 @@ class StockController extends Controller
 
         $request->attributes->set('branch_id', $branchId);
 
-        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-        $m = $this->inv->adjust($product->id, decimal_float($data['qty']), $warehouseId, $data['note'] ?? null);
+        // V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for stock quantities
+        $m = $this->inv->adjust($product->id, decimal_float($data['qty'], 4), $warehouseId, $data['note'] ?? null);
 
         return $this->ok($m, __('Adjusted'));
     }
@@ -90,8 +90,8 @@ class StockController extends Controller
 
         $request->attributes->set('branch_id', $branchId);
 
-        // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-        $res = $this->inv->transfer($product->id, decimal_float($data['qty']), $data['from_warehouse'], $data['to_warehouse']);
+        // V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for stock quantities
+        $res = $this->inv->transfer($product->id, decimal_float($data['qty'], 4), $data['from_warehouse'], $data['to_warehouse']);
 
         return $this->ok(['out' => $res[0], 'in' => $res[1]], __('Transferred'));
     }
