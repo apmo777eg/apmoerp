@@ -202,7 +202,18 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             $mappedData['stock_after'] = decimal_float($currentStock + $qty, 4);
             $mappedData['unit_cost'] = $data['unit_cost'] ?? null;
 
-            $movement = StockMovement::create($mappedData);
+            // V56-CRITICAL-05 FIX: Enforce no-negative-stock rule AFTER acquiring lock
+            // This prevents race conditions where two concurrent transactions both pass
+            // the pre-check but would result in negative stock when applied sequentially.
+            $allowNegativeStock = (bool) setting('inventory.allow_negative_stock', false);
+            if (! $allowNegativeStock && $mappedData['stock_after'] < 0) {
+                throw new DomainException(
+                    "Insufficient stock for product {$data['product_id']} in warehouse {$data['warehouse_id']}. " .
+                    "Available: {$currentStock}, Requested: " . abs($qty)
+                );
+            }
+
+            $movement = StockMovement::create($mappedData);;
 
             // V22-HIGH-08 FIX: Update the product's stock_quantity cache
             // This keeps the denormalized stock_quantity field in sync with stock_movements
