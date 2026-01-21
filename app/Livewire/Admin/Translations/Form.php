@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Admin\Translations;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Livewire\Attributes\Layout;
@@ -10,6 +12,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Form extends Component
 {
+    use AuthorizesRequests;
+    
     public $translationKey = '';
 
     public $group = 'app';
@@ -24,6 +28,12 @@ class Form extends Component
 
     public function mount()
     {
+        // V57-HIGH-01 FIX: Add authorization for translations management
+        $user = Auth::user();
+        if (! $user || ! $user->can('settings.translations.manage')) {
+            abort(403);
+        }
+        
         // Handle query string parameters for editing
         if (request()->has('key') && request()->has('group')) {
             // URL decode the key since it's passed via URL
