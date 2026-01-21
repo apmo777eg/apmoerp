@@ -442,6 +442,9 @@ if (! function_exists('bcround')) {
         // to achieve "half away from zero" rounding (matching PHP's standard round()).
         // bcmath truncates toward zero, so we need to work with absolute values
         // and then restore the sign to get correct results for negative numbers.
+        //
+        // V57-CRITICAL-01 FIX: Added normalization to prevent "-0.00" display issue.
+        // When a small negative number rounds to zero, we should return "0.XX" not "-0.XX".
         $isNegative = str_starts_with($value, '-');
         $absValue = $isNegative ? ltrim($value, '-') : $value;
 
@@ -449,6 +452,12 @@ if (! function_exists('bcround')) {
         // e.g., for precision=2, add 0.005
         $offset = '0.' . str_repeat('0', $precision) . '5';
         $rounded = bcadd($absValue, $offset, $precision);
+
+        // V57-CRITICAL-01 FIX: Normalize result to avoid "-0.00" display
+        // If the rounded value is zero (or effectively zero), return positive zero
+        if (bccomp($rounded, '0', $precision) === 0) {
+            return $rounded; // Return positive zero format
+        }
 
         // Restore sign if negative
         return $isNegative ? '-' . $rounded : $rounded;

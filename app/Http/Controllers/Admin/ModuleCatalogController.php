@@ -11,6 +11,9 @@ class ModuleCatalogController extends Controller
 {
     public function index()
     {
+        // V57-HIGH-01 FIX: Add authorization for module management
+        $this->authorize('modules.manage');
+        
         $mods = (array) config('modules.available', []);
 
         return $this->ok($mods);
@@ -21,6 +24,9 @@ class ModuleCatalogController extends Controller
      */
     public function store(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for module management
+        $this->authorize('modules.manage');
+        
         $validated = $this->validate($request, [
             'key' => ['required', 'string', 'max:100', 'unique:modules,key'],
             'name' => ['required', 'string', 'max:255'],
@@ -43,6 +49,9 @@ class ModuleCatalogController extends Controller
      */
     public function show(int $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for module viewing
+        $this->authorize('modules.view');
+        
         $moduleRecord = \App\Models\Module::findOrFail($module);
 
         return $this->ok($moduleRecord);
@@ -53,6 +62,9 @@ class ModuleCatalogController extends Controller
      */
     public function update(Request $request, int $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for module management
+        $this->authorize('modules.manage');
+        
         $moduleRecord = \App\Models\Module::findOrFail($module);
 
         $validated = $this->validate($request, [
@@ -71,6 +83,9 @@ class ModuleCatalogController extends Controller
      */
     public function destroy(int $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for module management
+        $this->authorize('modules.manage');
+        
         $moduleRecord = \App\Models\Module::findOrFail($module);
         $moduleRecord->delete();
 

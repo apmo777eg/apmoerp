@@ -12,6 +12,9 @@ class AuditLogController extends Controller
 {
     public function index(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for audit log viewing
+        $this->authorize('audit.view');
+        
         $per = min(max((int) $request->integer('per_page', 20), 1), 100);
         $q = DB::table('audit_logs')->orderByDesc('id');
         if ($request->filled('user_id')) {
@@ -35,6 +38,9 @@ class AuditLogController extends Controller
 
     public function show(int $id)
     {
+        // V57-HIGH-01 FIX: Add authorization for audit log viewing
+        $this->authorize('audit.view');
+        
         $row = DB::table('audit_logs')->where('id', $id)->first();
         abort_unless($row, 404);
 

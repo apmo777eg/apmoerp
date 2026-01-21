@@ -125,7 +125,11 @@ class Form extends Component
             'discount_total' => 'nullable|numeric|min:0',
             'shipping_total' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists for efficient branch-aware validation
+            'items.*.product_id' => [
+                'required',
+                new \App\Rules\BranchScopedExists('products', 'id', $branchId),
+            ],
             'items.*.qty' => 'required|numeric|min:0.0001',
             'items.*.unit_cost' => 'required|numeric|min:0',
         ];

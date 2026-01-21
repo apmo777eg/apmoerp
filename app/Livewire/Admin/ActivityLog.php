@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -36,6 +37,15 @@ class ActivityLog extends Component
     public string $dateTo = '';
 
     public int $perPage = 25;
+    
+    public function mount(): void
+    {
+        // V57-HIGH-01 FIX: Add authorization for activity log viewing
+        $user = Auth::user();
+        if (! $user || ! $user->can('logs.activity.view')) {
+            abort(403);
+        }
+    }
 
     public function updatingSearch(): void
     {

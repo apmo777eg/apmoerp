@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Translations;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Livewire\Attributes\Layout;
@@ -22,6 +23,12 @@ class Index extends Component
 
     public function mount()
     {
+        // V57-HIGH-01 FIX: Add authorization for translations management
+        $user = Auth::user();
+        if (! $user || ! $user->can('settings.translations.view')) {
+            abort(403);
+        }
+        
         $this->loadGroups();
     }
 

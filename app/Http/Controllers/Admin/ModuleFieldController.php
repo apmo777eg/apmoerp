@@ -15,6 +15,9 @@ class ModuleFieldController extends Controller
 
     public function index(Request $request, string $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for field viewing
+        $this->authorize('modules.fields.view');
+        
         $branchId = $request->integer('branch_id') ?: null;
 
         return $this->ok($this->fields->for($module, $branchId));
@@ -25,6 +28,9 @@ class ModuleFieldController extends Controller
      */
     public function store(Request $request, string $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for field management
+        $this->authorize('modules.fields.manage');
+        
         $validated = $this->validate($request, [
             'field_key' => ['required', 'string', 'max:100'],
             'label' => ['required', 'string', 'max:255'],
@@ -56,6 +62,9 @@ class ModuleFieldController extends Controller
      */
     public function show(string $module, int $field)
     {
+        // V57-HIGH-01 FIX: Add authorization for field viewing
+        $this->authorize('modules.fields.view');
+        
         $fieldRecord = ModuleProductField::findOrFail($field);
 
         return $this->ok($fieldRecord);
@@ -66,6 +75,9 @@ class ModuleFieldController extends Controller
      */
     public function update(Request $request, string $module, int $field)
     {
+        // V57-HIGH-01 FIX: Add authorization for field management
+        $this->authorize('modules.fields.manage');
+        
         $fieldRecord = ModuleProductField::findOrFail($field);
 
         $validated = $this->validate($request, [
@@ -87,6 +99,9 @@ class ModuleFieldController extends Controller
      */
     public function destroy(string $module, int $field)
     {
+        // V57-HIGH-01 FIX: Add authorization for field management
+        $this->authorize('modules.fields.manage');
+        
         $fieldRecord = ModuleProductField::findOrFail($field);
         $fieldRecord->delete();
 
@@ -98,6 +113,9 @@ class ModuleFieldController extends Controller
      */
     public function reorder(Request $request, string $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for field management
+        $this->authorize('modules.fields.manage');
+        
         $validated = $this->validate($request, [
             'fields' => ['required', 'array'],
             'fields.*.id' => ['required', 'integer', 'exists:module_product_fields,id'],
@@ -114,6 +132,9 @@ class ModuleFieldController extends Controller
 
     public function validatePayload(Request $request, string $module)
     {
+        // V57-HIGH-01 FIX: Add authorization for field validation
+        $this->authorize('modules.fields.view');
+        
         $branchId = $request->integer('branch_id') ?: null;
         $validator = $this->fields->validate($module, $request->all(), $branchId);
         $validator->validate();

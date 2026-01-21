@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * ModuleSetting Model
+ * 
+ * V57-CRITICAL-02 FIX: Added HasBranch trait for proper branch scoping.
+ * Module settings can be branch-specific and should be isolated by branch.
+ */
 class ModuleSetting extends Model
 {
-    use HasFactory;
+    use HasFactory, HasBranch;
 
     protected $fillable = [
         'module_id',

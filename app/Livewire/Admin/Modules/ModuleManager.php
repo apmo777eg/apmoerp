@@ -6,6 +6,8 @@ namespace App\Livewire\Admin\Modules;
 
 use App\Models\Module;
 use App\Services\ModuleRegistrationService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -13,6 +15,7 @@ use Livewire\WithPagination;
 
 class ModuleManager extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public string $search = '';
@@ -49,6 +52,15 @@ class ModuleManager extends Component
     public bool $formSupportsCustomFields = true;
 
     public bool $formSupportsItems = false;
+    
+    public function mount(): void
+    {
+        // V57-HIGH-01 FIX: Add authorization for modules management
+        $user = Auth::user();
+        if (! $user || ! $user->can('modules.manage')) {
+            abort(403);
+        }
+    }
 
     #[Computed]
     public function modules()

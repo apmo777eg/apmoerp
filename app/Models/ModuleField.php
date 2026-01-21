@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * ModuleField Model
+ * 
+ * V57-CRITICAL-02 FIX: Added HasBranch trait for proper branch scoping.
+ * Module fields can be branch-specific and should be isolated by branch.
+ */
 class ModuleField extends Model
 {
-    use HasFactory;
+    use HasFactory, HasBranch;
 
     protected $table = 'module_fields';
 

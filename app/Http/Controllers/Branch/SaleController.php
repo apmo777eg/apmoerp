@@ -65,21 +65,30 @@ class SaleController extends Controller
     public function handleReturn(SaleReturnRequest $request, int $sale)
     {
         $data = $request->validated();
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify sale belongs to current branch
+        Sale::where('branch_id', $branchId)->findOrFail($sale);
 
         return $this->ok($this->sales->handleReturn($sale, $data['items'], $request->input('reason')), __('Return processed'));
     }
 
     public function voidSale(SaleVoidRequest $request, int $sale)
     {
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify sale belongs to current branch
+        Sale::where('branch_id', $branchId)->findOrFail($sale);
 
         return $this->ok($this->sales->voidSale($sale, $request->input('reason')), __('Voided'));
     }
 
     public function printInvoice(Request $request, int $sale)
     {
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify sale belongs to current branch
+        Sale::where('branch_id', $branchId)->findOrFail($sale);
 
         return $this->ok($this->sales->printInvoice($sale));
     }

@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Currency;
 use App\Services\CurrencyService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -14,6 +15,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class CurrencyManager extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     protected CurrencyService $currencyService;
@@ -42,6 +44,9 @@ class CurrencyManager extends Component
 
     public function toggleActive(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('settings.currency.manage');
+        
         $currency = Currency::find($id);
         if ($currency) {
             if ($currency->is_base && $currency->is_active) {
@@ -60,6 +65,9 @@ class CurrencyManager extends Component
 
     public function setAsBase(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('settings.currency.manage');
+        
         $currency = Currency::find($id);
         if ($currency) {
             Currency::where('is_base', true)->update(['is_base' => false]);
@@ -74,6 +82,9 @@ class CurrencyManager extends Component
 
     public function delete(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('settings.currency.manage');
+        
         $currency = Currency::find($id);
         if ($currency) {
             if ($currency->is_base) {

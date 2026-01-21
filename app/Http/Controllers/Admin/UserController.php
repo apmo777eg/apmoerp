@@ -13,6 +13,9 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.view');
+        
         $per = min(max($request->integer('per_page', 20), 1), 100);
         $rows = User::query()
             ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->q.'%')->orWhere('email', 'like', '%'.$request->q.'%'))
@@ -23,6 +26,9 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.manage');
+        
         $data = $this->validate($request, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -46,11 +52,17 @@ class UserController extends Controller
 
     public function show(User $user)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.view');
+        
         return $this->ok($user);
     }
 
     public function update(Request $request, User $user)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.manage');
+        
         $data = $this->validate($request, [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$user->id],
@@ -77,6 +89,9 @@ class UserController extends Controller
 
     public function activate(User $user)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.manage');
+        
         $user->is_active = true;
         $user->save();
 
@@ -85,6 +100,9 @@ class UserController extends Controller
 
     public function deactivate(User $user)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.manage');
+        
         $user->is_active = false;
         $user->save();
         event(new \App\Events\UserDisabled($user));
@@ -94,6 +112,9 @@ class UserController extends Controller
 
     public function resetPassword(Request $request, User $user)
     {
+        // V57-HIGH-01 FIX: Add authorization for user management
+        $this->authorize('users.manage');
+        
         $this->validate($request, ['password' => ['required', 'string', 'min:6']]);
         $user->password = Hash::make($request->input('password'));
         $user->save();

@@ -23,6 +23,9 @@ class Index extends Component
 
     public function delete(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('helpdesk.manage');
+        
         $policy = TicketSLAPolicy::findOrFail($id);
 
         if ($policy->tickets()->exists() || $policy->categories()->exists()) {
@@ -38,6 +41,9 @@ class Index extends Component
 
     public function toggleActive(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('helpdesk.manage');
+        
         $policy = TicketSLAPolicy::findOrFail($id);
         $policy->is_active = ! $policy->is_active;
         // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation

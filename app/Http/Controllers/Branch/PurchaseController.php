@@ -77,10 +77,12 @@ class PurchaseController extends Controller
 
     public function approve(PurchaseApproveRequest $request, int $purchase)
     {
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
 
+        // V57-HIGH-01 FIX: Verify purchase belongs to current branch before approval
+        $purchaseModel = Purchase::where('branch_id', $branchId)->findOrFail($purchase);
+        
         // Prevent self-approval: verify purchase was not created by the current user
-        $purchaseModel = Purchase::findOrFail($purchase);
         if ($purchaseModel->created_by === auth()->id()) {
             abort(403, __('You cannot approve your own request.'));
         }
@@ -90,7 +92,10 @@ class PurchaseController extends Controller
 
     public function receive(PurchaseReceiveRequest $request, int $purchase)
     {
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify purchase belongs to current branch
+        Purchase::where('branch_id', $branchId)->findOrFail($purchase);
 
         return $this->ok($this->purchases->receive($purchase), __('Received'));
     }
@@ -98,7 +103,10 @@ class PurchaseController extends Controller
     public function pay(PurchasePayRequest $request, int $purchase)
     {
         $data = $request->validated();
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify purchase belongs to current branch
+        Purchase::where('branch_id', $branchId)->findOrFail($purchase);
 
         // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
         return $this->ok($this->purchases->pay($purchase, decimal_float($data['amount'])), __('Paid'));
@@ -107,6 +115,9 @@ class PurchaseController extends Controller
     public function handleReturn(PurchaseReturnRequest $request, int $purchase)
     {
         $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify purchase belongs to current branch
+        Purchase::where('branch_id', $branchId)->findOrFail($purchase);
 
         // V25-HIGH-09 FIX: Wire the endpoint to PurchaseReturnService for proper return workflow
         $validated = $request->validated();
@@ -127,7 +138,10 @@ class PurchaseController extends Controller
 
     public function cancel(PurchaseCancelRequest $request, int $purchase)
     {
-        $this->requireBranchId($request);
+        $branchId = $this->requireBranchId($request);
+        
+        // V57-HIGH-01 FIX: Verify purchase belongs to current branch
+        Purchase::where('branch_id', $branchId)->findOrFail($purchase);
 
         return $this->ok($this->purchases->cancel($purchase), __('Cancelled'));
     }

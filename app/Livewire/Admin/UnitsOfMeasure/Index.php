@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin\UnitsOfMeasure;
 
 use App\Models\UnitOfMeasure;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -14,6 +15,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -65,6 +67,9 @@ class Index extends Component
 
     public function delete(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('inventory.units.delete');
+        
         $unit = UnitOfMeasure::find($id);
         if ($unit) {
             if ($unit->products()->count() > 0) {

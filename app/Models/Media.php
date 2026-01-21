@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Media Model
+ * 
+ * V57-CRITICAL-02 FIX: Added HasBranch trait for proper branch scoping.
+ * Media files are branch-owned resources and should be isolated by branch.
+ */
 class Media extends Model
 {
-    use HasFactory;
+    use HasFactory, HasBranch;
 
     protected $table = 'media';
 

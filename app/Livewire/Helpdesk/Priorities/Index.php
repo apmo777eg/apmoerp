@@ -23,6 +23,9 @@ class Index extends Component
 
     public function delete(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('helpdesk.manage');
+        
         $priority = TicketPriority::findOrFail($id);
 
         if ($priority->tickets()->exists()) {
@@ -38,6 +41,9 @@ class Index extends Component
 
     public function toggleActive(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('helpdesk.manage');
+        
         $priority = TicketPriority::findOrFail($id);
         $priority->is_active = ! $priority->is_active;
         $priority->save();

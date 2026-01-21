@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Store;
 use App\Models\StoreSyncLog;
 use App\Services\Store\StoreSyncService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
@@ -16,6 +17,7 @@ use Livewire\WithPagination;
 
 class Stores extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     protected string $paginationTheme = 'tailwind';
@@ -68,6 +70,9 @@ class Stores extends Component
 
     public function delete(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('stores.delete');
+        
         $store = Store::findOrFail($id);
         $store->delete();
 
@@ -76,6 +81,9 @@ class Stores extends Component
 
     public function toggleStatus(int $id): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('stores.edit');
+        
         $store = Store::findOrFail($id);
         $store->update(['is_active' => ! $store->is_active]);
 
@@ -111,6 +119,9 @@ class Stores extends Component
 
     public function syncProducts(): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('stores.sync');
+        
         if (! $this->syncingStoreId) {
             return;
         }
@@ -141,6 +152,9 @@ class Stores extends Component
 
     public function syncInventory(): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('stores.sync');
+        
         if (! $this->syncingStoreId) {
             return;
         }
@@ -171,6 +185,9 @@ class Stores extends Component
 
     public function syncOrders(): void
     {
+        // V57-HIGH-01 FIX: Explicit authorization inside mutation method
+        $this->authorize('stores.sync');
+        
         if (! $this->syncingStoreId) {
             return;
         }

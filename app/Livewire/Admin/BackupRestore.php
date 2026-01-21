@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Services\BackupService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
 /**
@@ -19,6 +20,8 @@ use Livewire\Component;
  */
 class BackupRestore extends Component
 {
+    use AuthorizesRequests;
+    
     public array $backups = [];
 
     public bool $isCreating = false;
@@ -42,6 +45,9 @@ class BackupRestore extends Component
 
     public function mount(): void
     {
+        // V57-HIGH-01 FIX: Add authorization for backup management
+        $this->authorize('system.backup.manage');
+        
         $this->loadBackups();
     }
 
@@ -58,6 +64,9 @@ class BackupRestore extends Component
      */
     public function createBackup(): void
     {
+        // V57-HIGH-01 FIX: Add authorization for backup creation
+        $this->authorize('system.backup.manage');
+        
         $this->isCreating = true;
         $this->lastBackupResult = null;
 
@@ -85,6 +94,9 @@ class BackupRestore extends Component
      */
     public function initiateRestore(string $path): void
     {
+        // V57-HIGH-01 FIX: Add authorization for restore
+        $this->authorize('system.backup.manage');
+        
         $this->selectedBackup = $path;
         $this->showRestoreConfirm = true;
     }
@@ -103,6 +115,9 @@ class BackupRestore extends Component
      */
     public function confirmRestore(): void
     {
+        // V57-HIGH-01 FIX: Add authorization for restore
+        $this->authorize('system.backup.manage');
+        
         if (! $this->selectedBackup) {
             return;
         }
@@ -140,6 +155,9 @@ class BackupRestore extends Component
      */
     public function download(string $path): \Symfony\Component\HttpFoundation\StreamedResponse
     {
+        // V57-HIGH-01 FIX: Add authorization for download
+        $this->authorize('system.backup.manage');
+        
         $fullPath = $this->backupService->download($path);
 
         if (! $fullPath) {
@@ -156,6 +174,9 @@ class BackupRestore extends Component
      */
     public function deleteBackup(string $path): void
     {
+        // V57-HIGH-01 FIX: Add authorization for delete
+        $this->authorize('system.backup.manage');
+        
         try {
             if ($this->backupService->delete($path)) {
                 session()->flash('success', __('Backup deleted'));

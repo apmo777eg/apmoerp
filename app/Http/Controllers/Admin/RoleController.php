@@ -12,6 +12,9 @@ class RoleController extends Controller
 {
     public function index(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for role management
+        $this->authorize('roles.view');
+        
         $per = min(max($request->integer('per_page', 50), 1), 200);
         $q = Role::query()->where('guard_name', 'web')->orderBy('name');
         if ($s = $request->input('q')) {
@@ -23,6 +26,9 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for role management
+        $this->authorize('roles.manage');
+        
         $this->validate($request, [
             'name' => [
                 'required',
@@ -42,6 +48,9 @@ class RoleController extends Controller
 
     public function update(Request $request, int $id)
     {
+        // V57-HIGH-01 FIX: Add authorization for role management
+        $this->authorize('roles.manage');
+        
         $role = Role::where('guard_name', 'web')->findOrFail($id);
 
         $this->validate($request, [
@@ -60,6 +69,9 @@ class RoleController extends Controller
 
     public function destroy(int $id)
     {
+        // V57-HIGH-01 FIX: Add authorization for role management
+        $this->authorize('roles.manage');
+        
         Role::where('guard_name', 'web')->whereKey($id)->delete();
 
         return $this->ok([], __('Deleted'));
@@ -67,6 +79,9 @@ class RoleController extends Controller
 
     public function syncPermissions(Request $request, Role $role)
     {
+        // V57-HIGH-01 FIX: Add authorization for role management
+        $this->authorize('roles.manage');
+        
         $this->validate($request, [
             'permissions' => ['required', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],

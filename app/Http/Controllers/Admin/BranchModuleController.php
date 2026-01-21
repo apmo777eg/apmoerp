@@ -16,6 +16,9 @@ class BranchModuleController extends Controller
 
     public function index(Branch $branch)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.view');
+        
         $data = $this->modules->allForBranch($branch->id);
 
         return $this->ok([
@@ -26,6 +29,9 @@ class BranchModuleController extends Controller
 
     public function update(Request $request, Branch $branch)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.manage');
+        
         $data = $this->validate($request, [
             'key' => ['required', 'string'],
             'enabled' => ['required', 'boolean'],
@@ -49,6 +55,9 @@ class BranchModuleController extends Controller
      */
     public function attach(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.manage');
+        
         $data = $this->validate($request, [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'module_key' => ['required', 'string'],
@@ -69,6 +78,9 @@ class BranchModuleController extends Controller
      */
     public function detach(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.manage');
+        
         $data = $this->validate($request, [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'module_key' => ['required', 'string'],
@@ -85,6 +97,9 @@ class BranchModuleController extends Controller
      */
     public function updateSettings(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.manage');
+        
         $data = $this->validate($request, [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'module_key' => ['required', 'string'],
@@ -110,6 +125,9 @@ class BranchModuleController extends Controller
      */
     public function enable(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.manage');
+        
         $data = $this->validate($request, [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'module_key' => ['required', 'string'],
@@ -130,6 +148,9 @@ class BranchModuleController extends Controller
      */
     public function disable(Request $request)
     {
+        // V57-HIGH-01 FIX: Add authorization for branch module management
+        $this->authorize('branches.modules.manage');
+        
         $data = $this->validate($request, [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'module_key' => ['required', 'string'],
