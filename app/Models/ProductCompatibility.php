@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * ProductCompatibility - Product to vehicle compatibility mapping
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model does NOT use direct branch scoping.
+ * ProductCompatibility links products to vehicle models. Branch isolation is achieved
+ * indirectly through the Product relationship, which is branch-scoped.
+ * Access is controlled via permission checks and product ownership.
+ */
 class ProductCompatibility extends Model
 {
     protected $table = 'product_compatibilities';

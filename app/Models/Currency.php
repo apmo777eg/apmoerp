@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Currency - Supported currencies configuration
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model intentionally does NOT use branch scoping.
+ * Currency is a global configuration resource representing supported currency types.
+ * Access is controlled via permission checks (settings.currencies.*) rather than branch isolation.
+ * This is by design, as currencies should be consistent across all branches for financial integrity.
+ */
 class Currency extends Model
 {
     protected $table = 'currencies';

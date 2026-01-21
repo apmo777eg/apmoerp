@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * UnitOfMeasure - Standard units of measurement configuration
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model intentionally does NOT use branch scoping.
+ * UnitOfMeasure is a global configuration resource representing standard measurement units.
+ * Access is controlled via permission checks (inventory.units.*) rather than branch isolation.
+ * This is by design, as units should be consistent across all branches for data integrity.
+ */
 class UnitOfMeasure extends Model
 {
     protected $table = 'units_of_measure';

@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * VehicleModel - Vehicle make/model catalog for spare parts compatibility
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model intentionally does NOT use branch scoping.
+ * VehicleModel is a global reference catalog of vehicle makes and models.
+ * Access is controlled via permission checks rather than branch isolation.
+ * This is by design, as vehicle references should be consistent across all branches.
+ */
 class VehicleModel extends Model
 {
     protected $fillable = [

@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * ReportTemplate - System report templates configuration
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model intentionally does NOT use branch scoping.
+ * ReportTemplate is a global configuration resource defining available report types.
+ * Access is controlled via permission checks (reports.templates.manage) rather than branch isolation.
+ * This is by design, as report templates are system-wide definitions.
+ */
 class ReportTemplate extends Model
 {
     use HasFactory;

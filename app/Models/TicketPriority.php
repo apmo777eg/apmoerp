@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * TicketPriority - Helpdesk ticket priority configuration
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model intentionally does NOT use branch scoping.
+ * TicketPriority is a global configuration resource managed at the organization level.
+ * Access is controlled via permission checks (helpdesk.manage) rather than branch isolation.
+ * This is by design, as priorities should be consistent across all branches.
+ */
 class TicketPriority extends Model
 {
     use HasFactory;

@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * TicketCategory - Helpdesk ticket category configuration
+ *
+ * SECURITY NOTE (V58-IDOR-01): This model intentionally does NOT use branch scoping.
+ * TicketCategory is a global configuration resource managed at the organization level.
+ * Access is controlled via permission checks (helpdesk.manage) rather than branch isolation.
+ * This is by design, as categories should be consistent across all branches.
+ */
 class TicketCategory extends Model
 {
     use HasFactory, SoftDeletes;
