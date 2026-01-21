@@ -126,10 +126,10 @@ return new class extends Migration
             $table->string('metric_key', 100);
             $table->string('entity_type', 100)->nullable();
             $table->unsignedBigInteger('entity_id')->nullable();
-            $table->decimal('mean', 18, 2)->default(0);
-            $table->decimal('std_dev', 18, 2)->default(0);
-            $table->decimal('min', 18, 2)->default(0);
-            $table->decimal('max', 18, 2)->default(0);
+            $table->decimal('mean', 18, 4)->default(0);
+            $table->decimal('std_dev', 18, 4)->default(0);
+            $table->decimal('min', 18, 4)->default(0);
+            $table->decimal('max', 18, 4)->default(0);
             $table->unsignedInteger('sample_count')->default(0);
             $table->date('period_start');
             $table->date('period_end');
@@ -203,9 +203,9 @@ return new class extends Migration
             $table->unsignedInteger('items_rejected')->default(0);
             $table->decimal('quality_rate', 5, 2)->default(0);
             // Value metrics
-            $table->decimal('total_order_value', 18, 2)->default(0);
-            $table->decimal('total_paid', 18, 2)->default(0);
-            $table->decimal('average_order_value', 18, 2)->default(0);
+            $table->decimal('total_order_value', 18, 4)->default(0);
+            $table->decimal('total_paid', 18, 4)->default(0);
+            $table->decimal('average_order_value', 18, 4)->default(0);
             // Response metrics
             $table->decimal('average_lead_time_days', 8, 2)->default(0);
             $table->decimal('average_response_time_hours', 8, 2)->default(0);

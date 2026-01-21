@@ -82,11 +82,11 @@ return new class extends Migration
                 ->constrained('sales')
                 ->nullOnDelete()
                 ->name('fk_instpln_sale__sale');
-            $table->decimal('total_amount', 18, 2);
-            $table->decimal('down_payment', 18, 2)->default(0);
-            $table->decimal('financed_amount', 18, 2);
+            $table->decimal('total_amount', 18, 4);
+            $table->decimal('down_payment', 18, 4)->default(0);
+            $table->decimal('financed_amount', 18, 4);
             $table->decimal('interest_rate', 5, 2)->default(0);
-            $table->decimal('total_interest', 18, 2)->default(0);
+            $table->decimal('total_interest', 18, 4)->default(0);
             $table->unsignedSmallInteger('installments_count');
             $table->string('frequency', 20)->default('monthly'); // weekly, bi_weekly, monthly
             $table->date('start_date');
@@ -109,11 +109,11 @@ return new class extends Migration
                 ->name('fk_instpay_plan__instpln');
             $table->unsignedSmallInteger('installment_number');
             $table->date('due_date');
-            $table->decimal('amount_due', 18, 2);
-            $table->decimal('amount_paid', 18, 2)->default(0);
+            $table->decimal('amount_due', 18, 4);
+            $table->decimal('amount_paid', 18, 4)->default(0);
             $table->date('paid_date')->nullable();
             $table->string('status', 30)->default('pending'); // pending, paid, partial, overdue
-            $table->decimal('late_fee', 18, 2)->default(0);
+            $table->decimal('late_fee', 18, 4)->default(0);
             $table->string('payment_method', 50)->nullable();
             $table->text('notes')->nullable();
             $table->timestamp('paid_at')->nullable();
