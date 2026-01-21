@@ -10,6 +10,7 @@ use App\Models\Transfer;
 use App\Models\TransferItem;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -107,47 +108,51 @@ class Form extends Component
             return null;
         }
 
-        // V23-HIGH-05 FIX: Use 'notes' column (per migration) instead of 'note'
-        // and don't overwrite created_by on updates
-        $data = [
-            'branch_id' => $user->branch_id,
-            'from_warehouse_id' => $this->fromWarehouseId,
-            'to_warehouse_id' => $this->toWarehouseId,
-            'status' => $this->status,
-            'notes' => $this->note,
-        ];
+        // V56-HIGH-43 FIX: Wrap all database operations in a transaction
+        // to ensure data consistency (transfer + items are saved atomically)
+        DB::transaction(function () use ($user) {
+            // V23-HIGH-05 FIX: Use 'notes' column (per migration) instead of 'note'
+            // and don't overwrite created_by on updates
+            $data = [
+                'branch_id' => $user->branch_id,
+                'from_warehouse_id' => $this->fromWarehouseId,
+                'to_warehouse_id' => $this->toWarehouseId,
+                'status' => $this->status,
+                'notes' => $this->note,
+            ];
 
-        if ($this->transfer) {
-            // Don't overwrite created_by on updates
-            $this->transfer->update($data);
-        } else {
-            // Only set created_by on create
-            $data['created_by'] = $user->id;
-            $this->transfer = Transfer::create($data);
-        }
+            if ($this->transfer) {
+                // Don't overwrite created_by on updates
+                $this->transfer->update($data);
+            } else {
+                // Only set created_by on create
+                $data['created_by'] = $user->id;
+                $this->transfer = Transfer::create($data);
+            }
 
-        // Save items
-        $this->transfer->items()->delete();
+            // Save items
+            $this->transfer->items()->delete();
 
-        // V24-HIGH-01 FIX: Batch load products to avoid N+1 query issue
-        $productIds = collect($this->items)->pluck('product_id')->filter()->unique();
-        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+            // V24-HIGH-01 FIX: Batch load products to avoid N+1 query issue
+            $productIds = collect($this->items)->pluck('product_id')->filter()->unique();
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
-        foreach ($this->items as $item) {
-            // V24-HIGH-01 FIX: Get product from pre-loaded collection for unit_cost
-            $product = $products->get($item['product_id']);
-            $unitCost = $product ? ($product->cost ?? $product->standard_cost ?? 0) : 0;
-            
-            TransferItem::create([
-                'transfer_id' => $this->transfer->id,
-                'product_id' => $item['product_id'],
-                'quantity' => $item['qty'], // Use quantity column per migration
-                'unit_cost' => $unitCost,
-            ]);
-        }
-        
-        // V24-HIGH-01 FIX: Update transfer total_value after items are saved
-        $this->transfer->updateTotalValue();
+            foreach ($this->items as $item) {
+                // V24-HIGH-01 FIX: Get product from pre-loaded collection for unit_cost
+                $product = $products->get($item['product_id']);
+                $unitCost = $product ? ($product->cost ?? $product->standard_cost ?? 0) : 0;
+
+                TransferItem::create([
+                    'transfer_id' => $this->transfer->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['qty'], // Use quantity column per migration
+                    'unit_cost' => $unitCost,
+                ]);
+            }
+
+            // V24-HIGH-01 FIX: Update transfer total_value after items are saved
+            $this->transfer->updateTotalValue();
+        });
 
         session()->flash('success', __('Transfer saved successfully'));
 
