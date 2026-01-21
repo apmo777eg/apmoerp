@@ -130,8 +130,8 @@ class InventoryController extends BaseApiController
 
         // Calculate new quantity and direction
         if ($validated['direction'] === 'set') {
-            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            $newQuantity = decimal_float($validated['qty']);
+            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
+            $newQuantity = decimal_float($validated['qty'], 4);
             $difference = $newQuantity - $oldQuantity;
             $actualDirection = $difference >= 0 ? 'in' : 'out';
             $actualQty = abs($difference);
@@ -147,8 +147,8 @@ class InventoryController extends BaseApiController
             }
         } else {
             $actualDirection = $validated['direction'];
-            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            $actualQty = abs(decimal_float($validated['qty']));
+            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
+            $actualQty = abs(decimal_float($validated['qty'], 4));
             $newQuantity = $actualDirection === 'in'
                 ? $oldQuantity + $actualQty
                 : $oldQuantity - $actualQty;
@@ -243,15 +243,15 @@ class InventoryController extends BaseApiController
 
                 // Calculate new quantity and direction
                 if ($item['direction'] === 'set') {
-                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                    $newQuantity = decimal_float($item['qty']);
+                    // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
+                    $newQuantity = decimal_float($item['qty'], 4);
                     $difference = $newQuantity - $oldQuantity;
                     $actualDirection = $difference >= 0 ? 'in' : 'out';
                     $actualQty = abs($difference);
                 } else {
                     $actualDirection = $item['direction'];
-                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                    $actualQty = abs(decimal_float($item['qty']));
+                    // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
+                    $actualQty = abs(decimal_float($item['qty'], 4));
                     $newQuantity = $actualDirection === 'in'
                         ? $oldQuantity + $actualQty
                         : $oldQuantity - $actualQty;

@@ -61,8 +61,9 @@ class StockService
 
         // quantity is signed: positive = in, negative = out
         // Simply sum all quantities to get current stock
+        // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
         return decimal_float($query->selectRaw('COALESCE(SUM(quantity), 0) as stock')
-            ->value('stock'));
+            ->value('stock'), 4);
     }
 
     /**
@@ -176,12 +177,13 @@ class StockService
      */
     public static function getCurrentStockForBranch(int $productId, int $branchId): float
     {
+        // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
         return decimal_float(DB::table('stock_movements')
             ->join('warehouses', 'stock_movements.warehouse_id', '=', 'warehouses.id')
             ->where('stock_movements.product_id', $productId)
             ->where('warehouses.branch_id', $branchId)
             ->whereNull('stock_movements.deleted_at') // V45-CRIT-02 FIX: Exclude soft-deleted rows
-            ->sum('stock_movements.quantity'));
+            ->sum('stock_movements.quantity'), 4);
     }
 
     /**
@@ -341,14 +343,15 @@ class StockService
             // STILL-V7-HIGH-N07 FIX: Lock the rows for this product+warehouse combination
             // and calculate stock at database level for efficiency
             // V45-CRIT-02 FIX: Exclude soft-deleted rows from stock calculation
+            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
             $stockBefore = decimal_float(DB::table('stock_movements')
                 ->where('product_id', $productId)
                 ->where('warehouse_id', $warehouseId)
                 ->whereNull('deleted_at')
                 ->lockForUpdate()
-                ->sum('quantity'));
+                ->sum('quantity'), 4);
 
-            $stockAfter = $stockBefore + $quantity;
+            $stockAfter = decimal_float($stockBefore + $quantity, 4);
 
             // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             // This allows CLI/queue contexts to specify a user ID explicitly

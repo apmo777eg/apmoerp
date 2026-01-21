@@ -20,7 +20,16 @@ class BackupDatabaseJob implements ShouldQueue
 
     public $timeout = 900; // 15 min
 
-    public function __construct(public bool $verify = true) {}
+    /**
+     * V49-HIGH-02 FIX: Added prefix parameter to support pre-restore backups
+     *
+     * @param  bool  $verify  Whether to verify the backup was created
+     * @param  string  $prefix  Filename prefix (default: 'backup')
+     */
+    public function __construct(
+        public bool $verify = true,
+        public string $prefix = 'backup'
+    ) {}
 
     public function handle(): void
     {
@@ -29,7 +38,8 @@ class BackupDatabaseJob implements ShouldQueue
         $backupDir = (string) config('backup.dir', 'backups');
         $disk = Storage::disk($diskName);
 
-        $filename = 'backup_'.now()->format('Ymd_His').'.sql.gz';
+        // V49-HIGH-02 FIX: Use the prefix parameter for filename generation
+        $filename = $this->prefix.'_'.now()->format('Ymd_His').'.sql.gz';
         $path = trim($backupDir, '/').'/'.$filename;
 
         // Try using an artisan command if exists; fallback to mysqldump

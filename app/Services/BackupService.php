@@ -29,17 +29,27 @@ class BackupService implements BackupServiceInterface
         $this->dir = (string) config('backup.dir', 'backups');
     }
 
-    public function run(bool $verify = true): array
+    /**
+     * Run a database backup.
+     *
+     * V49-HIGH-02 FIX: Added optional $prefix parameter to allow custom filename prefixes.
+     * This enables createPreRestoreBackup() to generate properly named backup files.
+     *
+     * @param  bool  $verify  Whether to verify the backup was created
+     * @param  string  $prefix  Optional filename prefix (default: 'backup')
+     * @return array{path: string, size: int}
+     */
+    public function run(bool $verify = true, string $prefix = 'backup'): array
     {
         return $this->handleServiceOperation(
-            callback: function () use ($verify) {
-                $filename = 'backup_'.now()->format('Ymd_His').'.sql.gz';
+            callback: function () use ($verify, $prefix) {
+                $filename = $prefix.'_'.now()->format('Ymd_His').'.sql.gz';
                 $path = trim($this->dir, '/').'/'.$filename;
 
                 if (Artisan::has('db:dump')) {
                     Artisan::call('db:dump', ['--path' => $path]);
                 } else {
-                    dispatch_sync(new \App\Jobs\BackupDatabaseJob(verify: $verify));
+                    dispatch_sync(new \App\Jobs\BackupDatabaseJob(verify: $verify, prefix: $prefix));
                 }
 
                 if ($verify && ! Storage::disk($this->disk)->exists($path)) {
@@ -56,7 +66,7 @@ class BackupService implements BackupServiceInterface
                 ];
             },
             operation: 'run',
-            context: ['verify' => $verify]
+            context: ['verify' => $verify, 'prefix' => $prefix]
         );
     }
 
@@ -394,12 +404,13 @@ class BackupService implements BackupServiceInterface
 
     /**
      * Create a pre-restore backup
+     *
+     * V49-HIGH-02 FIX: Now uses the 'pre_restore' prefix when calling run(),
+     * ensuring the backup file is named 'pre_restore_YYYYMMDD_HHMMSS.sql.gz'
+     * for easy identification and audit trail.
      */
     public function createPreRestoreBackup(): array
     {
-        $filename = 'pre_restore_'.now()->format('Ymd_His').'.sql.gz';
-        $path = trim($this->dir, '/').'/'.$filename;
-
-        return $this->run(true);
+        return $this->run(true, 'pre_restore');
     }
 }

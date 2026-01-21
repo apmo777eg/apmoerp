@@ -451,14 +451,15 @@ class StoreSyncService
 
                 // CRITICAL-05 FIX: Use correct SaleItem schema column names
                 // V29-HIGH-03 FIX: Include warehouse_id and cost_price for ERP consistency
+                // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for financial values
                 $sale->items()->create([
                     'product_id' => $productId,
                     'warehouse_id' => $warehouseId, // V29-HIGH-03 FIX
                     'quantity' => (int) ($lineItem['quantity'] ?? 1),
-                    'unit_price' => decimal_float($lineItem['price'] ?? 0),
+                    'unit_price' => decimal_float($lineItem['price'] ?? 0, 4),
                     'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
-                    'discount_amount' => decimal_float($lineItem['total_discount'] ?? 0),
-                    'line_total' => decimal_float($lineItem['quantity'] ?? 1) * decimal_float($lineItem['price'] ?? 0) - decimal_float($lineItem['total_discount'] ?? 0),
+                    'discount_amount' => decimal_float($lineItem['total_discount'] ?? 0, 4),
+                    'line_total' => decimal_float($lineItem['quantity'] ?? 1, 4) * decimal_float($lineItem['price'] ?? 0, 4) - decimal_float($lineItem['total_discount'] ?? 0, 4),
                 ]);
             }
 

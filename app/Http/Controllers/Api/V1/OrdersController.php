@@ -205,9 +205,9 @@ class OrdersController extends BaseApiController
                         ]);
                     }
 
-                    // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                    $lineSubtotal = decimal_float($item['price']) * decimal_float($item['quantity']);
-                    $lineDiscount = max(0, decimal_float($item['discount'] ?? 0));
+                    // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for prices/quantities
+                    $lineSubtotal = decimal_float($item['price'], 4) * decimal_float($item['quantity'], 4);
+                    $lineDiscount = max(0, decimal_float($item['discount'] ?? 0, 4));
                     $lineDiscount = min($lineDiscount, $lineSubtotal);
 
                     $lineTotal = $lineSubtotal - $lineDiscount;
@@ -224,11 +224,12 @@ class OrdersController extends BaseApiController
                     ];
                 }
 
-                $orderDiscount = max(0, decimal_float($validated['discount'] ?? 0));
+                // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for financial values
+                $orderDiscount = max(0, decimal_float($validated['discount'] ?? 0, 4));
                 $orderDiscount = min($orderDiscount, max(0, $subTotal - $itemDiscountTotal));
-                $tax = max(0, decimal_float($validated['tax'] ?? 0));
-                $shipping = max(0, decimal_float($validated['shipping'] ?? 0));
-                $grandTotal = $subTotal - ($itemDiscountTotal + $orderDiscount) + $tax + $shipping;
+                $tax = max(0, decimal_float($validated['tax'] ?? 0, 4));
+                $shipping = max(0, decimal_float($validated['shipping'] ?? 0, 4));
+                $grandTotal = decimal_float($subTotal - ($itemDiscountTotal + $orderDiscount) + $tax + $shipping, 4);
 
                 // V31-MED-06 FIX: Get integration user ID for store token auth
                 // This provides proper audit trail for API orders

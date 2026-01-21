@@ -138,7 +138,8 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             ];
 
             // Handle quantity: direction 'out' should be negative
-            $qty = abs(decimal_float($data['qty'] ?? $data['quantity'] ?? 0));
+            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
+            $qty = abs(decimal_float($data['qty'] ?? $data['quantity'] ?? 0, 4));
             $direction = $data['direction'] ?? 'in';
 
             if ($direction === 'out') {
@@ -190,13 +191,13 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
                 ->first();
 
             // Calculate current stock from all movements
-            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
+            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
             $currentStock = decimal_float(StockMovement::where('product_id', $data['product_id'])
                 ->where('warehouse_id', $data['warehouse_id'])
-                ->sum('quantity'));
+                ->sum('quantity'), 4);
 
             $mappedData['stock_before'] = $currentStock;
-            $mappedData['stock_after'] = $currentStock + $qty;
+            $mappedData['stock_after'] = decimal_float($currentStock + $qty, 4);
             $mappedData['unit_cost'] = $data['unit_cost'] ?? null;
 
             $movement = StockMovement::create($mappedData);
