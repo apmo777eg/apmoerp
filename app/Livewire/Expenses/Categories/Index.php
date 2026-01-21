@@ -36,9 +36,12 @@ class Index extends Component
 
     public function render()
     {
+        // V55-CRITICAL-05 FIX: Wrap orWhere in a nested where to preserve branch scope
         $categories = ExpenseCategory::query()
-            ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%")
-                ->orWhere('name_ar', 'like', "%{$this->search}%"))
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
+                $query->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('name_ar', 'like', "%{$this->search}%");
+            }))
             ->withCount('expenses')
             ->orderBy('name')
             ->paginate(20);
@@ -48,26 +51,40 @@ class Index extends Component
         ]);
     }
 
+    /**
+     * V55-CRITICAL-05 FIX: Delete is now properly branch-scoped via HasBranch trait.
+     * The find() call automatically applies branch scope, preventing cross-branch access.
+     */
     public function delete(int $id): void
     {
         $this->authorize('expenses.manage');
 
+        // Branch scope is automatically applied by HasBranch trait
         $category = ExpenseCategory::find($id);
-        if ($category) {
-            if ($category->expenses()->count() > 0) {
-                session()->flash('error', __('Cannot delete category with expenses'));
+        if (! $category) {
+            session()->flash('error', __('Category not found'));
 
-                return;
-            }
-            $category->delete();
-            session()->flash('success', __('Category deleted successfully'));
+            return;
         }
+
+        if ($category->expenses()->count() > 0) {
+            session()->flash('error', __('Cannot delete category with expenses'));
+
+            return;
+        }
+        $category->delete();
+        session()->flash('success', __('Category deleted successfully'));
     }
 
+    /**
+     * V55-CRITICAL-05 FIX: Toggle is now properly branch-scoped via HasBranch trait.
+     * The find() call automatically applies branch scope, preventing cross-branch access.
+     */
     public function toggleActive(int $id): void
     {
         $this->authorize('expenses.manage');
 
+        // Branch scope is automatically applied by HasBranch trait
         $category = ExpenseCategory::find($id);
         if ($category) {
             $category->update(['is_active' => ! $category->is_active]);

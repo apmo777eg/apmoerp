@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * IncomeCategory Model
+ *
+ * V55-CRITICAL-04 FIX: Added HasBranch trait for branch scoping
+ * This prevents cross-branch data access and IDOR vulnerabilities.
+ */
 class IncomeCategory extends Model
 {
+    use HasBranch;
     protected $table = 'income_categories';
 
     protected $fillable = [

@@ -89,14 +89,18 @@ class BackupDatabaseJob implements ShouldQueue
             // Create temp file for the dump, then move to disk
             $tempFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql.gz';
 
+            // V55-HIGH-01 FIX: Use bash with pipefail option to catch mysqldump failures
+            // Without pipefail, the pipe only reports the exit code of gzip, which may succeed
+            // even if mysqldump fails, resulting in an empty or corrupted backup file.
             // All values are from config and properly escaped - no user input
-            $cmd = sprintf(
+            $innerCmd = sprintf(
                 'mysqldump -h%s -u%s %s | gzip > %s',
                 escapeshellarg($db['host'] ?? '127.0.0.1'),
                 escapeshellarg($db['username'] ?? ''),
                 escapeshellarg($db['database'] ?? ''),
                 escapeshellarg($tempFile)
             );
+            $cmd = sprintf('bash -o pipefail -c %s', escapeshellarg($innerCmd));
 
             // Execute with proper error handling
             $output = [];
@@ -153,9 +157,11 @@ class BackupDatabaseJob implements ShouldQueue
             // Create temp file for the dump, then move to disk
             $tempFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql.gz';
 
-            // Build pg_dump command with proper escaping
+            // V55-HIGH-01 FIX: Use bash with pipefail option to catch pg_dump failures
+            // Without pipefail, the pipe only reports the exit code of gzip, which may succeed
+            // even if pg_dump fails, resulting in an empty or corrupted backup file.
             // All values are from config - no user input
-            $cmd = sprintf(
+            $innerCmd = sprintf(
                 'pg_dump -h %s -p %s -U %s %s | gzip > %s',
                 escapeshellarg($db['host'] ?? '127.0.0.1'),
                 escapeshellarg((string) ($db['port'] ?? '5432')),
@@ -163,6 +169,7 @@ class BackupDatabaseJob implements ShouldQueue
                 escapeshellarg($db['database'] ?? ''),
                 escapeshellarg($tempFile)
             );
+            $cmd = sprintf('bash -o pipefail -c %s', escapeshellarg($innerCmd));
 
             // Execute with proper error handling
             $output = [];

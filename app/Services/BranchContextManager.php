@@ -191,9 +191,19 @@ class BranchContextManager
     /**
      * Get the current branch ID from the authenticated user
      * Returns the primary branch_id of the current user
+     *
+     * V55-CRITICAL-02/03 FIX: Prefer explicit branch context set by middleware
+     * This ensures records are created in the branch the user is actively working in,
+     * not necessarily their primary branch.
      */
     public static function getCurrentBranchId(): ?int
     {
+        // V55-CRITICAL-02/03 FIX: First check for explicitly set branch context
+        // This is set by SetBranchContext middleware when user navigates to a specific branch
+        if (self::$explicitBranchId !== null) {
+            return self::$explicitBranchId;
+        }
+
         $user = self::getCurrentUser();
 
         if (! $user) {

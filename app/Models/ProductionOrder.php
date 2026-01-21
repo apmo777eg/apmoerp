@@ -223,25 +223,32 @@ class ProductionOrder extends BaseModel
 
     /**
      * Generate next production order number.
+     *
+     * V55-HIGH-02 FIX: Use database locking to prevent race conditions.
+     * Without locking, concurrent requests could get the same order number.
      */
     public static function generateOrderNumber(int $branchId): string
     {
-        $prefix = 'PRO';
-        $date = now()->format('Ym');
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            $prefix = 'PRO';
+            $date = now()->format('Ym');
 
-        $lastOrder = static::where('branch_id', $branchId)
-            ->where('reference_number', 'like', "{$prefix}-{$date}-%")
-            ->orderByDesc('id')
-            ->first();
+            // V55-HIGH-02 FIX: Use lockForUpdate to prevent race conditions
+            $lastOrder = static::where('branch_id', $branchId)
+                ->where('reference_number', 'like', "{$prefix}-{$date}-%")
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->first();
 
-        if ($lastOrder) {
-            $lastNumber = (int) substr($lastOrder->reference_number, -4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
+            if ($lastOrder) {
+                $lastNumber = (int) substr($lastOrder->reference_number, -4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
 
-        return sprintf('%s-%s-%04d', $prefix, $date, $newNumber);
+            return sprintf('%s-%s-%04d', $prefix, $date, $newNumber);
+        });
     }
 
     /**

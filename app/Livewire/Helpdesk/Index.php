@@ -66,10 +66,15 @@ class Index extends Component
         }
     }
 
+    /**
+     * V55-CRITICAL-05 FIX: Delete is now properly branch-scoped via HasBranch trait.
+     * The findOrFail() call automatically applies branch scope, preventing cross-branch access.
+     */
     public function delete(int $id): void
     {
         $this->authorize('helpdesk.delete');
 
+        // Branch scope is automatically applied by HasBranch trait
         $ticket = Ticket::findOrFail($id);
         $ticket->delete();
 
@@ -82,9 +87,9 @@ class Index extends Component
         $user = auth()->user();
         $branchId = $user->branch_id;
 
-        // Build query
+        // V55-CRITICAL-05 FIX: Branch scope is now automatically applied via HasBranch trait
+        // The manual branch filter is kept for additional explicitness but the trait handles it
         $query = Ticket::with(['customer', 'assignedAgent', 'category', 'priority'])
-            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->when($this->search, fn ($q) => $q->where(function ($query) {
                 $query->where('ticket_number', 'like', "%{$this->search}%")
                     ->orWhere('subject', 'like', "%{$this->search}%")

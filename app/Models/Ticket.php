@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Ticket Model
+ *
+ * V55-CRITICAL-04 FIX: Added HasBranch trait for branch scoping
+ * This prevents cross-branch data access and IDOR vulnerabilities.
+ */
 class Ticket extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasBranch, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'ticket_number',

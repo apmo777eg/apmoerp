@@ -152,7 +152,10 @@ class Index extends Component
             ->orderBy($this->getSortField(), $this->getSortDirection())
             ->paginate(15);
 
-        $categories = Cache::remember('income_categories', 600, fn () => IncomeCategory::all());
+        // V55-HIGH-03 FIX: Make cache key branch-aware to prevent data mixing between branches
+        // IncomeCategory now uses HasBranch trait which automatically applies branch scope
+        $branchId = $user?->branch_id ?? 'all';
+        $categories = Cache::remember("income_categories_{$branchId}", 600, fn () => IncomeCategory::all());
         $stats = $this->getStatistics();
 
         return view('livewire.income.index', [

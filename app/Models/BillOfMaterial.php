@@ -175,25 +175,32 @@ class BillOfMaterial extends BaseModel
 
     /**
      * Generate next BOM number.
+     *
+     * V55-HIGH-02 FIX: Use database locking to prevent race conditions.
+     * Without locking, concurrent requests could get the same BOM number.
      */
     public static function generateBomNumber(int $branchId): string
     {
-        $prefix = 'BOM';
-        $date = now()->format('Ym');
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
+            $prefix = 'BOM';
+            $date = now()->format('Ym');
 
-        $lastBom = static::where('branch_id', $branchId)
-            ->where('reference_number', 'like', "{$prefix}-{$date}-%")
-            ->orderByDesc('id')
-            ->first();
+            // V55-HIGH-02 FIX: Use lockForUpdate to prevent race conditions
+            $lastBom = static::where('branch_id', $branchId)
+                ->where('reference_number', 'like', "{$prefix}-{$date}-%")
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->first();
 
-        if ($lastBom) {
-            $lastNumber = (int) substr($lastBom->reference_number, -4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
+            if ($lastBom) {
+                $lastNumber = (int) substr($lastBom->reference_number, -4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
 
-        return sprintf('%s-%s-%04d', $prefix, $date, $newNumber);
+            return sprintf('%s-%s-%04d', $prefix, $date, $newNumber);
+        });
     }
 
     /**
