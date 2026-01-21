@@ -213,7 +213,7 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
                 );
             }
 
-            $movement = StockMovement::create($mappedData);;
+            $movement = StockMovement::create($mappedData);
 
             // V22-HIGH-08 FIX: Update the product's stock_quantity cache
             // This keeps the denormalized stock_quantity field in sync with stock_movements
