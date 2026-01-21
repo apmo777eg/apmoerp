@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * BankReconciliation - Bank reconciliation model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Bank reconciliations must be isolated by branch to prevent cross-branch access
+ * in financial reports and audit trails.
+ */
 class BankReconciliation extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'bank_account_id',
         'branch_id',

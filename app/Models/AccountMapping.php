@@ -4,11 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * AccountMapping - Account mapping configuration model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Account mappings must be isolated by branch to prevent cross-branch
+ * configuration leakage in accounting setup.
+ */
 class AccountMapping extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'branch_id',
         'module_name',

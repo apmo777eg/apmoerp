@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,8 +14,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * Document - Document management model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Documents must be isolated by branch to prevent cross-branch document access.
+ */
 class Document extends Model
 {
+    use HasBranch;
     use HasFactory, SoftDeletes;
 
     protected $fillable = [

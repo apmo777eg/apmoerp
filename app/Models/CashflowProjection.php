@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * CashflowProjection - Cash flow projection model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Cash flow projections must be isolated by branch to prevent cross-branch
+ * access in financial reports and forecasting.
+ */
 class CashflowProjection extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'branch_id',
         'projection_date',

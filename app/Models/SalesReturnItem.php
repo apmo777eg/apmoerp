@@ -2,12 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * SalesReturnItem - Sales return item model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Sales return items must be isolated by branch for accurate inventory
+ * and financial tracking per branch.
+ */
 class SalesReturnItem extends Model
 {
+    use HasBranch;
     use HasFactory;
 
     protected $fillable = [

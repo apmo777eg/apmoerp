@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * StoreOrder - E-commerce store order model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Store orders must be isolated by branch to prevent cross-branch data leakage.
+ */
 class StoreOrder extends Model
 {
+    use HasBranch;
     use HasFactory;
 
     /**

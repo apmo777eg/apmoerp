@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * WorkflowInstance - Workflow instance model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Workflow instances must be isolated by branch to prevent cross-branch
+ * access to approval workflows and process tracking.
+ */
 class WorkflowInstance extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'workflow_definition_id',
         'branch_id',

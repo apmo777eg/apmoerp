@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * InventoryBatch - Inventory batch tracking model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Inventory batches must be isolated by branch to prevent cross-branch
+ * access and ensure accurate batch tracking per branch.
+ */
 class InventoryBatch extends Model
 {
+    use HasBranch;
     protected $table = 'inventory_batches';
 
     protected $fillable = [

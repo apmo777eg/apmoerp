@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * InventorySerial - Serial number tracking model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Serial numbers must be isolated by branch to prevent cross-branch access
+ * and ensure accurate serial tracking per branch.
+ */
 class InventorySerial extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'product_id',
         'warehouse_id',

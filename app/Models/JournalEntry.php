@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * JournalEntry - Accounting journal entry model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Journal entries must be isolated by branch to prevent cross-branch data leakage
+ * in financial reports and audit trails.
+ */
 class JournalEntry extends Model
 {
+    use HasBranch;
     use SoftDeletes;
 
     protected $table = 'journal_entries';

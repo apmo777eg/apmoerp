@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * AssetDepreciation - Asset depreciation record model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Asset depreciation records must be isolated by branch for accurate
+ * financial reporting per branch.
+ */
 class AssetDepreciation extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'asset_id',
         'branch_id',

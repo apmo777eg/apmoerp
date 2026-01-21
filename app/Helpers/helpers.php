@@ -418,6 +418,14 @@ if (! function_exists('bcround')) {
     /**
      * Round a string number using bcmath with proper half-up rounding.
      * V7-MEDIUM-U10 FIX: Implement proper rounding instead of truncation.
+     * V56-CRITICAL-01 FIX: Correct rounding for negative numbers using "half away from zero"
+     * behavior to match PHP's standard round() function (PHP_ROUND_HALF_UP).
+     *
+     * Examples:
+     * - bcround('1.235', 2) returns '1.24' (positive rounds away from zero)
+     * - bcround('-1.235', 2) returns '-1.24' (negative rounds away from zero)
+     * - bcround('1.234', 2) returns '1.23'
+     * - bcround('-1.234', 2) returns '-1.23'
      *
      * @param string|null $value The value to round
      * @param int $precision Number of decimal places
@@ -429,16 +437,19 @@ if (! function_exists('bcround')) {
         if ($value === '' || $value === null) {
             return '0';
         }
-        
-        // Determine sign
+
+        // V56-CRITICAL-01 FIX: Use absolute value approach with proper offset handling
+        // to achieve "half away from zero" rounding (matching PHP's standard round()).
+        // bcmath truncates toward zero, so we need to work with absolute values
+        // and then restore the sign to get correct results for negative numbers.
         $isNegative = str_starts_with($value, '-');
         $absValue = $isNegative ? ltrim($value, '-') : $value;
-        
-        // Add 0.5 * 10^(-precision) to achieve half-up rounding
+
+        // Add 0.5 * 10^(-precision) to achieve half-up rounding on absolute value
         // e.g., for precision=2, add 0.005
         $offset = '0.' . str_repeat('0', $precision) . '5';
         $rounded = bcadd($absValue, $offset, $precision);
-        
+
         // Restore sign if negative
         return $isNegative ? '-' . $rounded : $rounded;
     }

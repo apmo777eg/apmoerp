@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * FiscalPeriod - Accounting fiscal period model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Fiscal periods must be isolated by branch for proper financial reporting.
+ */
 class FiscalPeriod extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'branch_id',
         'year',

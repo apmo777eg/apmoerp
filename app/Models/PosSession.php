@@ -2,12 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * PosSession - Point of Sale session model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * POS sessions must be isolated by branch to prevent cross-branch data access
+ * and ensure proper cash handling accountability.
+ */
 class PosSession extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'branch_id',
         'user_id',

@@ -353,6 +353,17 @@ class StockService
 
             $stockAfter = decimal_float($stockBefore + $quantity, 4);
 
+            // V56-CRITICAL-05 FIX: Enforce no-negative-stock rule AFTER acquiring lock
+            // This prevents race conditions where two concurrent transactions both pass
+            // the pre-check but would result in negative stock when applied sequentially.
+            $allowNegativeStock = (bool) setting('inventory.allow_negative_stock', false);
+            if (! $allowNegativeStock && $stockAfter < 0) {
+                throw new \DomainException(
+                    "Insufficient stock for product {$productId} in warehouse {$warehouseId}. " .
+                    "Available: {$stockBefore}, Requested: " . abs($quantity)
+                );
+            }
+
             // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
             // This allows CLI/queue contexts to specify a user ID explicitly
             $createdBy = $userId ?? actual_user_id();

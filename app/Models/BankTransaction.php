@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * BankTransaction - Bank transaction record model
+ *
+ * V56-CRITICAL-03 FIX: Added HasBranch trait for proper multi-branch scoping.
+ * Bank transactions must be isolated by branch to prevent cross-branch data leakage
+ * in banking reports and reconciliation.
+ */
 class BankTransaction extends Model
 {
+    use HasBranch;
     protected $fillable = [
         'bank_account_id',
         'branch_id',
