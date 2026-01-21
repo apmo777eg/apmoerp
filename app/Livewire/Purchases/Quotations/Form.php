@@ -7,6 +7,7 @@ use App\Models\PurchaseRequisition;
 use App\Models\Supplier;
 use App\Models\SupplierQuotation;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -165,37 +166,49 @@ class Form extends Component
     {
         $this->validate();
 
+        // V56-CRITICAL-NEW-01 FIX: Re-authorize on save() to prevent CSRF/timing attacks
+        // where authorization might change between mount() and save() calls
+        if ($this->quotation) {
+            $this->authorize('update', $this->quotation);
+        } else {
+            $this->authorize('create', SupplierQuotation::class);
+        }
+
+        // V56-CRITICAL-NEW-01 FIX: Wrap all database operations in a transaction
+        // to ensure data consistency (quotation + items are saved atomically)
         try {
-            $data = [
-                'requisition_id' => $this->requisition_id,
-                'supplier_id' => $this->supplier_id,
-                'quotation_date' => $this->quotation_date,
-                'valid_until' => $this->valid_until,
-                'payment_terms' => $this->payment_terms,
-                'delivery_terms' => $this->delivery_terms,
-                'lead_time_days' => $this->lead_time_days,
-                'notes' => $this->notes,
-                'terms_conditions' => $this->terms_conditions,
-                'status' => 'pending',
-            ];
+            DB::transaction(function () {
+                $data = [
+                    'requisition_id' => $this->requisition_id,
+                    'supplier_id' => $this->supplier_id,
+                    'quotation_date' => $this->quotation_date,
+                    'valid_until' => $this->valid_until,
+                    'payment_terms' => $this->payment_terms,
+                    'delivery_terms' => $this->delivery_terms,
+                    'lead_time_days' => $this->lead_time_days,
+                    'notes' => $this->notes,
+                    'terms_conditions' => $this->terms_conditions,
+                    'status' => 'pending',
+                ];
 
-            if ($this->quotation) {
-                $this->quotation->update($data);
-                $this->quotation->items()->delete();
-            } else {
-                $this->quotation = SupplierQuotation::create($data);
-            }
+                if ($this->quotation) {
+                    $this->quotation->update($data);
+                    $this->quotation->items()->delete();
+                } else {
+                    $this->quotation = SupplierQuotation::create($data);
+                }
 
-            // Save items
-            foreach ($this->items as $item) {
-                $this->quotation->items()->create([
-                    'product_id' => $item['product_id'],
-                    'qty' => $item['quantity'],
-                    'unit_cost' => $item['unit_price'],
-                    'tax_rate' => $item['tax_percentage'] ?? 0,
-                    'notes' => $item['notes'] ?? null,
-                ]);
-            }
+                // Save items within the same transaction
+                foreach ($this->items as $item) {
+                    $this->quotation->items()->create([
+                        'product_id' => $item['product_id'],
+                        'qty' => $item['quantity'],
+                        'unit_cost' => $item['unit_price'],
+                        'tax_rate' => $item['tax_percentage'] ?? 0,
+                        'notes' => $item['notes'] ?? null,
+                    ]);
+                }
+            });
 
             session()->flash('success', __('Quotation saved successfully'));
             $this->redirectRoute('app.purchases.quotations.index', navigate: true);
