@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+// Models
 use App\Models\BillOfMaterial;
 use App\Models\Branch;
 use App\Models\Notification;
-// Models
 use App\Models\Product;
 use App\Models\ProductionOrder;
 use App\Models\Property;
@@ -22,10 +22,10 @@ use App\Models\Tenant;
 use App\Models\Ticket;
 use App\Models\Vehicle;
 use App\Models\WorkCenter;
+// Policies
 use App\Policies\BranchPolicy;
 use App\Policies\ManufacturingPolicy;
 use App\Policies\NotificationPolicy;
-// Policies
 use App\Policies\ProductPolicy;
 use App\Policies\PurchasePolicy;
 use App\Policies\RentalPolicy;
