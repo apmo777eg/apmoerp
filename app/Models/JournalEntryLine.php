@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * V65-BUG-FIX: Added HasBranch trait for proper branch scoping.
+ */
 class JournalEntryLine extends Model
 {
+    use HasBranch;
+
     protected $table = 'journal_entry_lines';
 
     /**
@@ -16,6 +22,7 @@ class JournalEntryLine extends Model
      * 2026_01_04_000007_create_accounting_tables.php
      */
     protected $fillable = [
+        'branch_id',
         'journal_entry_id',
         'account_id',
         'debit',

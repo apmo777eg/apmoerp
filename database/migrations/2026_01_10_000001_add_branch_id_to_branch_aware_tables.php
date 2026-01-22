@@ -62,6 +62,25 @@ return new class extends Migration
         'product_store_mappings' => ['products', 'product_id'],
         'user_dashboard_widgets' => null,
         'search_history' => null,
+
+        // V65-BUG-FIX: Stock transfer related tables for branch scoping
+        'inventory_transits' => ['stock_transfers', 'stock_transfer_id'],
+        'stock_transfer_items' => ['stock_transfers', 'stock_transfer_id'],
+        'stock_transfer_approvals' => ['stock_transfers', 'stock_transfer_id'],
+        'stock_transfer_documents' => ['stock_transfers', 'stock_transfer_id'],
+        'stock_transfer_history' => ['stock_transfers', 'stock_transfer_id'],
+
+        // V65-BUG-FIX: Ticket related tables for branch scoping
+        // NOTE: ticket_categories and ticket_priorities are intentionally global (V58-IDOR-01)
+        'ticket_replies' => ['tickets', 'ticket_id'],
+
+        // V65-BUG-FIX: Workflow related tables for branch scoping
+        'workflow_approvals' => ['workflow_instances', 'workflow_instance_id'],
+        'workflow_audit_logs' => null,
+        'workflow_notifications' => null,
+
+        // V65-BUG-FIX: Journal entry lines for branch scoping
+        'journal_entry_lines' => ['journal_entries', 'journal_entry_id'],
     ];
 
     public function up(): void
@@ -131,6 +150,20 @@ return new class extends Migration
             'product_store_mappings' => 'prdstrmap',
             'user_dashboard_widgets' => 'usrdshwdgt',
             'search_history' => 'srchist',
+            // V65-BUG-FIX: Stock transfer related tables
+            'inventory_transits' => 'invtrs',
+            'stock_transfer_items' => 'stktrfitm',
+            'stock_transfer_approvals' => 'stktrfapr',
+            'stock_transfer_documents' => 'stktrfdoc',
+            'stock_transfer_history' => 'stktrfhst',
+            // V65-BUG-FIX: Ticket related tables (categories/priorities are intentionally global)
+            'ticket_replies' => 'tktrpl',
+            // V65-BUG-FIX: Workflow related tables
+            'workflow_approvals' => 'wflapr',
+            'workflow_audit_logs' => 'wflaudit',
+            'workflow_notifications' => 'wflnotif',
+            // V65-BUG-FIX: Journal entry lines
+            'journal_entry_lines' => 'jrnlln',
         ];
 
         // Throw exception for unmapped tables to ensure explicit naming

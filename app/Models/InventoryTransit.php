@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,12 +16,15 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * Tracks inventory that is in transit between warehouses.
  * This prevents the "vanishing stock" issue where inventory is
  * neither in the source nor destination warehouse during transfer.
+ * 
+ * V65-BUG-FIX: Added HasBranch trait for proper branch scoping.
  */
 class InventoryTransit extends Model
 {
-    use HasFactory;
+    use HasBranch, HasFactory;
 
     protected $fillable = [
+        'branch_id',
         'product_id',
         'from_warehouse_id',
         'to_warehouse_id',

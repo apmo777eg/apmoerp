@@ -2,18 +2,23 @@
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * V65-BUG-FIX: Added HasBranch trait for proper branch scoping.
+ */
 class TicketReply extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasBranch, HasFactory, SoftDeletes;
 
     protected $table = 'ticket_replies';
 
     protected $fillable = [
+        'branch_id',
         'ticket_id',
         'user_id',
         'message',

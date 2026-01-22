@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * V65-BUG-FIX: Added HasBranch trait for proper branch scoping.
+ */
 class WorkflowAuditLog extends Model
 {
+    use HasBranch;
+
     protected $fillable = [
+        'branch_id',
         'workflow_instance_id',
         'user_id',
         'action',
