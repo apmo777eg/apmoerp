@@ -57,6 +57,7 @@ class PermissionsSeeder extends Seeder
             $this->getPurchasesPermissions(),
             $this->getCustomerPermissions(),
             $this->getSupplierPermissions(),
+            $this->getAccountingPermissions(),
             $this->getBankingPermissions(),
             $this->getExpenseIncomePermissions(),
             $this->getFixedAssetPermissions(),
@@ -82,8 +83,10 @@ class PermissionsSeeder extends Seeder
     {
         return [
             'system.view-notifications',
+            'system.backup.manage',
             'impersonate.users',
             'access-all-branches',
+            'import.manage',
         ];
     }
 
@@ -148,6 +151,7 @@ class PermissionsSeeder extends Seeder
         return [
             'pos.use',
             'pos.offline.report.view',
+            'pos.daily-report.view',
         ];
     }
 
@@ -159,8 +163,11 @@ class PermissionsSeeder extends Seeder
             'inventory.products.manage',
             'inventory.categories.view',
             'inventory.categories.manage',
+            'inventory.categories.edit',
+            'inventory.categories.delete',
             'inventory.units.view',
             'inventory.units.manage',
+            'inventory.units.delete',
             'inventory.stock.alerts.view',
             'products.view-cost',
             'products.create',
@@ -179,6 +186,8 @@ class PermissionsSeeder extends Seeder
             'warehouses.create',
             'warehouses.update',
             'warehouses.manage',
+            'warehouse.view',
+            'warehouse.manage',
         ];
     }
 
@@ -189,6 +198,7 @@ class PermissionsSeeder extends Seeder
             'sales.update',
             'sales.void',
             'sales.return',
+            'sales.manage',
             'sales.installments.view',
         ];
     }
@@ -205,6 +215,15 @@ class PermissionsSeeder extends Seeder
             'purchases.pay',
             'purchases.receive',
             'purchases.return',
+            'purchases.requisitions.view',
+            'purchases.requisitions.create',
+            'purchases.requisitions.approve',
+            'grn.create',
+            'grn.update',
+            'grn.delete',
+            'grn.approve',
+            'grn.reject',
+            'grn.inspect',
         ];
     }
 
@@ -234,11 +253,22 @@ class PermissionsSeeder extends Seeder
         ];
     }
 
+    protected function getAccountingPermissions(): array
+    {
+        return [
+            'accounting.view',
+            'accounting.create',
+            'accounting.update',
+        ];
+    }
+
     protected function getBankingPermissions(): array
     {
         return [
             'banking.create',
             'banking.edit',
+            'banking.view',
+            'banking.reconcile',
         ];
     }
 
@@ -246,7 +276,11 @@ class PermissionsSeeder extends Seeder
     {
         return [
             'expenses.manage',
+            'expenses.view',
             'income.manage',
+            'income.view',
+            'income.delete',
+            'incomes.manage', // Alias for backward compatibility
         ];
     }
 
@@ -271,6 +305,7 @@ class PermissionsSeeder extends Seeder
             'hrm.attendance.create',
             'hrm.payroll.view',
             'hrm.payroll.run',
+            'hrm.manage',
             'hr.manage-employees',
             'hr.view-reports',
             'employee.self.attendance',
@@ -285,8 +320,13 @@ class PermissionsSeeder extends Seeder
             'projects.view',
             'projects.create',
             'projects.edit',
+            'projects.delete',
+            'projects.tasks.view',
             'projects.tasks.manage',
+            'projects.expenses.view',
             'projects.expenses.manage',
+            'projects.expenses.approve',
+            'projects.timelogs.view',
             'projects.timelogs.manage',
         ];
     }
@@ -329,8 +369,13 @@ class PermissionsSeeder extends Seeder
     protected function getManufacturingPermissions(): array
     {
         return [
+            'manufacturing.view',
             'manufacturing.create',
             'manufacturing.update',
+            'manufacturing.edit',
+            'manufacturing.boms.manage',
+            'manufacturing.orders.manage',
+            'manufacturing.work_centers.manage',
         ];
     }
 
@@ -340,10 +385,13 @@ class PermissionsSeeder extends Seeder
             'documents.view',
             'documents.create',
             'documents.edit',
+            'documents.delete',
             'documents.manage',
             'documents.share',
             'documents.download',
             'documents.tags.create',
+            'documents.tags.manage',
+            'documents.versions.manage',
         ];
     }
 
@@ -353,8 +401,11 @@ class PermissionsSeeder extends Seeder
             'helpdesk.view',
             'helpdesk.create',
             'helpdesk.edit',
+            'helpdesk.delete',
             'helpdesk.manage',
             'helpdesk.reply',
+            'helpdesk.assign',
+            'helpdesk.close',
         ];
     }
 
@@ -363,6 +414,8 @@ class PermissionsSeeder extends Seeder
         return [
             'reports.view',
             'reports.manage',
+            'reports.export',
+            'reports.aggregate',
             'reports.sales.view',
             'reports.inventory.charts',
             'reports.inventory.export',
@@ -405,6 +458,10 @@ class PermissionsSeeder extends Seeder
     {
         return [
             'stores.view',
+            'stores.edit',
+            'stores.delete',
+            'stores.sync',
+            'stores.manage',
             'store.api.products',
             'store.api.orders',
             'store.reports.dashboard',
@@ -424,6 +481,7 @@ class PermissionsSeeder extends Seeder
     {
         return [
             'spares.compatibility.update',
+            'spares.compatibility.manage',
         ];
     }
 
