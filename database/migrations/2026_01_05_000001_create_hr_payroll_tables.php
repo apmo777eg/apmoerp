@@ -414,16 +414,25 @@ return new class extends Migration
                 ->name('fk_lvhol_branch__brnch');
             $table->string('name', 100);
             $table->string('name_ar', 100)->nullable();
-            $table->date('holiday_date');
+            $table->date('date'); // V62-FIX: Renamed from holiday_date to match model
             $table->unsignedSmallInteger('year');
+            $table->string('type', 30)->default('public'); // V62-FIX: Added to match model (public, company, regional, religious)
+            $table->boolean('is_mandatory')->default(false); // V62-FIX: Added to match model
             $table->boolean('is_recurring')->default(false);
             $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
+            $table->foreignId('created_by') // V62-FIX: Added to match model
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_lvhol_created_by__usr');
             $table->timestamps();
+            $table->softDeletes(); // V62-FIX: Added to match model SoftDeletes trait
 
-            $table->unique(['branch_id', 'holiday_date'], 'uq_lvhol_branch_date');
+            $table->unique(['branch_id', 'date'], 'uq_lvhol_branch_date');
             $table->index('year', 'idx_lvhol_year');
             $table->index('is_active', 'idx_lvhol_is_active');
+            $table->index('type', 'idx_lvhol_type'); // V62-FIX: Added index for type filter
         });
 
         // Payrolls

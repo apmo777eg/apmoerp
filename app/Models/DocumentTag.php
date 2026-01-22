@@ -33,7 +33,8 @@ class DocumentTag extends Model
     // Relationships
     public function documents(): BelongsToMany
     {
-        return $this->belongsToMany(Document::class, 'document_tag_pivot', 'tag_id', 'document_id');
+        // V62-FIX: Use correct pivot table name and column names matching migration
+        return $this->belongsToMany(Document::class, 'document_tag', 'document_tag_id', 'document_id');
     }
 
     // Business Methods
