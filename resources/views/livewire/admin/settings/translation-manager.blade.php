@@ -132,18 +132,19 @@
                 </div>
                 <form wire:submit.prevent="addTranslation" class="p-6 space-y-4">
                     <div>
-                        <label class="erp-label">{{ __('Translation Key') }}</label>
-                        <input type="text" wire:model="newKey" class="erp-input mt-1" placeholder="e.g., Welcome Message">
+                        <label class="erp-label">{{ __('What do you want to translate?') }}</label>
+                        <input type="text" wire:model="newKey" class="erp-input mt-1" placeholder="{{ __('e.g., Welcome to our system') }}">
+                        <p class="text-xs text-slate-500 mt-1">{{ __('Type the phrase you want to translate') }}</p>
                         @error('newKey') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="erp-label">{{ __('Arabic Translation') }} 🇪🇬</label>
-                        <input type="text" wire:model="newValueAr" class="erp-input mt-1" dir="rtl" placeholder="{{ __('Arabic translation') }}">
+                        <input type="text" wire:model="newValueAr" class="erp-input mt-1" dir="rtl" placeholder="{{ __('e.g., مرحباً بك في نظامنا') }}">
                         @error('newValueAr') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="erp-label">{{ __('English Translation') }} 🇬🇧</label>
-                        <input type="text" wire:model="newValueEn" class="erp-input mt-1" dir="ltr" placeholder="{{ __('English translation') }}">
+                        <input type="text" wire:model="newValueEn" class="erp-input mt-1" dir="ltr" placeholder="{{ __('e.g., Welcome to our system') }}">
                         @error('newValueEn') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">

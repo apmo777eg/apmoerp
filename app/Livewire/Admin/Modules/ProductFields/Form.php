@@ -110,7 +110,8 @@ class Form extends Component
     public function updatedFieldLabel(): void
     {
         // Only auto-generate if not editing an existing field
-        if (! $this->fieldId && empty($this->field_key)) {
+        // Always regenerate when creating new field to keep label and key in sync
+        if (! $this->fieldId) {
             $this->field_key = $this->generateFieldKey($this->field_label);
         }
     }
