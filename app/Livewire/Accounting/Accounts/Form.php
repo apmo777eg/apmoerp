@@ -8,6 +8,7 @@ use App\Http\Requests\Traits\HasMultilingualValidation;
 use App\Livewire\Concerns\HandlesErrors;
 use App\Models\Account;
 use App\Models\Currency;
+use App\Rules\BranchScopedExists;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -72,7 +73,8 @@ class Form extends Component
             'form.currency_code' => ['required', 'string', 'max:10'],
             'form.account_category' => ['nullable', 'string', 'max:100'],
             'form.description' => ['nullable', 'string', 'max:1000'],
-            'form.parent_id' => ['nullable', 'exists:accounts,id'],
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch parent account references
+            'form.parent_id' => ['nullable', new BranchScopedExists('accounts', 'id', null, true)],
             'form.is_active' => ['boolean'],
         ];
     }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Branch;
 use App\Models\HREmployee;
+use App\Rules\BranchScopedExists;
 use App\Services\Contracts\HRMServiceInterface as HRM;
 use Illuminate\Http\Request;
 
@@ -40,14 +41,12 @@ class AttendanceController extends Controller
 
     public function log(Branch $branch, Request $request)
     {
+        // V57-CRITICAL-03 FIX: Use BranchScopedExists with explicit branch_id for early validation
         $data = $this->validate($request, [
-            'employee_id' => ['required', 'exists:hr_employees,id'],
+            'employee_id' => ['required', new BranchScopedExists('hr_employees', 'id', $branch->getKey())],
             'type' => ['required', 'in:in,out'],
             'at' => ['sometimes', 'date'],
         ]);
-
-        // Ensure employee belongs to branch
-        HREmployee::where('branch_id', $branch->getKey())->findOrFail($data['employee_id']);
 
         return $this->ok($this->hrm->logAttendance($data['employee_id'], $data['type'], $request->input('at', now()->toDateTimeString())));
     }
@@ -61,16 +60,14 @@ class AttendanceController extends Controller
 
     public function store(Branch $branch, Request $request)
     {
+        // V57-CRITICAL-03 FIX: Use BranchScopedExists with explicit branch_id for early validation
         $data = $this->validate($request, [
-            'employee_id' => ['required', 'exists:hr_employees,id'],
+            'employee_id' => ['required', new BranchScopedExists('hr_employees', 'id', $branch->getKey())],
             'date' => ['required', 'date'],
             'check_in' => ['required', 'date_format:H:i:s'],
             'check_out' => ['nullable', 'date_format:H:i:s'],
             'status' => ['nullable', 'string', 'in:present,absent,late,on_leave,pending,inactive'],
         ]);
-
-        // Ensure employee belongs to branch
-        HREmployee::where('branch_id', $branch->getKey())->findOrFail($data['employee_id']);
 
         // V46-CRIT-01 FIX: Use canonical column names from Attendance model
         // Model uses: attendance_date, clock_in, clock_out (not date, check_in, check_out)

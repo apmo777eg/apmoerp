@@ -6,6 +6,7 @@ namespace App\Livewire\Admin\Categories;
 
 use App\Http\Requests\Traits\HasMultilingualValidation;
 use App\Models\ProductCategory;
+use App\Rules\BranchScopedExists;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -70,7 +71,8 @@ class Form extends Component
             'nameAr' => 'nullable|string|max:255',
             'parentId' => [
                 'nullable',
-                'exists:product_categories,id',
+                // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch parent references
+                new BranchScopedExists('product_categories', 'id', null, true),
                 function ($attribute, $value, $fail) {
                     if ($this->categoryId && $value == $this->categoryId) {
                         $fail(__('A category cannot be its own parent'));

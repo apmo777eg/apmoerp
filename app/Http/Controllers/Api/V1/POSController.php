@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\PosSession;
+use App\Rules\BranchScopedExists;
 use App\Services\POSService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -23,59 +24,48 @@ class POSController extends Controller
     {
         $this->authorize('pos.use');
 
-        $branch = null;
+        // V57-CRITICAL-03 FIX: First resolve the branch, then validate items with branch scoping
+        // Step 1: Validate branch_id first if not provided in route
+        if (! $branchId) {
+            $request->validate([
+                'branch_id' => 'required|integer|exists:branches,id',
+            ]);
+            $branchId = $request->integer('branch_id');
+        }
 
-        // Use branchId from route if provided, otherwise require it in request
-        // client_uuid: Primary parameter for POS idempotency
-        // client_sale_uuid: Deprecated alias for backward compatibility
+        // Step 2: Validate the branch is active
+        $branch = Branch::query()
+            ->whereKey($branchId)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $branch) {
+            throw ValidationException::withMessages([
+                'branch_id' => [__('The selected branch is invalid or inactive.')],
+            ]);
+        }
+
+        // Step 3: Now validate the rest of the request with branch-scoped exists rules
+        // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch data references
         $validationRules = [
             'client_uuid' => 'nullable|uuid',
             'client_sale_uuid' => 'nullable|uuid', // Deprecated: use client_uuid instead
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.product_id' => ['required', 'integer', new BranchScopedExists('products', 'id', $branch->id)],
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'nullable|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0|max:100',
             'items.*.percent' => 'nullable|boolean',
-            'items.*.tax_id' => 'nullable|integer|exists:taxes,id',
+            'items.*.tax_id' => ['nullable', 'integer', new BranchScopedExists('taxes', 'id', $branch->id, true)],
             'payments' => 'nullable|array',
             'payments.*.method' => 'required_with:payments|in:cash,card,transfer,cheque',
             'payments.*.amount' => 'required_with:payments|numeric|min:0.01',
-            'customer_id' => 'nullable|integer|exists:customers,id',
-            'warehouse_id' => 'nullable|integer|exists:warehouses,id',
+            'customer_id' => ['nullable', 'integer', new BranchScopedExists('customers', 'id', $branch->id, true)],
+            'warehouse_id' => ['nullable', 'integer', new BranchScopedExists('warehouses', 'id', $branch->id, true)],
             'notes' => 'nullable|string|max:1000',
         ];
 
-        // If branchId not in route, require it in request body
-        if (! $branchId) {
-            $validationRules['branch_id'] = 'required|integer|exists:branches,id';
-        } else {
-            $branch = Branch::query()
-                ->whereKey($branchId)
-                ->where('is_active', true)
-                ->first();
-
-            if (! $branch) {
-                throw ValidationException::withMessages([
-                    'branch_id' => [__('The selected branch is invalid or inactive.')],
-                ]);
-            }
-        }
-
         $request->validate($validationRules);
-
-        if (! $branch) {
-            $branch = Branch::query()
-                ->whereKey($request->integer('branch_id'))
-                ->where('is_active', true)
-                ->first();
-
-            if (! $branch) {
-                throw ValidationException::withMessages([
-                    'branch_id' => [__('The selected branch is invalid or inactive.')],
-                ]);
-            }
-        }
 
         // NEW-CRITICAL-03 FIX: Verify user has access to this branch
         $user = auth()->user();

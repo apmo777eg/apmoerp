@@ -8,6 +8,7 @@ use App\Livewire\Concerns\HandlesErrors;
 use App\Models\Account;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Rules\BranchScopedExists;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -102,7 +103,8 @@ class Form extends Component
             'form.description' => ['nullable', 'string', 'max:1000'],
             'form.status' => ['required', 'in:draft,posted'],
             'lines' => ['required', 'array', 'min:2'],
-            'lines.*.account_id' => ['required', 'exists:accounts,id'],
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch account references
+            'lines.*.account_id' => ['required', new BranchScopedExists('accounts')],
             'lines.*.description' => ['nullable', 'string', 'max:500'],
             'lines.*.debit' => ['nullable', 'numeric', 'min:0'],
             'lines.*.credit' => ['nullable', 'numeric', 'min:0'],

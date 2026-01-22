@@ -9,6 +9,7 @@ use App\Livewire\Concerns\HandlesErrors;
 use App\Models\FixedAsset;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Rules\BranchScopedExists;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -73,7 +74,8 @@ class Form extends Component
             'useful_life_months' => 'nullable|integer|min:0|max:11',
             'depreciation_method' => 'required|in:straight_line,declining_balance,units_of_production',
             'depreciation_rate' => 'nullable|numeric|min:0|max:100',
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch supplier references
+            'supplier_id' => ['nullable', new BranchScopedExists('suppliers', 'id', null, true)],
             'warranty_expiry' => 'nullable|date',
             'assigned_to' => 'nullable|exists:users,id',
         ], [

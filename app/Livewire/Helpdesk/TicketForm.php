@@ -10,6 +10,7 @@ use App\Models\TicketCategory;
 use App\Models\TicketPriority;
 use App\Models\TicketSLAPolicy;
 use App\Models\User;
+use App\Rules\BranchScopedExists;
 use App\Services\HelpdeskService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -149,7 +150,8 @@ class TicketForm extends Component
                 'status' => 'required|in:new,open,pending,resolved,closed',
                 'category_id' => 'required|exists:ticket_categories,id',
                 'priority_id' => 'required|exists:ticket_priorities,id',
-                'customer_id' => 'nullable|exists:customers,id',
+                // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch customer references
+                'customer_id' => ['nullable', new BranchScopedExists('customers', 'id', null, true)],
                 'assigned_to' => 'nullable|exists:users,id',
                 'sla_policy_id' => 'nullable|exists:ticket_sla_policies,id',
                 'tags' => 'array',
@@ -168,7 +170,8 @@ class TicketForm extends Component
                 'description' => 'required|string',
                 'category_id' => 'required|exists:ticket_categories,id',
                 'priority_id' => 'required|exists:ticket_priorities,id',
-                'customer_id' => 'nullable|exists:customers,id',
+                // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch customer references
+                'customer_id' => ['nullable', new BranchScopedExists('customers', 'id', null, true)],
                 'assigned_to' => 'nullable|exists:users,id',
                 'sla_policy_id' => 'nullable|exists:ticket_sla_policies,id',
                 'tags' => 'array',

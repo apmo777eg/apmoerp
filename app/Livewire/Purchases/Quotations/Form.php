@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\PurchaseRequisition;
 use App\Models\Supplier;
 use App\Models\SupplierQuotation;
+use App\Rules\BranchScopedExists;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -47,8 +48,9 @@ class Form extends Component
     protected function rules()
     {
         return [
-            'requisition_id' => 'required|exists:purchase_requisitions,id',
-            'supplier_id' => 'required|exists:suppliers,id',
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch references
+            'requisition_id' => ['required', new BranchScopedExists('purchase_requisitions')],
+            'supplier_id' => ['required', new BranchScopedExists('suppliers')],
             'quotation_date' => 'required|date',
             'valid_until' => 'required|date|after:quotation_date',
             'validity_days' => 'nullable|integer|min:1',
@@ -58,7 +60,8 @@ class Form extends Component
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch product references
+            'items.*.product_id' => ['required', new BranchScopedExists('products')],
             'items.*.quantity' => 'required|numeric|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.tax_percentage' => 'nullable|numeric|min:0|max:100',

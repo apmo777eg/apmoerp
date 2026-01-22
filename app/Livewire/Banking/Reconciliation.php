@@ -6,6 +6,7 @@ namespace App\Livewire\Banking;
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Rules\BranchScopedExists;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -117,7 +118,8 @@ class Reconciliation extends Component
     {
         $rules = match ($this->currentStep) {
             1 => [
-                'accountId' => 'required|exists:bank_accounts,id',
+                // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch bank account access
+                'accountId' => ['required', new BranchScopedExists('bank_accounts')],
                 'startDate' => 'required|date',
                 'endDate' => 'required|date|after_or_equal:startDate',
             ],

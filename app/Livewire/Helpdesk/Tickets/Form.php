@@ -11,6 +11,7 @@ use App\Models\TicketCategory;
 use App\Models\TicketPriority;
 use App\Models\TicketSLAPolicy;
 use App\Models\User;
+use App\Rules\BranchScopedExists;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -53,7 +54,8 @@ class Form extends Component
             'description' => ['required', 'string'],
             'status' => ['required', 'string', 'in:new,open,pending,resolved,closed'],
             'priority_id' => ['required', 'exists:ticket_priorities,id'],
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch customer references
+            'customer_id' => ['nullable', new BranchScopedExists('customers', 'id', null, true)],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'category_id' => ['required', 'exists:ticket_categories,id'],
             'sla_policy_id' => ['nullable', 'exists:ticket_sla_policies,id'],

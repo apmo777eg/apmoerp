@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Branch\Motorcycle;
 use App\Http\Controllers\Branch\Concerns\RequiresBranchContext;
 use App\Http\Controllers\Controller;
 use App\Models\VehicleContract;
+use App\Rules\BranchScopedExists;
 use App\Services\Contracts\MotorcycleServiceInterface as Motos;
 use Illuminate\Http\Request;
 
@@ -25,9 +26,10 @@ class ContractController extends Controller
 
     public function store(Request $request)
     {
+        // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch references
         $data = $this->validate($request, [
-            'vehicle_id' => ['required', 'exists:vehicles,id'],
-            'customer_id' => ['required', 'exists:customers,id'],
+            'vehicle_id' => ['required', new BranchScopedExists('vehicles')],
+            'customer_id' => ['required', new BranchScopedExists('customers')],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after:start_date'],
         ]);
