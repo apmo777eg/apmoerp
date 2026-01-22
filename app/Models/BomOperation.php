@@ -13,6 +13,7 @@ class BomOperation extends BaseModel
 
     protected $fillable = [
         'bom_id',
+        'branch_id',
         'work_center_id',
         'operation_name',
         'operation_name_ar',

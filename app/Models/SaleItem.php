@@ -20,6 +20,7 @@ class SaleItem extends BaseModel
      */
     protected $fillable = [
         'sale_id',
+        'branch_id',
         'product_id',
         'variation_id',
         'warehouse_id',

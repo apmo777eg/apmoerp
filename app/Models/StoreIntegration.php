@@ -10,6 +10,7 @@ class StoreIntegration extends BaseModel
 {
     protected $fillable = [
         'store_id',
+        'branch_id',
         'platform',
         'api_key',
         'api_secret',

@@ -15,6 +15,7 @@ class SearchHistory extends BaseModel
 
     protected $fillable = [
         'user_id',
+        'branch_id',
         'query',
         'module',
         'context',

@@ -16,6 +16,7 @@ class GRNItem extends BaseModel
      */
     protected $fillable = [
         'grn_id',
+        'branch_id',
         'product_id',
         'purchase_item_id',
         'expected_quantity',

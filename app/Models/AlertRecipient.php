@@ -13,6 +13,7 @@ class AlertRecipient extends BaseModel
 
     protected $fillable = [
         'alert_instance_id',
+        'branch_id',
         'user_id',
         'notification_sent',
         'email_sent',

@@ -18,6 +18,7 @@ class BomItem extends BaseModel
      */
     protected $fillable = [
         'bom_id',
+        'branch_id',
         'product_id',
         'quantity',
         'unit_id',

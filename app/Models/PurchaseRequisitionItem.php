@@ -11,7 +11,7 @@ class PurchaseRequisitionItem extends BaseModel
     protected $table = 'purchase_requisition_items';
 
     protected $fillable = [
-        'requisition_id', 'product_id', 'quantity', 'unit_id',
+        'requisition_id', 'branch_id', 'product_id', 'quantity', 'unit_id',
         'estimated_price', 'specifications',
         'preferred_supplier_id',
         'extra_attributes', 'created_by', 'updated_by',

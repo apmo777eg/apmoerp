@@ -10,6 +10,7 @@ class StoreSyncLog extends BaseModel
 {
     protected $fillable = [
         'store_id',
+        'branch_id',
         'type',
         'direction',
         'status',

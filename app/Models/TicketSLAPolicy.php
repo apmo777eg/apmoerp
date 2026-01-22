@@ -10,6 +10,7 @@ class TicketSLAPolicy extends BaseModel
     protected $table = 'ticket_sla_policies';
 
     protected $fillable = [
+        'branch_id',
         'name',
         'description',
         'first_response_time_hours',

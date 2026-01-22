@@ -13,6 +13,7 @@ class ProductionOrderOperation extends BaseModel
 
     protected $fillable = [
         'production_order_id',
+        'branch_id',
         'bom_operation_id',
         'work_center_id',
         'operation_name',

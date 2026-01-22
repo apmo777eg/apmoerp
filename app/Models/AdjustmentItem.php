@@ -16,6 +16,7 @@ class AdjustmentItem extends BaseModel
      */
     protected $fillable = [
         'adjustment_id',
+        'branch_id',
         'product_id',
         'system_quantity',
         'counted_quantity',

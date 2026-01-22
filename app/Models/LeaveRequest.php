@@ -35,6 +35,7 @@ class LeaveRequest extends BaseModel
 
     protected $fillable = [
         'employee_id',
+        'branch_id',
         'leave_type',
         'start_date',
         'end_date',

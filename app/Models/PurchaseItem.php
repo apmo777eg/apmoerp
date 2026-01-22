@@ -20,6 +20,7 @@ class PurchaseItem extends BaseModel
      */
     protected $fillable = [
         'purchase_id',
+        'branch_id',
         'product_id',
         'variation_id',
         'product_name',

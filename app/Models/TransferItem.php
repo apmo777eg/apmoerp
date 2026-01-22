@@ -16,6 +16,7 @@ class TransferItem extends BaseModel
      */
     protected $fillable = [
         'transfer_id',
+        'branch_id',
         'product_id',
         'quantity',
         'received_quantity',

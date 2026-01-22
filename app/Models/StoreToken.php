@@ -10,6 +10,7 @@ class StoreToken extends BaseModel
 {
     protected $fillable = [
         'store_id',
+        'branch_id',
         'name',
         'token',
         'abilities',

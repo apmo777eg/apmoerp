@@ -16,6 +16,7 @@ class EmployeeShift extends BaseModel
      */
     protected $fillable = [
         'employee_id',
+        'branch_id',
         'shift_id',
         'start_date',
         'end_date',

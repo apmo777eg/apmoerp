@@ -28,6 +28,7 @@ class StockMovement extends BaseModel
      */
     protected $fillable = [
         'product_id',
+        'branch_id',
         'warehouse_id',
         'batch_id',
         'movement_type',

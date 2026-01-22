@@ -10,6 +10,7 @@ class ProductStoreMapping extends BaseModel
 {
     protected $fillable = [
         'product_id',
+        'branch_id',
         'store_id',
         'external_id',
         'external_sku',

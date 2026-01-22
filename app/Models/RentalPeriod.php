@@ -8,6 +8,7 @@ class RentalPeriod extends BaseModel
 {
     protected $fillable = [
         'module_id',
+        'branch_id',
         'period_key',
         'period_name',
         'period_name_ar',

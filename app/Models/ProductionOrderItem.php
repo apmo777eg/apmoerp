@@ -13,6 +13,7 @@ class ProductionOrderItem extends BaseModel
 
     protected $fillable = [
         'production_order_id',
+        'branch_id',
         'product_id',
         'quantity_required',
         'quantity_consumed',

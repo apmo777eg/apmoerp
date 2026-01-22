@@ -12,6 +12,7 @@ class DashboardWidget extends BaseModel
     use HasFactory;
 
     protected $fillable = [
+        'branch_id',
         'key',
         'name',
         'name_ar',

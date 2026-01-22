@@ -13,6 +13,7 @@ class UserDashboardWidget extends BaseModel
 
     protected $fillable = [
         'user_dashboard_layout_id',
+        'branch_id',
         'dashboard_widget_id',
         'position_x',
         'position_y',

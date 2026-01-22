@@ -10,6 +10,7 @@ class WorkflowRule extends BaseModel
 {
     protected $fillable = [
         'workflow_definition_id',
+        'branch_id',
         'name',
         'priority',
         'conditions',

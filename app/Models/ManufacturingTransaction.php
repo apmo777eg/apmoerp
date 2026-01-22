@@ -13,6 +13,7 @@ class ManufacturingTransaction extends BaseModel
 
     protected $fillable = [
         'production_order_id',
+        'branch_id',
         'transaction_type',
         'amount',
         'journal_entry_id',

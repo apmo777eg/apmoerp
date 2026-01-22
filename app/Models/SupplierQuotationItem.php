@@ -11,7 +11,7 @@ class SupplierQuotationItem extends BaseModel
     protected $table = 'supplier_quotation_items';
 
     protected $fillable = [
-        'quotation_id', 'product_id', 'quantity',
+        'quotation_id', 'branch_id', 'product_id', 'quantity',
         'unit_price', 'tax_percent', 'line_total',
         'notes', 'extra_attributes',
         'created_by', 'updated_by',

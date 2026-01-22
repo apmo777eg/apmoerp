@@ -12,7 +12,7 @@ class RentalInvoice extends BaseModel
 {
     protected ?string $moduleKey = 'rentals';
 
-    protected $fillable = ['contract_id', 'code', 'period', 'due_date', 'amount', 'paid_total', 'status', 'extra_attributes'];
+    protected $fillable = ['contract_id', 'branch_id', 'code', 'period', 'due_date', 'amount', 'paid_total', 'status', 'extra_attributes'];
 
     protected $casts = ['amount' => 'decimal:2', 'paid_total' => 'decimal:2', 'due_date' => 'date'];
 
