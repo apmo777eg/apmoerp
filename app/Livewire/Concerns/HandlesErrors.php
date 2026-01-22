@@ -5,16 +5,31 @@ declare(strict_types=1);
 namespace App\Livewire\Concerns;
 
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 trait HandlesErrors
 {
-    protected function handleOperation(callable $operation, string $successMessage = '', ?string $redirectRoute = null): mixed
+    /**
+     * Handle an operation with error handling and optional transaction wrapping.
+     *
+     * HIGH-001 FIX: Wrap multi-write operations in DB::transaction for atomicity.
+     * This ensures that all database writes within the operation either succeed
+     * together or are rolled back on failure.
+     */
+    protected function handleOperation(callable $operation, string $successMessage = '', ?string $redirectRoute = null, bool $useTransaction = true): mixed
     {
         try {
-            $operation();
+            // HIGH-001 FIX: Wrap operation in transaction for data integrity
+            if ($useTransaction) {
+                DB::transaction(function () use ($operation) {
+                    $operation();
+                });
+            } else {
+                $operation();
+            }
 
             if ($successMessage) {
                 session()->flash('success', $successMessage);
@@ -53,10 +68,22 @@ trait HandlesErrors
         }
     }
 
-    protected function handleDelete(callable $operation, string $successMessage = '', ?string $redirectRoute = null): mixed
+    /**
+     * Handle a delete operation with error handling and optional transaction wrapping.
+     *
+     * HIGH-001 FIX: Wrap multi-write delete operations in DB::transaction for atomicity.
+     */
+    protected function handleDelete(callable $operation, string $successMessage = '', ?string $redirectRoute = null, bool $useTransaction = true): mixed
     {
         try {
-            $operation();
+            // HIGH-001 FIX: Wrap operation in transaction for data integrity
+            if ($useTransaction) {
+                DB::transaction(function () use ($operation) {
+                    $operation();
+                });
+            } else {
+                $operation();
+            }
 
             if ($successMessage) {
                 session()->flash('success', $successMessage);

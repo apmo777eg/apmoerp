@@ -8,6 +8,7 @@ use App\Models\Attachment;
 use App\Models\Note;
 use App\Services\AttachmentAuthorizationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -179,6 +180,10 @@ class NotesAttachments extends Component
         $this->reset(['newFiles', 'fileDescription']);
     }
 
+    /**
+     * HIGH-002 FIX: Wrap uploadFiles in DB::transaction for atomicity.
+     * Multiple file uploads and database records should succeed or fail together.
+     */
     public function uploadFiles(): void
     {
         $this->ensureAuthorized();
@@ -189,76 +194,88 @@ class NotesAttachments extends Component
 
         $user = Auth::user();
         $storage = Storage::disk('local');
+        $uploadedPaths = [];
 
-        foreach ($this->newFiles as $file) {
-            $path = $file->store('attachments/'.strtolower(class_basename($this->modelType)), 'local');
+        try {
+            DB::transaction(function () use ($user, $storage, &$uploadedPaths) {
+                foreach ($this->newFiles as $file) {
+                    $path = $file->store('attachments/'.strtolower(class_basename($this->modelType)), 'local');
+                    $uploadedPaths[] = $path;
 
-            $storedMime = $storage->mimeType($path) ?? $file->getMimeType();
-            $clientMime = $file->getMimeType();
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'txt'];
-            $allowedMimeTypes = [
-                'image/jpeg',
-                'image/png',
-                'image/gif',
-                'image/webp',
-                'application/pdf',
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.ms-powerpoint',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'text/csv',
-                'text/plain',
-            ];
-            if (! in_array($file->extension(), $allowedExtensions, true)
-                || ! in_array($storedMime, $allowedMimeTypes, true)
-                || ! in_array($clientMime, $allowedMimeTypes, true)
-                || $storedMime !== $clientMime) {
-                $storage->delete($path);
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'newFiles' => [__('Uploaded file type is not allowed after verification.')],
-                ]);
+                    $storedMime = $storage->mimeType($path) ?? $file->getMimeType();
+                    $clientMime = $file->getMimeType();
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'txt'];
+                    $allowedMimeTypes = [
+                        'image/jpeg',
+                        'image/png',
+                        'image/gif',
+                        'image/webp',
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'application/vnd.ms-powerpoint',
+                        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        'text/csv',
+                        'text/plain',
+                    ];
+                    if (! in_array($file->extension(), $allowedExtensions, true)
+                        || ! in_array($storedMime, $allowedMimeTypes, true)
+                        || ! in_array($clientMime, $allowedMimeTypes, true)
+                        || $storedMime !== $clientMime) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'newFiles' => [__('Uploaded file type is not allowed after verification.')],
+                        ]);
+                    }
+
+                    if (! $storage->exists($path)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'newFiles' => [__('Uploaded file could not be saved. Please try again.')],
+                        ]);
+                    }
+
+                    $hash = hash_file('sha256', $storage->path($path));
+
+                    if ($hash === false) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'newFiles' => [__('Uploaded file could not be processed. Please try again.')],
+                        ]);
+                    }
+
+                    $attachment = new Attachment([
+                        'attachable_type' => $this->modelType,
+                        'attachable_id' => $this->modelId,
+                        'filename' => basename($path),
+                        'original_filename' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'type' => $this->getFileType($storedMime),
+                        'description' => $this->fileDescription,
+                        'branch_id' => $user?->branch_id,
+                        'uploaded_by' => $user?->id,
+                        'metadata' => [
+                            'sha256' => $hash,
+                        ],
+                    ]);
+                    $attachment->disk = 'local';
+                    $attachment->path = $path;
+                    $attachment->mime_type = $storedMime;
+                    $attachment->save();
+                }
+            });
+
+            session()->flash('success', __('Files uploaded successfully'));
+            $this->closeFileModal();
+            $this->loadData();
+        } catch (\Exception $e) {
+            // Clean up uploaded files if transaction failed
+            foreach ($uploadedPaths as $path) {
+                if ($storage->exists($path)) {
+                    $storage->delete($path);
+                }
             }
-
-            if (! $storage->exists($path)) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'newFiles' => [__('Uploaded file could not be saved. Please try again.')],
-                ]);
-            }
-
-            $hash = hash_file('sha256', $storage->path($path));
-
-            if ($hash === false) {
-                $storage->delete($path);
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'newFiles' => [__('Uploaded file could not be processed. Please try again.')],
-                ]);
-            }
-
-            $attachment = new Attachment([
-                'attachable_type' => $this->modelType,
-                'attachable_id' => $this->modelId,
-                'filename' => basename($path),
-                'original_filename' => $file->getClientOriginalName(),
-                'size' => $file->getSize(),
-                'type' => $this->getFileType($storedMime),
-                'description' => $this->fileDescription,
-                'branch_id' => $user?->branch_id,
-                'uploaded_by' => $user?->id,
-                'metadata' => [
-                    'sha256' => $hash,
-                ],
-            ]);
-            $attachment->disk = 'local';
-            $attachment->path = $path;
-            $attachment->mime_type = $storedMime;
-            $attachment->save();
+            throw $e;
         }
-
-        session()->flash('success', __('Files uploaded successfully'));
-        $this->closeFileModal();
-        $this->loadData();
     }
 
     public function deleteAttachment(int $attachmentId): void
