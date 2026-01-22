@@ -102,6 +102,9 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $this->authorize('customers.manage');
+
         $validated = $this->validate($this->getRules());
 
         // Get the user's branch - handle both direct branch_id and relationship

@@ -280,6 +280,9 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $this->authorize('purchases.manage');
+
         // BUG-010 Fix: Prevent double submission
         if ($this->isSubmitting) {
             return null;

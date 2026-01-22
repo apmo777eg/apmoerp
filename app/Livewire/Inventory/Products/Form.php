@@ -313,6 +313,9 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $this->authorize('inventory.products.manage');
+
         $user = Auth::user();
         $this->form['branch_id'] = (int) ($user?->branch_id ?? $this->form['branch_id']);
         if ($this->form['branch_id'] === 0) {

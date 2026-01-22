@@ -178,6 +178,13 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $user = Auth::user();
+        $requiredPermission = config('screen_permissions.admin.branches.index', 'branches.view');
+        if (! $user || ! $user->can($requiredPermission)) {
+            abort(403, __('Unauthorized access'));
+        }
+
         $validated = $this->validate();
         $data = $this->form;
         $branchId = $this->branchId;

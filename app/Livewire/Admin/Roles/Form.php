@@ -200,6 +200,12 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $user = auth()->user();
+        if (! $user || ! $user->can('roles.manage')) {
+            abort(403, __('Unauthorized access to role management'));
+        }
+
         $validated = $this->validate();
 
         if ($this->editMode && $this->role->name === 'Super Admin') {

@@ -71,6 +71,12 @@ class Modules extends Component
 
     public function save(): void
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $user = auth()->user();
+        if (! $user || ! $user->can('branches.manage')) {
+            abort(403);
+        }
+
         DB::transaction(function () {
             foreach ($this->modules as $module) {
                 $moduleId = $module['id'];

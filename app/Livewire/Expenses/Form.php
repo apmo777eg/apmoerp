@@ -107,6 +107,9 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $this->authorize('expenses.manage');
+
         $validated = $this->validate();
         $user = auth()->user();
         $branchId = $this->expense?->branch_id ?? $user?->branch_id ?? $user?->branches()->first()?->id;

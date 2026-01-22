@@ -108,6 +108,12 @@ class Form extends Component
 
     public function save(): mixed
     {
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
+        $user = auth()->user();
+        if (! $user || ! $user->can('modules.manage')) {
+            abort(403, __('Unauthorized access to module management'));
+        }
+
         $validated = $this->validate();
         $moduleData = collect($validated)->except('customFields')->toArray();
         $customFields = $this->customFields;

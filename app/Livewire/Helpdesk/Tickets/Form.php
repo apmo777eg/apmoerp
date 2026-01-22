@@ -102,14 +102,24 @@ class Form extends Component
 
     public function save()
     {
-        $this->validate();
-
+        // V58-HIGH-01 FIX: Re-authorize on mutation to prevent direct method calls
         $user = Auth::user();
-        if ($this->isEditing && $this->ticket && ! $user?->can('update', $this->ticket)) {
-            session()->flash('error', __('You do not have permission to update this ticket.'));
-
-            return;
+        if (! $user) {
+            abort(403);
         }
+
+        if ($this->isEditing && $this->ticket) {
+            if (! $user->can('update', $this->ticket)) {
+                session()->flash('error', __('You do not have permission to update this ticket.'));
+                return;
+            }
+        } else {
+            if (! $user->can('tickets.manage')) {
+                abort(403);
+            }
+        }
+
+        $this->validate();
 
         $data = [
             'subject' => $this->subject,
