@@ -1,0 +1,489 @@
+erDiagram
+    %% Core Tables
+    branches {
+        bigint id PK
+        varchar name
+        varchar code UK
+        boolean is_active
+        bigint parent_id FK
+    }
+    
+    users {
+        bigint id PK
+        varchar name
+        varchar email UK
+        bigint branch_id FK
+        boolean is_active
+    }
+    
+    modules {
+        bigint id PK
+        varchar key UK
+        varchar name
+        boolean is_active
+    }
+    
+    permissions {
+        bigint id PK
+        varchar name
+        varchar guard_name
+    }
+    
+    roles {
+        bigint id PK
+        varchar name
+        varchar guard_name
+    }
+
+    %% Branch Pivots
+    branch_user {
+        bigint branch_id FK
+        bigint user_id FK
+    }
+    
+    branch_modules {
+        bigint branch_id FK
+        bigint module_id FK
+        boolean enabled
+    }
+
+    %% Master Data
+    currencies {
+        bigint id PK
+        varchar code UK
+        varchar name
+        boolean is_base
+    }
+    
+    units_of_measure {
+        bigint id PK
+        varchar name
+        varchar symbol
+        bigint base_unit_id FK
+    }
+    
+    taxes {
+        bigint id PK
+        bigint branch_id FK
+        varchar code
+        decimal rate
+    }
+    
+    warehouses {
+        bigint id PK
+        bigint branch_id FK
+        varchar name
+        varchar code
+        boolean is_active
+    }
+
+    %% Products
+    product_categories {
+        bigint id PK
+        bigint branch_id FK
+        varchar name
+        bigint parent_id FK
+    }
+    
+    products {
+        bigint id PK
+        bigint branch_id FK
+        bigint category_id FK
+        varchar name
+        varchar sku UK
+        decimal price
+        decimal cost
+        decimal stock_quantity
+    }
+    
+    product_variations {
+        bigint id PK
+        bigint product_id FK
+        varchar sku
+        decimal price
+    }
+    
+    inventory_batches {
+        bigint id PK
+        bigint product_id FK
+        bigint warehouse_id FK
+        varchar batch_number
+        date expiry_date
+        decimal quantity
+    }
+    
+    inventory_serials {
+        bigint id PK
+        bigint product_id FK
+        varchar serial_number UK
+    }
+
+    %% Customers & Suppliers
+    customers {
+        bigint id PK
+        bigint branch_id FK
+        varchar code
+        varchar name
+        decimal credit_limit
+        decimal balance
+    }
+    
+    suppliers {
+        bigint id PK
+        bigint branch_id FK
+        varchar code
+        varchar name
+        decimal balance
+    }
+
+    %% Sales
+    pos_sessions {
+        bigint id PK
+        bigint branch_id FK
+        bigint user_id FK
+        decimal opening_cash
+        decimal closing_cash
+    }
+    
+    sales {
+        bigint id PK
+        bigint branch_id FK
+        bigint customer_id FK
+        bigint warehouse_id FK
+        varchar reference_number UK
+        decimal total_amount
+        varchar status
+    }
+    
+    sale_items {
+        bigint id PK
+        bigint sale_id FK
+        bigint product_id FK
+        decimal quantity
+        decimal unit_price
+        decimal line_total
+    }
+    
+    sale_payments {
+        bigint id PK
+        bigint sale_id FK
+        decimal amount
+        varchar payment_method
+    }
+
+    %% Purchases
+    purchases {
+        bigint id PK
+        bigint branch_id FK
+        bigint supplier_id FK
+        bigint warehouse_id FK
+        varchar reference_number UK
+        decimal total_amount
+        varchar status
+    }
+    
+    purchase_items {
+        bigint id PK
+        bigint purchase_id FK
+        bigint product_id FK
+        decimal quantity
+        decimal unit_price
+    }
+    
+    goods_received_notes {
+        bigint id PK
+        bigint purchase_id FK
+        bigint warehouse_id FK
+        varchar reference_number
+    }
+    
+    grn_items {
+        bigint id PK
+        bigint grn_id FK
+        bigint product_id FK
+        decimal received_quantity
+    }
+
+    %% Inventory
+    stock_movements {
+        bigint id PK
+        bigint product_id FK
+        bigint warehouse_id FK
+        varchar movement_type
+        decimal quantity
+        decimal stock_before
+        decimal stock_after
+    }
+    
+    stock_adjustments {
+        bigint id PK
+        bigint branch_id FK
+        bigint warehouse_id FK
+        varchar reference_number
+    }
+    
+    transfers {
+        bigint id PK
+        bigint branch_id FK
+        bigint from_warehouse_id FK
+        bigint to_warehouse_id FK
+        varchar status
+    }
+
+    %% Accounting
+    fiscal_periods {
+        bigint id PK
+        bigint branch_id FK
+        int year
+        int period
+        varchar status
+    }
+    
+    accounts {
+        bigint id PK
+        bigint branch_id FK
+        varchar account_number UK
+        varchar name
+        varchar type
+        decimal balance
+    }
+    
+    journal_entries {
+        bigint id PK
+        bigint branch_id FK
+        varchar reference_number UK
+        date entry_date
+        decimal total_debit
+        decimal total_credit
+        varchar status
+    }
+    
+    journal_entry_lines {
+        bigint id PK
+        bigint journal_entry_id FK
+        bigint account_id FK
+        decimal debit
+        decimal credit
+    }
+    
+    bank_accounts {
+        bigint id PK
+        bigint branch_id FK
+        varchar account_number
+        decimal current_balance
+    }
+
+    %% HR & Payroll
+    hr_employees {
+        bigint id PK
+        bigint branch_id FK
+        bigint user_id FK
+        varchar employee_code UK
+        varchar first_name
+        varchar last_name
+        decimal basic_salary
+    }
+    
+    shifts {
+        bigint id PK
+        bigint branch_id FK
+        varchar name
+        time start_time
+        time end_time
+    }
+    
+    attendances {
+        bigint id PK
+        bigint employee_id FK
+        date attendance_date
+        timestamp clock_in
+        timestamp clock_out
+    }
+    
+    payrolls {
+        bigint id PK
+        bigint employee_id FK
+        int year
+        int month
+        decimal gross_salary
+        decimal net_salary
+    }
+
+    %% Projects
+    projects {
+        bigint id PK
+        bigint branch_id FK
+        bigint customer_id FK
+        varchar code UK
+        varchar name
+        decimal budget
+    }
+    
+    project_tasks {
+        bigint id PK
+        bigint project_id FK
+        varchar title
+        varchar status
+    }
+
+    %% Manufacturing
+    bills_of_materials {
+        bigint id PK
+        bigint branch_id FK
+        bigint product_id FK
+        varchar reference_number
+    }
+    
+    production_orders {
+        bigint id PK
+        bigint branch_id FK
+        bigint bom_id FK
+        decimal planned_quantity
+        decimal produced_quantity
+    }
+
+    %% Tickets
+    tickets {
+        bigint id PK
+        bigint branch_id FK
+        bigint customer_id FK
+        varchar ticket_number UK
+        varchar status
+    }
+
+    %% Workflows
+    workflow_definitions {
+        bigint id PK
+        bigint branch_id FK
+        varchar name
+        varchar code
+    }
+    
+    workflow_instances {
+        bigint id PK
+        bigint workflow_definition_id FK
+        varchar entity_type
+        bigint entity_id
+        varchar status
+    }
+
+    %% Documents
+    documents {
+        bigint id PK
+        bigint branch_id FK
+        varchar code UK
+        varchar title
+        varchar file_path
+    }
+
+    %% Rentals
+    properties {
+        bigint id PK
+        bigint branch_id FK
+        varchar name
+    }
+    
+    rental_units {
+        bigint id PK
+        bigint property_id FK
+        varchar code
+        decimal monthly_rate
+    }
+    
+    rental_contracts {
+        bigint id PK
+        bigint unit_id FK
+        bigint tenant_id FK
+        date start_date
+        date end_date
+    }
+
+    %% Relationships - Core
+    branches ||--o{ branches : "parent"
+    branches ||--o{ users : "belongs_to"
+    branches ||--o{ branch_user : "has"
+    users ||--o{ branch_user : "has"
+    branches ||--o{ branch_modules : "has"
+    modules ||--o{ branch_modules : "has"
+    
+    %% Products & Inventory
+    branches ||--o{ product_categories : "has"
+    product_categories ||--o{ product_categories : "parent"
+    branches ||--o{ products : "has"
+    product_categories ||--o{ products : "categorizes"
+    products ||--o{ product_variations : "has"
+    products ||--o{ inventory_batches : "has"
+    warehouses ||--o{ inventory_batches : "stores"
+    products ||--o{ inventory_serials : "has"
+    products ||--o{ stock_movements : "tracks"
+    warehouses ||--o{ stock_movements : "tracks"
+    
+    %% Sales
+    branches ||--o{ customers : "has"
+    branches ||--o{ sales : "has"
+    customers ||--o{ sales : "places"
+    warehouses ||--o{ sales : "fulfills"
+    sales ||--o{ sale_items : "contains"
+    products ||--o{ sale_items : "sold_in"
+    sales ||--o{ sale_payments : "paid_by"
+    users ||--o{ pos_sessions : "opens"
+    pos_sessions ||--o{ sales : "processes"
+    
+    %% Purchases
+    branches ||--o{ suppliers : "has"
+    branches ||--o{ purchases : "has"
+    suppliers ||--o{ purchases : "receives"
+    purchases ||--o{ purchase_items : "contains"
+    products ||--o{ purchase_items : "ordered_in"
+    purchases ||--o{ goods_received_notes : "received_by"
+    goods_received_notes ||--o{ grn_items : "contains"
+    
+    %% Accounting
+    branches ||--o{ accounts : "has"
+    branches ||--o{ journal_entries : "has"
+    journal_entries ||--o{ journal_entry_lines : "contains"
+    accounts ||--o{ journal_entry_lines : "debits_credits"
+    branches ||--o{ bank_accounts : "has"
+    
+    %% HR
+    branches ||--o{ hr_employees : "employs"
+    users ||--o{ hr_employees : "links"
+    branches ||--o{ shifts : "defines"
+    hr_employees ||--o{ attendances : "logs"
+    hr_employees ||--o{ payrolls : "receives"
+    
+    %% Projects
+    branches ||--o{ projects : "manages"
+    customers ||--o{ projects : "owns"
+    projects ||--o{ project_tasks : "contains"
+    
+    %% Manufacturing
+    branches ||--o{ bills_of_materials : "defines"
+    products ||--o{ bills_of_materials : "produces"
+    bills_of_materials ||--o{ production_orders : "executed_as"
+    
+    %% Support
+    branches ||--o{ tickets : "receives"
+    customers ||--o{ tickets : "submits"
+    
+    %% Workflows
+    branches ||--o{ workflow_definitions : "defines"
+    workflow_definitions ||--o{ workflow_instances : "creates"
+    
+    %% Documents
+    branches ||--o{ documents : "stores"
+    
+    %% Rentals
+    branches ||--o{ properties : "owns"
+    properties ||--o{ rental_units : "contains"
+    rental_units ||--o{ rental_contracts : "leased_in"
+    
+    %% Warehouses & Transfers
+    branches ||--o{ warehouses : "has"
+    branches ||--o{ transfers : "initiates"
+    warehouses ||--o{ transfers : "from"
+    warehouses ||--o{ transfers : "to"
+    
+    %% Stock Adjustments
+    branches ||--o{ stock_adjustments : "performs"
+    warehouses ||--o{ stock_adjustments : "adjusts"
