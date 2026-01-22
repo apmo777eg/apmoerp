@@ -23,6 +23,9 @@ class Index extends Component
 
     public function delete(int $id): void
     {
+        // V57-CRITICAL-04 FIX: Re-authorize on mutation to prevent IDOR attacks
+        $this->authorize('documents.tags.manage');
+        
         $tag = DocumentTag::findOrFail($id);
 
         if ($tag->getDocumentCount() > 0) {

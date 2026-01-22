@@ -43,6 +43,9 @@ class VehicleModels extends Component
 
     public function toggleActive(int $id): void
     {
+        // V57-CRITICAL-04 FIX: Re-authorize on mutation to prevent IDOR attacks
+        $this->authorize('spares.compatibility.manage');
+        
         $model = VehicleModel::findOrFail($id);
         $model->is_active = ! $model->is_active;
         $model->save();
