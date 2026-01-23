@@ -460,7 +460,8 @@ class StoreSyncService
                     'unit_price' => decimal_float($lineItem['price'] ?? 0, 4),
                     'cost_price' => $this->getProductCostPrice($productId), // V29-HIGH-03 FIX
                     'discount_amount' => decimal_float($lineItem['total_discount'] ?? 0, 4),
-                    'line_total' => decimal_float($lineItem['quantity'] ?? 1, 4) * decimal_float($lineItem['price'] ?? 0, 4) - decimal_float($lineItem['total_discount'] ?? 0, 4),
+                    // FIX: Use bcmath for financial precision
+                    'line_total' => decimal_float(bcsub(bcmul((string) decimal_float($lineItem['quantity'] ?? 1, 4), (string) decimal_float($lineItem['price'] ?? 0, 4), 4), (string) decimal_float($lineItem['total_discount'] ?? 0, 4), 4), 4),
                 ]);
             }
 
@@ -581,7 +582,8 @@ class StoreSyncService
                 'warehouse_id' => $warehouseId, // V25-HIGH-03 FIX
                 'customer_id' => $customerId,
                 'sale_date' => $orderDate, // V25-HIGH-03 FIX
-                'subtotal' => decimal_float($data['total'] ?? 0) - decimal_float($data['total_tax'] ?? 0),
+                // FIX: Use bcsub for financial precision
+                'subtotal' => decimal_float(bcsub((string) decimal_float($data['total'] ?? 0), (string) decimal_float($data['total_tax'] ?? 0), 4), 4),
                 'tax_amount' => decimal_float($data['total_tax'] ?? 0),
                 'discount_amount' => decimal_float($data['discount_total'] ?? 0),
                 'total_amount' => decimal_float($data['total'] ?? 0),

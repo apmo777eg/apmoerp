@@ -139,8 +139,8 @@ class StockReorderService
             return decimal_float(bcround((string) $optimalQty, 4), 4);
         }
 
-        // Fallback: reorder to bring stock to 2x reorder point
-        return $product->reorder_point ? (decimal_float($product->reorder_point, 4) * 2) : 50;
+        // FIX: Use bcmul for financial precision instead of float multiplication
+        return $product->reorder_point ? decimal_float(bcmul((string) decimal_float($product->reorder_point, 4), '2', 4), 4) : 50;
     }
 
     /**
@@ -167,7 +167,8 @@ class StockReorderService
 
         $totalSold = $query->sum('sale_items.quantity');
 
-        return $totalSold ? (decimal_float($totalSold) / $days) : 0;
+        // FIX: Use bcdiv for financial precision instead of float division
+        return $totalSold ? decimal_float(bcdiv((string) decimal_float($totalSold), (string) $days, 4), 4) : 0;
     }
 
     /**

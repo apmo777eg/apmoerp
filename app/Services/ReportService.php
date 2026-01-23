@@ -87,7 +87,8 @@ class ReportService implements ReportServiceInterface
                     'sales' => ['total' => decimal_float($sales->total ?? 0), 'paid' => decimal_float($sales->paid ?? 0)],
                     'purchases' => ['total' => decimal_float($purchases->total ?? 0), 'paid' => decimal_float($purchases->paid ?? 0)],
                     // V43-HIGH-02 NOTE: This is simplified P&L (sales - purchases), not true accounting P&L
-                    'pnl' => decimal_float($sales->total ?? 0) - decimal_float($purchases->total ?? 0),
+                    // FIX: Use bcsub for financial precision
+                    'pnl' => decimal_float(bcsub((string) decimal_float($sales->total ?? 0), (string) decimal_float($purchases->total ?? 0), 4), 4),
                     'pnl_type' => 'simplified', // V43-HIGH-02 FIX: Indicate this is a simplified calculation
                 ];
             },
@@ -214,7 +215,8 @@ class ReportService implements ReportServiceInterface
                 // Previously was computing ($p->default_price ?? 0) * 1 which is meaningless
                 $summary = [
                     'total_products' => $items->count(),
-                    'total_value' => $items->sum(fn ($p) => (decimal_float($p->stock_quantity ?? 0, 4)) * (decimal_float($p->cost ?? $p->standard_cost ?? 0, 4))),
+                    // FIX: Use bcmul for financial precision in inventory valuation
+                    'total_value' => $items->sum(fn ($p) => decimal_float(bcmul((string) decimal_float($p->stock_quantity ?? 0, 4), (string) decimal_float($p->cost ?? $p->standard_cost ?? 0, 4), 4), 4)),
                     'total_cost' => $items->sum(fn ($p) => decimal_float($p->standard_cost ?? 0, 4)),
                     'by_module' => $items->groupBy('module_id')->map(fn ($g) => $g->count()),
                     'by_status' => $items->groupBy('status')->map(fn ($g) => $g->count()),

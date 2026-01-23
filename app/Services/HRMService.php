@@ -233,8 +233,8 @@ class HRMService implements HRMServiceInterface
                 return 0;
             }
 
-            // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            $dailyRate = decimal_float($emp->salary) / 30;
+            // FIX: Use bcdiv for financial precision instead of float division
+            $dailyRate = decimal_float(bcdiv((string) decimal_float($emp->salary), '30', 4), 4);
 
             // Use bcmath for precise absence deduction
             return decimal_float(bcmul((string) $dailyRate, (string) $absenceDays, 2));
