@@ -360,8 +360,18 @@ class DocumentService
         );
 
         // MED-004 FIX: Verify MIME type from actual file on storage instead of trusting DB
-        $storedMimeType = Storage::disk($disk)->mimeType($document->file_path);
         $dbMimeType = $document->mime_type;
+        try {
+            $storedMimeType = Storage::disk($disk)->mimeType($document->file_path);
+        } catch (\Exception $e) {
+            // If MIME detection fails, log warning and use DB value
+            Log::warning('Failed to detect MIME type from storage, using DB value', [
+                'path' => $document->file_path,
+                'disk' => $disk,
+                'error' => $e->getMessage(),
+            ]);
+            $storedMimeType = null;
+        }
 
         // Use storage-detected MIME if available, otherwise fall back to DB value
         $mimeType = $storedMimeType ?: $dbMimeType;

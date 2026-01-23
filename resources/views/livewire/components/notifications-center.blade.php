@@ -138,15 +138,14 @@
 <script>
     // Livewire 4 FIX: Wrap with @script for proper execution timing across SPA navigation
     // Auto-refresh notifications every 60 seconds
-    let notificationInterval = setInterval(() => {
+    const notificationInterval = setInterval(() => {
         $wire.call('loadNotifications');
     }, 60000);
     
     // Clean up on component destroy to prevent memory leaks
-    Livewire.hook('component.destroyed', ({ component }) => {
-        if (component.id === $wire.id) {
-            clearInterval(notificationInterval);
-        }
+    // Use cleanup function that runs when component is removed from DOM
+    $cleanup(() => {
+        clearInterval(notificationInterval);
     });
 </script>
 @endscript

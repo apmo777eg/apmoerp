@@ -73,15 +73,14 @@
 <script>
     // Livewire 4 FIX: Wrap with @script for proper execution timing across SPA navigation
     // Auto-refresh activity every 2 minutes
-    let refreshInterval = setInterval(() => {
+    const refreshInterval = setInterval(() => {
         $wire.call('refresh');
     }, 120000);
     
     // Clean up on component destroy to prevent memory leaks
-    Livewire.hook('component.destroyed', ({ component }) => {
-        if (component.id === $wire.id) {
-            clearInterval(refreshInterval);
-        }
+    // Use cleanup function that runs when component is removed from DOM
+    $cleanup(() => {
+        clearInterval(refreshInterval);
     });
 </script>
 @endscript

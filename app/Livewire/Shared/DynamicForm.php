@@ -258,19 +258,39 @@ class DynamicForm extends Component
 
         if ($htmlSvgAllowed && (in_array($serverExtension, $htmlSvgExtensions, true) || in_array($clientExtension, $htmlSvgExtensions, true))) {
             // Read only first 8KB to check for malicious content (sufficient for header scanning)
-            $handle = fopen($file->getRealPath(), 'rb');
-            if ($handle) {
-                $content = fread($handle, 8192);
-                fclose($handle);
+            $filePath = $file->getRealPath();
+            if (! $filePath || ! is_readable($filePath)) {
+                // If we can't read the file, reject it for security
+                $validator = validator([], []);
+                $validator->errors()->add('file', __('Unable to verify file content for security scanning.'));
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
 
-                // Comprehensive XSS/malicious content detection pattern
-                // Includes: scripts, iframes, JS URIs, event handlers, data URIs, vbscript, object/embed tags
-                $maliciousPattern = '/<script|<iframe|<object|<embed|javascript:|vbscript:|data:\s*[^,]*;base64|on[a-z]+\s*=/i';
-                if ($content && preg_match($maliciousPattern, $content)) {
-                    $validator = validator([], []);
-                    $validator->errors()->add('file', __('File contains potentially malicious content.'));
-                    throw new \Illuminate\Validation\ValidationException($validator);
-                }
+            $handle = @fopen($filePath, 'rb');
+            if ($handle === false) {
+                // If we can't open the file, reject it for security
+                $validator = validator([], []);
+                $validator->errors()->add('file', __('Unable to verify file content for security scanning.'));
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
+
+            $content = @fread($handle, 8192);
+            fclose($handle);
+
+            if ($content === false) {
+                // If we can't read the content, reject it for security
+                $validator = validator([], []);
+                $validator->errors()->add('file', __('Unable to verify file content for security scanning.'));
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
+
+            // Comprehensive XSS/malicious content detection pattern
+            // Includes: scripts, iframes, JS URIs, event handlers, data URIs, vbscript, object/embed tags
+            $maliciousPattern = '/<script|<iframe|<object|<embed|javascript:|vbscript:|data:\s*[^,]*;base64|on[a-z]+\s*=/i';
+            if ($content && preg_match($maliciousPattern, $content)) {
+                $validator = validator([], []);
+                $validator->errors()->add('file', __('File contains potentially malicious content.'));
+                throw new \Illuminate\Validation\ValidationException($validator);
             }
         }
     }
