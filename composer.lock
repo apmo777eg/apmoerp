@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "819830ea197edaee68fba5e9d8f00c5b",
+    "content-hash": "066b99483e0e926dc20da9dbf96123b8",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2634,16 +2634,16 @@
         },
         {
             "name": "livewire/livewire",
-            "version": "v4.0.1",
+            "version": "v4.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/livewire/livewire.git",
-                "reference": "c7539589d5af82691bef17da17ce4e289269f8d9"
+                "reference": "11afe7b36dbb1d98e073551c217f87b2b6911f81"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/livewire/livewire/zipball/c7539589d5af82691bef17da17ce4e289269f8d9",
-                "reference": "c7539589d5af82691bef17da17ce4e289269f8d9",
+                "url": "https://api.github.com/repos/livewire/livewire/zipball/11afe7b36dbb1d98e073551c217f87b2b6911f81",
+                "reference": "11afe7b36dbb1d98e073551c217f87b2b6911f81",
                 "shasum": ""
             },
             "require": {
@@ -2698,7 +2698,7 @@
             "description": "A front-end framework for Laravel.",
             "support": {
                 "issues": "https://github.com/livewire/livewire/issues",
-                "source": "https://github.com/livewire/livewire/tree/v4.0.1"
+                "source": "https://github.com/livewire/livewire/tree/v4.0.3"
             },
             "funding": [
                 {
@@ -2706,7 +2706,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-14T18:40:41+00:00"
+            "time": "2026-01-23T06:13:46+00:00"
         },
         {
             "name": "maennchen/zipstream-php",
@@ -9968,7 +9968,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "beta",
+    "minimum-stability": "stable",
     "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,

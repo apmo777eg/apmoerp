@@ -404,7 +404,10 @@
     </div>
 </div>
 
+@script
 <script>
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+// This ensures the script is properly executed during SPA navigation with wire:navigate
 function erpPosTerminal(config) {
     return {
         branchId: config.branchId,
@@ -728,3 +731,4 @@ function erpPosTerminal(config) {
     };
 }
 </script>
+@endscript
