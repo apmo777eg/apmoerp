@@ -51,7 +51,7 @@ class DynamicForm extends Component
     // HIGH-004 FIX: Whitelist of allowed storage disks for security
     // Removed 'private' as it's not defined in config/filesystems.php
     // Available disks: 'local' (private storage), 'public', 's3'
-    private array $allowedDisks = ['local'];
+    private array $allowedDisks = ['local', 'public'];
 
     public function mount(
         array $schema = [],

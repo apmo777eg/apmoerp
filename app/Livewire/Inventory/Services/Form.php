@@ -205,9 +205,8 @@ class Form extends Component
             session()->flash('success', __('Service updated successfully'));
         } else {
             $data['created_by'] = Auth::id();
-            $product = new Product($data);
-            $product->branch_id = $userBranchId;
-            $product->save();
+            $data['branch_id'] = $userBranchId;
+            $product = Product::create($data);
             session()->flash('success', __('Service created successfully'));
         }
 

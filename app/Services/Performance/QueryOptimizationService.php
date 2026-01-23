@@ -335,7 +335,16 @@ class QueryOptimizationService
         // Note: Actual implementation depends on cache driver
         // This is a placeholder for Redis stats
         try {
-            $redis = Cache::getRedis();
+            // Check if Redis driver is configured
+            $store = Cache::getStore();
+            if (!$store instanceof \Illuminate\Cache\RedisStore) {
+                return [
+                    'driver' => config('cache.default'),
+                    'message' => 'Detailed cache stats only available for Redis driver',
+                ];
+            }
+
+            $redis = $store->connection();
             $info = $redis->info();
 
             return [

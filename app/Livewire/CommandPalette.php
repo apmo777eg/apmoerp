@@ -145,7 +145,7 @@ class CommandPalette extends Component
                     'icon' => '📦',
                     'name' => $p->name,
                     'subtitle' => $p->sku ?? '',
-                    'url' => route('products.show', $p),
+                    'url' => route('app.inventory.products.show', $p),
                 ]);
             $results = array_merge($results, $products->toArray());
         }

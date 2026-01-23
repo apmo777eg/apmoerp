@@ -336,7 +336,7 @@ class Reconciliation extends Component
             'count' => count($this->matchedTransactions),
         ]));
 
-        $this->redirect(route('banking.index'));
+        $this->redirect(route('app.banking.index'));
     }
 
     public function render()

@@ -179,13 +179,13 @@ class RecentItemsService
     protected function getItemRoute(string $type, int $itemId): string
     {
         return match ($type) {
-            'product' => route('products.edit', $itemId),
+            'product' => route('app.inventory.products.edit', $itemId),
             'customer' => route('customers.edit', $itemId),
-            'sale' => route('sales.show', $itemId),
-            'purchase' => route('purchases.show', $itemId),
-            'invoice' => route('rental.invoices.show', $itemId),
+            'sale' => route('app.sales.show', $itemId),
+            'purchase' => route('app.purchases.show', $itemId),
+            'invoice' => route('app.rental.invoices.index'),
             'supplier' => route('suppliers.edit', $itemId),
-            'report' => route('admin.reports.show', $itemId),
+            'report' => route('admin.reports.index'),
             default => '#',
         };
     }
