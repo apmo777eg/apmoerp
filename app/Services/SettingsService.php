@@ -19,14 +19,18 @@ class SettingsService
 
     protected const CACHE_TTL = 3600;
 
+    /** String values that should be treated as boolean false */
+    protected const FALSY_STRING_VALUES = ['0', 'false', 'no', 'off', ''];
+
     /**
      * Resolve a setting value, preserving full arrays while supporting legacy unwrapping
+     * and proper type casting to avoid TypeErrors in Livewire components
      */
     private function resolveValue(mixed $value, string $type = 'string'): mixed
     {
-        // For non-arrays, return as-is
+        // For scalar values, apply type casting to ensure proper types for typed Livewire properties
         if (! is_array($value)) {
-            return $value;
+            return $this->castToType($value, $type);
         }
 
         // For array/json types, preserve the full array
@@ -34,8 +38,58 @@ class SettingsService
             return $value;
         }
 
-        // For other types, unwrap single-value arrays (legacy behavior)
-        return count($value) === 1 ? $value[0] : $value;
+        // For other types, unwrap single-value arrays (legacy behavior from DB storage)
+        $unwrapped = count($value) === 1 ? $value[0] : $value;
+        
+        // If still an array after unwrapping, return as-is (multi-value)
+        if (is_array($unwrapped)) {
+            return $unwrapped;
+        }
+        
+        // Apply type casting to the unwrapped scalar value
+        return $this->castToType($unwrapped, $type);
+    }
+
+    /**
+     * Cast a scalar value to the specified type
+     * This prevents TypeErrors when assigning to typed Livewire properties
+     * (e.g., `public string $company_name` receiving an array would throw TypeError)
+     */
+    private function castToType(mixed $value, string $type): mixed
+    {
+        // Handle null by returning appropriate default for each type
+        if ($value === null) {
+            return match ($type) {
+                'bool', 'boolean' => false,
+                'int', 'integer' => 0,
+                'float', 'decimal' => 0.0,
+                'string' => '',
+                default => $value,
+            };
+        }
+
+        return match ($type) {
+            'bool', 'boolean' => $this->castToBool($value),
+            'int', 'integer' => is_numeric($value) ? (int) $value : 0,
+            'float', 'decimal' => is_numeric($value) ? (float) $value : 0.0,
+            'string' => (string) $value,
+            default => $value,
+        };
+    }
+
+    /**
+     * Properly cast string values to boolean
+     * Database stores booleans as strings, so "0"/"false"/"no" need proper handling
+     */
+    private function castToBool(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_string($value)) {
+            return !in_array(strtolower(trim($value)), self::FALSY_STRING_VALUES, true);
+        }
+        return (bool) $value;
     }
 
     public function get(string $key, mixed $default = null): mixed
