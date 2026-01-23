@@ -44,7 +44,7 @@ class BranchModuleController extends Controller
         }
 
         $bm = BranchModule::where('branch_id', $branch->id)
-            ->where('module_key', $data['key'])
+            ->where('branch_modules.module_key', $data['key'])
             ->first();
 
         return $this->ok($bm, __('Module status updated'));
@@ -67,7 +67,7 @@ class BranchModuleController extends Controller
         $this->modules->enableForBranch($branch, $data['module_key']);
 
         $bm = BranchModule::where('branch_id', $data['branch_id'])
-            ->where('module_key', $data['module_key'])
+            ->where('branch_modules.module_key', $data['module_key'])
             ->first();
 
         return $this->ok($bm, __('Module attached to branch'));
@@ -107,7 +107,7 @@ class BranchModuleController extends Controller
         ]);
 
         $bm = BranchModule::where('branch_id', $data['branch_id'])
-            ->where('module_key', $data['module_key'])
+            ->where('branch_modules.module_key', $data['module_key'])
             ->first();
 
         if (! $bm) {
@@ -137,7 +137,7 @@ class BranchModuleController extends Controller
         $this->modules->enableForBranch($branch, $data['module_key']);
 
         $bm = BranchModule::where('branch_id', $data['branch_id'])
-            ->where('module_key', $data['module_key'])
+            ->where('branch_modules.module_key', $data['module_key'])
             ->first();
 
         return $this->ok($bm, __('Module enabled'));

@@ -155,7 +155,7 @@ class Branch extends BaseModel
     {
         return $this->modules()
             ->wherePivot('enabled', true)
-            ->where('module_key', $moduleKey)
+            ->where('modules.module_key', $moduleKey)
             ->exists();
     }
 
