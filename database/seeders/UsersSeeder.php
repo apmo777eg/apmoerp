@@ -24,11 +24,11 @@ class UsersSeeder extends Seeder
 
         // Super Admin - Full system access
         $superAdmin = User::updateOrCreate(
-            ['email' => 'admin@ghanem-erp.com'],
+            ['email' => 'admin@ghanem-lvju-egypt.com'],
             [
                 'name' => 'System Administrator',
-                'email' => 'admin@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'email' => 'admin@ghanem-lvju-egypt.com',
+                'password' => Hash::make('0150386787'),
                 'phone' => '+20 100 000 0001',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
