@@ -134,11 +134,19 @@
     </div>
 </div>
 
-@push('scripts')
+@script
 <script>
+    // Livewire 4 FIX: Wrap with @script for proper execution timing across SPA navigation
     // Auto-refresh notifications every 60 seconds
-    setInterval(() => {
-        @this.call('loadNotifications');
+    let notificationInterval = setInterval(() => {
+        $wire.call('loadNotifications');
     }, 60000);
+    
+    // Clean up on component destroy to prevent memory leaks
+    Livewire.hook('component.destroyed', ({ component }) => {
+        if (component.id === $wire.id) {
+            clearInterval(notificationInterval);
+        }
+    });
 </script>
-@endpush
+@endscript

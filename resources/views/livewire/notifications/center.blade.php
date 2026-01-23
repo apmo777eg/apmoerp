@@ -121,15 +121,15 @@
     </div>
 </div>
 
-@push('scripts')
-    <script>
-        if (window.Echo && window.Laravel && window.Laravel.userId) {
-            window.Echo.private('App.Models.User.' + window.Laravel.userId)
-                .notification((notification) => {
-                    if (window.Livewire) {
-                        window.Livewire.dispatch('notification-received');
-                    }
-                });
-        }
-    </script>
-@endpush
+@script
+<script>
+    // Livewire 4 FIX: Wrap with @script for proper execution timing across SPA navigation
+    if (window.Echo && window.Laravel && window.Laravel.userId) {
+        window.Echo.private('App.Models.User.' + window.Laravel.userId)
+            .notification((notification) => {
+                // Use $wire for Livewire 4 component reference
+                $wire.dispatch('notification-received');
+            });
+    }
+</script>
+@endscript

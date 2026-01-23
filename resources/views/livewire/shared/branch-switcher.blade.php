@@ -135,13 +135,14 @@
     @endif
 </div>
 
+@script
 <script>
-    document.addEventListener('livewire:init', () => {
-        Livewire.on('branch-switched', () => {
-            // Use Livewire.navigate for SPA-friendly navigation instead of full reload
-            // This refreshes the page content while preserving SPA state
-            Livewire.navigate(window.location.href);
-        });
+    // Livewire 4 FIX: Wrap with @script for proper execution timing
+    Livewire.on('branch-switched', () => {
+        // Use Livewire.navigate for SPA-friendly navigation instead of full reload
+        // This refreshes the page content while preserving SPA state
+        Livewire.navigate(window.location.href);
     });
 </script>
+@endscript
 @endif
