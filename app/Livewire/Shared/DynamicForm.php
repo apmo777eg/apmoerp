@@ -13,6 +13,18 @@ class DynamicForm extends Component
 {
     use WithFileUploads;
 
+    /**
+     * Buffer size for security scanning of HTML/SVG files (in bytes).
+     * 8KB is sufficient to detect malicious content in file headers.
+     */
+    private const SECURITY_SCAN_BUFFER_SIZE = 8192;
+
+    /**
+     * Comprehensive XSS/malicious content detection pattern.
+     * Includes: scripts, iframes, JS URIs, event handlers, data URIs, vbscript, object/embed tags
+     */
+    private const MALICIOUS_CONTENT_PATTERN = '/<script|<iframe|<object|<embed|javascript:|vbscript:|data:\s*[^,]*;base64|on[a-z]+\s*=/i';
+
     #[Locked]
     public array $schema = [];
 
@@ -274,7 +286,7 @@ class DynamicForm extends Component
                 throw new \Illuminate\Validation\ValidationException($validator);
             }
 
-            $content = @fread($handle, 8192);
+            $content = @fread($handle, self::SECURITY_SCAN_BUFFER_SIZE);
             fclose($handle);
 
             if ($content === false) {
@@ -284,10 +296,8 @@ class DynamicForm extends Component
                 throw new \Illuminate\Validation\ValidationException($validator);
             }
 
-            // Comprehensive XSS/malicious content detection pattern
-            // Includes: scripts, iframes, JS URIs, event handlers, data URIs, vbscript, object/embed tags
-            $maliciousPattern = '/<script|<iframe|<object|<embed|javascript:|vbscript:|data:\s*[^,]*;base64|on[a-z]+\s*=/i';
-            if ($content && preg_match($maliciousPattern, $content)) {
+            // Use class constant for malicious content pattern
+            if ($content && preg_match(self::MALICIOUS_CONTENT_PATTERN, $content)) {
                 $validator = validator([], []);
                 $validator->errors()->add('file', __('File contains potentially malicious content.'));
                 throw new \Illuminate\Validation\ValidationException($validator);
