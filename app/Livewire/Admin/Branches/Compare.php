@@ -39,7 +39,7 @@ class Compare extends Component
         $modules1 = $branch1->branchModules->where('enabled', true)->pluck('module_key')->toArray();
         $modules2 = $branch2->branchModules->where('enabled', true)->pluck('module_key')->toArray();
 
-        $allModules = Module::all()->keyBy('key');
+        $allModules = Module::all()->keyBy('module_key');
 
         $this->comparison = [
             'branch1' => [

@@ -109,9 +109,9 @@ class Form extends Component
         }
 
         $this->branchModules = BranchModule::query()
-            ->where('branch_id', $branchId)
-            ->where('enabled', true)
-            ->pluck('module_key')
+            ->where('branch_modules.branch_id', $branchId)
+            ->where('branch_modules.enabled', true)
+            ->pluck('branch_modules.module_key')
             ->all();
     }
 

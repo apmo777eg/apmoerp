@@ -85,7 +85,7 @@ class Form extends Component
 
         return $branch->modules()
             ->wherePivot('enabled', true)
-            ->pluck('key')
+            ->pluck('modules.module_key')
             ->toArray();
     }
 

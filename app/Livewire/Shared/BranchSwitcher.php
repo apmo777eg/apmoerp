@@ -119,8 +119,8 @@ class BranchSwitcher extends Component
 
         return Branch::find($this->selectedBranchId)
             ?->branchModules()
-            ->where('enabled', true)
-            ->pluck('module_key')
+            ->where('branch_modules.enabled', true)
+            ->pluck('branch_modules.module_key')
             ->toArray() ?? [];
     }
 

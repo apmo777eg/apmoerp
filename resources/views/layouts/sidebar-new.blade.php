@@ -92,8 +92,8 @@
         $branch = \App\Models\Branch::find($adminBranchContext);
         if ($branch) {
             $branchModuleKeys = \App\Models\BranchModule::where('branch_id', $branch->id)
-                ->where('enabled', true)
-                ->pluck('module_key')
+                ->where('branch_modules.enabled', true)
+                ->pluck('branch_modules.module_key')
                 ->toArray();
         }
     } elseif (!$user?->hasRole('Super Admin') && !$user?->can('branches.view-all')) {
@@ -101,8 +101,8 @@
         $userBranch = $user?->branch;
         if ($userBranch) {
             $branchModuleKeys = \App\Models\BranchModule::where('branch_id', $userBranch->id)
-                ->where('enabled', true)
-                ->pluck('module_key')
+                ->where('branch_modules.enabled', true)
+                ->pluck('branch_modules.module_key')
                 ->toArray();
         }
     }

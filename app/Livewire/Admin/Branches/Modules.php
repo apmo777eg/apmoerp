@@ -89,7 +89,7 @@ class Modules extends Component
                         'module_id' => $moduleId,
                     ],
                     [
-                        'module_key' => $module['key'],
+                        'module_key' => $module['module_key'],
                         'enabled' => $enabled,
                         'settings' => $settings,
                     ]

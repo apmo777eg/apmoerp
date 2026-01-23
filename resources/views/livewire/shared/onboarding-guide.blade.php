@@ -7,7 +7,7 @@
             class="hidden p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
             data-onboarding-trigger
         >
-            <x-heroicon-o-question-mark-circle class="h-5 w-5" />
+            <x-icon name="question-mark-circle" class="h-5 w-5" />
         </button>
     @endif
 
@@ -80,7 +80,7 @@
                                         type="button"
                                         class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
                                     >
-                                        <x-heroicon-s-arrow-left class="w-4 h-4 inline-block me-1" />
+                                        <x-icon name="arrow-left" class="w-4 h-4 inline-block me-1" />
                                         {{ __('Previous') }}
                                     </button>
                                 @else
@@ -102,10 +102,10 @@
                                 >
                                     @if($currentStep === count($steps) - 1)
                                         {{ __('Get Started!') }}
-                                        <x-heroicon-s-rocket-launch class="w-4 h-4 inline-block ms-1" />
+                                        <x-icon name="rocket-launch" class="w-4 h-4 inline-block ms-1" />
                                     @else
                                         {{ __('Next') }}
-                                        <x-heroicon-s-arrow-right class="w-4 h-4 inline-block ms-1" />
+                                        <x-icon name="arrow-right" class="w-4 h-4 inline-block ms-1" />
                                     @endif
                                 </button>
                             </div>
@@ -119,7 +119,7 @@
                         class="absolute top-3 end-3 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                         aria-label="{{ __('Close') }}"
                     >
-                        <x-heroicon-o-x-mark class="w-5 h-5" />
+                        <x-icon name="x-mark" class="w-5 h-5" />
                     </button>
                 </div>
             </div>
