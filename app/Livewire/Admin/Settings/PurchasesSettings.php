@@ -47,7 +47,7 @@ class PurchasesSettings extends Component
     protected function loadSettings(): void
     {
         $settings = Cache::remember('purchases_settings', 3600, function () {
-            return SystemSetting::where('group', 'purchases')->pluck('value', 'key')->toArray();
+            return SystemSetting::where('setting_group', 'purchases')->pluck('value', 'setting_key')->toArray();
         });
 
         // Use canonical key purchases.purchase_order_prefix that matches config/settings.php
@@ -69,10 +69,10 @@ class PurchasesSettings extends Component
     protected function setSetting(string $key, $value): void
     {
         SystemSetting::updateOrCreate(
-            ['key' => $key],
+            ['setting_key' => $key],
             [
                 'value' => $value,
-                'group' => 'purchases',
+                'setting_group' => 'purchases',
                 'is_public' => false,
             ]
         );

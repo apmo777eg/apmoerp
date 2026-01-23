@@ -35,7 +35,7 @@ class SystemSettingController extends Controller
         
         $data = (array) $request->input('settings', []);
         foreach ($data as $k => $v) {
-            DB::table('system_settings')->updateOrInsert(['key' => $k], ['value' => is_scalar($v) ? (string) $v : json_encode($v), 'updated_at' => now()]);
+            DB::table('system_settings')->updateOrInsert(['setting_key' => $k], ['value' => is_scalar($v) ? (string) $v : json_encode($v), 'updated_at' => now()]);
         }
 
         return $this->ok(['updated' => count($data)], __('Settings saved'));

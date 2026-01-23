@@ -498,7 +498,7 @@ class UnifiedSettings extends Component
         ]);
 
         // Normalize to the current key and remove the legacy one to avoid drift
-        SystemSetting::where('key', 'security.require_2fa')->delete();
+        SystemSetting::where('setting_key', 'security.require_2fa')->delete();
         $this->setSetting('security.2fa_required', $this->require_2fa, 'security', 'boolean');
         $this->setSetting('security.session_timeout', $this->session_timeout, 'security', 'integer');
         $this->setSetting('security.enable_audit_log', $this->enable_audit_log, 'security', 'boolean');
@@ -688,7 +688,7 @@ class UnifiedSettings extends Component
             $defaultValue = $config['default'] ?? null;
             $fullKey = "{$group}.{$key}";
 
-            SystemSetting::where('key', $fullKey)->delete();
+            SystemSetting::where('setting_key', $fullKey)->delete();
         }
 
         $this->clearSettingsCaches();

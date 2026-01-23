@@ -54,7 +54,7 @@ class Modules extends Component
                 'id' => $module->id,
                 'name' => $module->name,
                 'name_ar' => $module->name_ar,
-                'key' => $module->key,
+                'module_key' => $module->module_key,
                 'description' => $module->description,
                 'icon' => $module->icon,
             ];

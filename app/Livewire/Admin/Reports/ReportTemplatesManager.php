@@ -57,7 +57,7 @@ class ReportTemplatesManager extends Component
         if (trim($this->search) !== '') {
             $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term): void {
-                $q->where('key', 'like', $term)
+                $q->where('template_key', 'like', $term)
                     ->orWhere('name', 'like', $term)
                     ->orWhere('description', 'like', $term)
                     ->orWhere('route_name', 'like', $term);
@@ -122,7 +122,7 @@ class ReportTemplatesManager extends Component
         $key = $base;
         $counter = 1;
 
-        while (ReportTemplate::where('key', $key)->where('id', '!=', $this->editingId)->exists()) {
+        while (ReportTemplate::where('template_key', $key)->where('id', '!=', $this->editingId)->exists()) {
             $key = $base.'_'.$counter;
             $counter++;
         }
@@ -141,7 +141,7 @@ class ReportTemplatesManager extends Component
         $template = ReportTemplate::query()->findOrFail($id);
 
         $this->editingId = $template->id;
-        $this->key = $template->key;
+        $this->key = $template->template_key;
         $this->name = $template->name;
         $this->description = $template->description;
         $this->routeName = $template->route_name;
@@ -186,7 +186,7 @@ class ReportTemplatesManager extends Component
         ReportTemplate::query()->updateOrCreate(
             ['id' => $this->editingId],
             [
-                'key' => $this->key,
+                'template_key' => $this->key,
                 'name' => $this->name,
                 'description' => $this->description,
                 'route_name' => $this->routeName,

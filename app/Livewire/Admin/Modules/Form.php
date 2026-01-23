@@ -66,7 +66,7 @@ class Form extends Component
         if ($module && $module->exists) {
             $this->module = $module;
             $this->editMode = true;
-            $this->key = $module->key ?? '';
+            $this->key = $module->module_key ?? '';
             $this->name = $module->name;
             $this->name_ar = $module->name_ar ?? '';
             $this->description = $module->description ?? '';

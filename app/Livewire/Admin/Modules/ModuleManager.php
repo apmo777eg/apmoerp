@@ -137,7 +137,7 @@ class ModuleManager extends Component
 
         try {
             $moduleData = [
-                'key' => $this->formKey,
+                'module_key' => $this->formKey,
                 'name' => $this->formName,
                 'name_ar' => $this->formNameAr,
                 'description' => $this->formDescription ?: null,
@@ -178,10 +178,10 @@ class ModuleManager extends Component
             $newStatus = ! $module->is_active;
 
             if ($newStatus) {
-                $service->activateModule($module->key);
+                $service->activateModule($module->module_key);
                 $message = __('Module activated successfully');
             } else {
-                $service->deactivateModule($module->key);
+                $service->deactivateModule($module->module_key);
                 $message = __('Module deactivated successfully');
             }
 
@@ -213,7 +213,7 @@ class ModuleManager extends Component
                 return;
             }
 
-            $service->unregisterModule($module->key);
+            $service->unregisterModule($module->module_key);
 
             $this->dispatch('notify', [
                 'type' => 'success',

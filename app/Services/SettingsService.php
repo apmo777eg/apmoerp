@@ -333,13 +333,13 @@ class SettingsService
     {
         return $this->handleServiceOperation(
             callback: function () use ($key) {
-                SystemSetting::where('key', $key)->delete();
+                SystemSetting::where('setting_key', $key)->delete();
                 $this->clearCache();
 
                 return true;
             },
             operation: 'delete',
-            context: ['key' => $key],
+            context: ['setting_key' => $key],
             defaultValue: false
         );
     }

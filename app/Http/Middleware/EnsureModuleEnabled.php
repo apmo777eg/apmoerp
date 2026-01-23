@@ -51,7 +51,7 @@ class EnsureModuleEnabled
                 // Check module by relationship (module_id) or by key (module_key fallback)
                 if (class_exists(Module::class)) {
                     $query->whereHas('module', function ($w) use ($key) {
-                        $w->where('key', $key)
+                        $w->where('module_key', $key)
                             ->where('is_active', true); // Module must also be active
                     });
                 } else {

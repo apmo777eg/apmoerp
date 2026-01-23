@@ -112,7 +112,7 @@ class Form extends Component
             ->get()
             ->map(fn ($m) => [
                 'id' => $m->id,
-                'key' => $m->key,
+                'module_key' => $m->module_key,
                 'name' => $m->localized_name,
                 'description' => $m->localized_description,
                 'is_core' => $m->is_core,

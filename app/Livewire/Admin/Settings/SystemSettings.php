@@ -60,15 +60,15 @@ class SystemSettings extends Component
     protected function loadRows(): void
     {
         $this->rows = SystemSetting::query()
-            ->orderBy('group')
-            ->orderBy('key')
+            ->orderBy('setting_group')
+            ->orderBy('setting_key')
             ->get()
             ->map(function (SystemSetting $row) {
                 return [
                     'id' => $row->getKey(),
-                    'key' => $row->key,
+                    'key' => $row->setting_key,
                     'value' => $row->value,
-                    'group' => $row->group,
+                    'group' => $row->setting_group,
                     'is_public' => (bool) $row->is_public,
                 ];
             })
@@ -163,9 +163,9 @@ class SystemSettings extends Component
             ->keyBy('id')
             ->map(fn (SystemSetting $s) => [
                 'id' => $s->id,
-                'key' => $s->key,
+                'key' => $s->setting_key,
                 'value' => $s->value,
-                'group' => $s->group,
+                'group' => $s->setting_group,
                 'is_public' => (bool) $s->is_public,
             ])
             ->all();
@@ -179,16 +179,16 @@ class SystemSettings extends Component
                         continue;
                     }
                     $model->fill([
-                        'key' => $row['key'],
+                        'setting_key' => $row['key'],
                         'value' => $row['value'],
-                        'group' => $row['group'],
+                        'setting_group' => $row['group'],
                         'is_public' => $row['is_public'],
                     ])->save();
                 } else {
                     $created = SystemSetting::query()->create([
-                        'key' => $row['key'],
+                        'setting_key' => $row['key'],
                         'value' => $row['value'],
-                        'group' => $row['group'],
+                        'setting_group' => $row['group'],
                         'is_public' => $row['is_public'],
                     ]);
                 }
@@ -205,9 +205,9 @@ class SystemSettings extends Component
             ->keyBy('id')
             ->map(fn (SystemSetting $s) => [
                 'id' => $s->id,
-                'key' => $s->key,
+                'key' => $s->setting_key,
                 'value' => $s->value,
-                'group' => $s->group,
+                'group' => $s->setting_group,
                 'is_public' => (bool) $s->is_public,
             ])
             ->all();

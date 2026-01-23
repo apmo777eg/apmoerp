@@ -47,7 +47,7 @@ class WarehouseSettings extends Component
     protected function loadSettings(): void
     {
         $settings = Cache::remember('warehouse_settings', 3600, function () {
-            return SystemSetting::where('group', 'warehouse')->pluck('value', 'key')->toArray();
+            return SystemSetting::where('setting_group', 'warehouse')->pluck('value', 'setting_key')->toArray();
         });
 
         $this->enable_multi_location = (bool) ($settings['warehouse.enable_multi_location'] ?? false);
@@ -65,10 +65,10 @@ class WarehouseSettings extends Component
     protected function setSetting(string $key, $value): void
     {
         SystemSetting::updateOrCreate(
-            ['key' => $key],
+            ['setting_key' => $key],
             [
                 'value' => $value,
-                'group' => 'warehouse',
+                'setting_group' => 'warehouse',
                 'is_public' => false,
             ]
         );

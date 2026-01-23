@@ -22,9 +22,9 @@ class ModuleRegistrationService
         return DB::transaction(function () use ($moduleData) {
             // Create or update module
             $module = Module::updateOrCreate(
-                ['key' => $moduleData['key']],
+                ['module_key' => $moduleData['module_key']],
                 [
-                    'slug' => $moduleData['slug'] ?? str($moduleData['key'])->slug(),
+                    'slug' => $moduleData['slug'] ?? str($moduleData['module_key'])->slug(),
                     'name' => $moduleData['name'],
                     'name_ar' => $moduleData['name_ar'] ?? $moduleData['name'],
                     'description' => $moduleData['description'] ?? null,
@@ -94,7 +94,7 @@ class ModuleRegistrationService
     public function unregisterModule(string $moduleKey): bool
     {
         return DB::transaction(function () use ($moduleKey) {
-            $module = Module::where('key', $moduleKey)->first();
+            $module = Module::where('module_key', $moduleKey)->first();
 
             if (! $module) {
                 return false;
@@ -119,7 +119,7 @@ class ModuleRegistrationService
      */
     public function activateModule(string $moduleKey): bool
     {
-        $module = Module::where('key', $moduleKey)->first();
+        $module = Module::where('module_key', $moduleKey)->first();
 
         if (! $module) {
             return false;
@@ -138,7 +138,7 @@ class ModuleRegistrationService
      */
     public function deactivateModule(string $moduleKey): bool
     {
-        $module = Module::where('key', $moduleKey)->first();
+        $module = Module::where('module_key', $moduleKey)->first();
 
         if (! $module) {
             return false;

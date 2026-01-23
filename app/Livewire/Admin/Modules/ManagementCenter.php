@@ -107,7 +107,7 @@ class ManagementCenter extends Component
 
         $this->selectedModuleData = [
             'id' => $module->id,
-            'key' => $module->key,
+            'module_key' => $module->module_key,
             'name' => $module->localized_name,
             'description' => $module->localized_description ?? '',
             'is_active' => $module->is_active,
@@ -176,7 +176,7 @@ class ManagementCenter extends Component
             BranchModule::create([
                 'branch_id' => $this->selectedBranchId,
                 'module_id' => $this->selectedModuleId,
-                'module_key' => $module->key,
+                'module_key' => $module->module_key,
                 'enabled' => true,
                 'activated_at' => now(),
             ]);

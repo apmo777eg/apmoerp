@@ -35,7 +35,7 @@ class ModuleCatalogController extends Controller
         ]);
 
         $module = \App\Models\Module::create([
-            'key' => $validated['key'],
+            'module_key' => $validated['key'],
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'is_active' => $validated['is_active'] ?? true,

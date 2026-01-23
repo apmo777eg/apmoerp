@@ -41,7 +41,7 @@ class ModuleFieldController extends Controller
             'sort_order' => ['integer', 'min:0'],
         ]);
 
-        $moduleRecord = \App\Models\Module::where('key', $module)->firstOrFail();
+        $moduleRecord = \App\Models\Module::where('module_key', $module)->firstOrFail();
 
         $field = ModuleProductField::create([
             'module_id' => $moduleRecord->id,

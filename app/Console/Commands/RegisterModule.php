@@ -113,7 +113,7 @@ class RegisterModule extends Command
 
         // Prepare module data
         $moduleData = [
-            'key' => $key,
+            'module_key' => $key,
             'name' => $name,
             'name_ar' => $nameAr,
             'description' => $description ?: null,
@@ -161,7 +161,7 @@ class RegisterModule extends Command
             $module = $this->service->registerModule($moduleData);
             $this->info('✓ Module registered successfully!');
             $this->line('  ID: '.$module->id);
-            $this->line('  Key: '.$module->key);
+            $this->line('  Key: '.$module->module_key);
             $this->line('  Name: '.$module->name);
 
             if (! empty($navigation)) {
@@ -193,7 +193,7 @@ class RegisterModule extends Command
         $nameAr = $this->option('name-ar') ?: $name;
 
         $moduleData = [
-            'key' => $key,
+            'module_key' => $key,
             'name' => $name,
             'name_ar' => $nameAr,
             'description' => $this->option('description'),

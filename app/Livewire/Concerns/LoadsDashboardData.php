@@ -57,7 +57,7 @@ trait LoadsDashboardData
         $this->branchId = session('admin_branch_context', $user->branch_id);
         // Use case-insensitive role check - seeder uses "Super Admin" (Title Case)
         $this->isAdmin = $user->hasAnyRole(['Super Admin', 'super-admin', 'Admin', 'admin']);
-        $this->cacheTtl = (int) (\App\Models\SystemSetting::where('key', 'advanced.cache_ttl')->value('value') ?? 300);
+        $this->cacheTtl = (int) (\App\Models\SystemSetting::where('setting_key', 'advanced.cache_ttl')->value('value') ?? 300);
     }
 
     /**

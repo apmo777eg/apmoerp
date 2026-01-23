@@ -106,7 +106,7 @@ class SetupWizard extends Component
     public function mount(): void
     {
         // Check if setup is already complete
-        $setupComplete = SystemSetting::where('key', 'setup_wizard_complete')->value('value');
+        $setupComplete = SystemSetting::where('setting_key', 'setup_wizard_complete')->value('value');
         if ($setupComplete === 'true' || $setupComplete === '1') {
             $this->setupComplete = true;
         }
@@ -212,7 +212,7 @@ class SetupWizard extends Component
                 if ($module) {
                     $branch->modules()->attach($moduleId, [
                         'enabled' => true,
-                        'module_key' => $module->key,
+                        'module_key' => $module->module_key,
                     ]);
                 }
             }
@@ -246,7 +246,7 @@ class SetupWizard extends Component
 
             foreach ($settings as $key => $value) {
                 SystemSetting::updateOrCreate(
-                    ['key' => $key],
+                    ['setting_key' => $key],
                     ['value' => $value]
                 );
             }

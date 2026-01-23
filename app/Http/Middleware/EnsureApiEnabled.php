@@ -27,7 +27,7 @@ class EnsureApiEnabled
     {
         $apiEnabled = Cache::remember('api_enabled_setting', 300, function () {
             // Use value() to only retrieve the value column for better performance
-            $value = SystemSetting::where('key', 'advanced.enable_api')->value('value');
+            $value = SystemSetting::where('setting_key', 'advanced.enable_api')->value('value');
 
             // Default to true if setting doesn't exist
             if ($value === null) {

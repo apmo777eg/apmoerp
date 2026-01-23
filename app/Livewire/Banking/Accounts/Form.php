@@ -92,7 +92,7 @@ class Form extends Component
             $this->opening_date = now()->format('Y-m-d');
 
             // Set default currency if available
-            $defaultCurrency = \App\Models\SystemSetting::where('key', 'default_currency')->value('value');
+            $defaultCurrency = \App\Models\SystemSetting::where('setting_key', 'default_currency')->value('value');
             // Handle JSON-casted value or string value
             if (is_array($defaultCurrency)) {
                 $defaultCurrency = $defaultCurrency['value'] ?? null;

@@ -71,7 +71,7 @@ class ModuleService implements ModuleServiceInterface
         return $this->handleServiceOperation(
             callback: function () use ($key, $attributes) {
                 /** @var Module $module */
-                $module = Module::firstOrNew(['key' => $key]);
+                $module = Module::firstOrNew(['module_key' => $key]);
 
                 $module->fill($attributes);
                 $module->is_active = $module->is_active ?? true;
@@ -80,7 +80,7 @@ class ModuleService implements ModuleServiceInterface
                 return $module;
             },
             operation: 'ensureModule',
-            context: ['key' => $key, 'attributes' => $attributes]
+            context: ['module_key' => $key, 'attributes' => $attributes]
         );
     }
 
@@ -88,7 +88,7 @@ class ModuleService implements ModuleServiceInterface
     {
         $this->handleServiceOperation(
             callback: function () use ($branch, $moduleKey, $settings) {
-                $module = Module::where('key', $moduleKey)->firstOrFail();
+                $module = Module::where('module_key', $moduleKey)->firstOrFail();
 
                 $branch->modules()->syncWithoutDetaching([
                     $module->id => [
@@ -107,7 +107,7 @@ class ModuleService implements ModuleServiceInterface
     {
         $this->handleServiceOperation(
             callback: function () use ($branch, $moduleKey) {
-                $module = Module::where('key', $moduleKey)->first();
+                $module = Module::where('module_key', $moduleKey)->first();
 
                 if (! $module) {
                     return;
@@ -248,7 +248,7 @@ class ModuleService implements ModuleServiceInterface
 
     public function userCanPerformOperation($user, string $moduleKey, string $operationKey): bool
     {
-        $module = Module::where('key', $moduleKey)->first();
+        $module = Module::where('module_key', $moduleKey)->first();
         if (! $module) {
             return false;
         }

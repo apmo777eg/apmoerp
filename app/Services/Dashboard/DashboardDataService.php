@@ -52,7 +52,7 @@ class DashboardDataService
      */
     public function generateWidgetData(DashboardWidget $widget, int $userId, ?int $branchId): array
     {
-        $data = match ($widget->key) {
+        $data = match ($widget->widget_key) {
             // Core sales widgets
             'sales_today' => $this->generateSalesTodayData($branchId),
             'sales_this_week' => $this->generateSalesWeekData($branchId),
@@ -81,12 +81,12 @@ class DashboardDataService
             'attendance_snapshot' => $this->generateAttendanceSnapshotData($branchId),
 
             // NEW-003 FIX: Log warning for unsupported widget keys instead of silent failure
-            default => $this->handleUnsupportedWidget($widget->key),
+            default => $this->handleUnsupportedWidget($widget->widget_key),
         };
 
         return [
             'widget_id' => $widget->id,
-            'widget_key' => $widget->key,
+            'widget_key' => $widget->widget_key,
             'data' => $data,
             'generated_at' => now()->toISOString(),
         ];

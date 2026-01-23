@@ -106,7 +106,7 @@ class Form extends Component
 
         // Pre-select module if passed via URL (e.g., ?module=motorcycle or ?module=rental)
         if (! $product && $this->module) {
-            $preselectedModule = Module::where('key', $this->module)->where('supports_items', true)->first();
+            $preselectedModule = Module::where('module_key', $this->module)->where('supports_items', true)->first();
             if ($preselectedModule) {
                 $this->selectedModuleId = $preselectedModule->id;
                 $this->form['module_id'] = $preselectedModule->id;

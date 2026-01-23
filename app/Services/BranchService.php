@@ -193,7 +193,7 @@ class BranchService implements BranchServiceInterface
                         }
 
                         $key = (string) $item['module_key'];
-                        $module = Module::where('key', $key)->first();
+                        $module = Module::where('module_key', $key)->first();
 
                         $pivotData = [
                             'module_key' => $key,

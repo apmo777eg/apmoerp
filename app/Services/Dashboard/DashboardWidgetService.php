@@ -210,7 +210,7 @@ class DashboardWidgetService
             ->filter(fn ($widget) => $widget->userCanView($user))
             ->map(fn ($widget) => [
                 'id' => $widget->id,
-                'key' => $widget->key,
+                'widget_key' => $widget->widget_key,
                 'name' => $widget->localized_name,
                 'description' => $widget->description,
                 'icon' => $widget->icon,
