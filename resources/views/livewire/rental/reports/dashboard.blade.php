@@ -175,8 +175,7 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Livewire 4 FIX: Use 'livewire:init' instead of deprecated 'livewire:load'
-        // Also added 'livewire:navigated' for SPA navigation support
+        // Livewire 4 FIX: Use DOMContentLoaded for initial load and 'livewire:navigated' for SPA navigation support
         function initRentalCharts() {
             const unitsCtx = document.getElementById('rentalUnitsChart')?.getContext('2d');
             const contractsCtx = document.getElementById('rentalContractsChart')?.getContext('2d');

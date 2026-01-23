@@ -127,8 +127,8 @@
     if (window.Echo && window.Laravel && window.Laravel.userId) {
         window.Echo.private('App.Models.User.' + window.Laravel.userId)
             .notification((notification) => {
-                // Use $wire for Livewire 4 component reference
-                $wire.dispatch('notification-received');
+                // Use Livewire.dispatch() for global event broadcasting in Livewire 4
+                Livewire.dispatch('notification-received');
             });
     }
 </script>

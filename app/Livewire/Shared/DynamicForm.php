@@ -182,10 +182,11 @@ class DynamicForm extends Component
     private function validateFileUpload($file, array $field): void
     {
         // MED-002 FIX: Check file size FIRST to prevent memory exhaustion on large files
-        $maxSize = ($field['max'] ?? 10240) * 1024; // Convert KB to bytes
+        $maxSizeKB = $field['max'] ?? 10240;
+        $maxSize = $maxSizeKB * 1024; // Convert KB to bytes
         if ($file->getSize() > $maxSize) {
             $validator = validator([], []);
-            $validator->errors()->add('file', __('File size exceeds maximum allowed size.'));
+            $validator->errors()->add('file', __('File size exceeds maximum allowed size of :max KB.', ['max' => $maxSizeKB]));
             throw new \Illuminate\Validation\ValidationException($validator);
         }
 
@@ -262,7 +263,10 @@ class DynamicForm extends Component
                 $content = fread($handle, 8192);
                 fclose($handle);
 
-                if ($content && preg_match('/<script|<iframe|javascript:|onerror=|onload=/i', $content)) {
+                // Comprehensive XSS/malicious content detection pattern
+                // Includes: scripts, iframes, JS URIs, event handlers, data URIs, vbscript, object/embed tags
+                $maliciousPattern = '/<script|<iframe|<object|<embed|javascript:|vbscript:|data:\s*[^,]*;base64|on[a-z]+\s*=/i';
+                if ($content && preg_match($maliciousPattern, $content)) {
                     $validator = validator([], []);
                     $validator->errors()->add('file', __('File contains potentially malicious content.'));
                     throw new \Illuminate\Validation\ValidationException($validator);
