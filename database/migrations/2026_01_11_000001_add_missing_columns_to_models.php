@@ -285,7 +285,8 @@ return new class extends Migration
                         ->constrained('users')->nullOnDelete()->name('fk_lvenc_processed_by__usr');
                 }
                 if (! Schema::hasColumn('leave_encashments', 'processed_at')) {
-                    $table->timestamp('processed_at')->nullable()->after('processed_by');
+                    // Use approved_at as reference since processed_by might not exist yet
+                    $table->timestamp('processed_at')->nullable()->after('approved_at');
                 }
                 if (! Schema::hasColumn('leave_encashments', 'created_by')) {
                     $table->foreignId('created_by')->nullable()->after('notes')
