@@ -152,16 +152,14 @@ class Form extends Component
             $this->editMode = true;
             $this->supplier_id = (string) ($purchase->supplier_id ?? '');
             $this->warehouse_id = (string) ($purchase->warehouse_id ?? '');
-            $this->reference_no = $purchase->reference_no ?? '';
+            $this->reference_no = $purchase->reference_number ?? '';
             $this->status = $purchase->status ?? 'draft';
             $this->currency = $purchase->currency ?? 'EGP';
             $this->notes = $purchase->notes ?? '';
-            $this->supplier_notes = $purchase->supplier_notes ?? '';
-            $this->internal_notes = $purchase->internal_notes ?? '';
             $this->expected_date = $purchase->expected_date?->format('Y-m-d') ?? '';
             $this->shipping_method = $purchase->shipping_method ?? '';
-            $this->discount_total = decimal_float($purchase->discount_total ?? 0);
-            $this->shipping_total = decimal_float($purchase->shipping_total ?? 0);
+            $this->discount_total = decimal_float($purchase->discount_amount ?? 0);
+            $this->shipping_total = decimal_float($purchase->shipping_amount ?? 0);
 
             $this->items = $purchase->items->map(fn ($item) => [
                 'id' => $item->id,

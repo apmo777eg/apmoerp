@@ -75,9 +75,13 @@ class Form extends Component
 
             $this->projectId = $id;
             $this->fill($this->project->only([
-                'branch_id', 'name', 'code', 'description', 'client_id', 'project_manager_id',
-                'start_date', 'end_date', 'status', 'budget_amount', 'notes', 'currency',
+                'branch_id', 'name', 'code', 'description',
+                'start_date', 'end_date', 'status', 'notes', 'currency',
             ]));
+            // Map model fields to form properties
+            $this->client_id = $this->project->customer_id;
+            $this->project_manager_id = $this->project->manager_id;
+            $this->budget_amount = (float) ($this->project->budget ?? 0);
             $this->overrideCode = true; // When editing, code is already set
         } else {
             $this->authorize('projects.create');
@@ -227,10 +231,13 @@ class Form extends Component
     {
         return array_merge(
             $this->only([
-                'branch_id', 'name', 'code', 'description', 'client_id', 'project_manager_id',
-                'status', 'budget_amount', 'notes', 'currency',
+                'branch_id', 'name', 'code', 'description',
+                'status', 'notes', 'currency',
             ]),
             [
+                'customer_id' => $this->client_id,
+                'manager_id' => $this->project_manager_id,
+                'budget' => $this->budget_amount,
                 'start_date' => $this->normalizeDate($this->start_date, 'start_date'),
                 'end_date' => $this->normalizeDate($this->end_date, 'end_date'),
             ]

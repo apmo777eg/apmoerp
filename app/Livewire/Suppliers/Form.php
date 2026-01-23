@@ -39,17 +39,11 @@ class Form extends Component
 
     public string $notes = '';
 
-    public string $payment_terms = '';
+    public ?int $payment_terms_days = null;
 
-    public float $minimum_order_value = 0;
+    public float $minimum_order_amount = 0;
 
-    public string $supplier_rating = '';
-
-    public float $quality_rating = 0;
-
-    public float $delivery_rating = 0;
-
-    public float $service_rating = 0;
+    public ?int $rating = null;
 
     public bool $is_active = true;
 
@@ -83,12 +77,9 @@ class Form extends Component
             'company_name' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'payment_terms' => ['nullable', 'in:immediate,net15,net30,net60,net90'],
-            'minimum_order_value' => ['nullable', 'numeric', 'min:0'],
-            'supplier_rating' => ['nullable', 'string', 'max:191'],
-            'quality_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
-            'delivery_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
-            'service_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'payment_terms_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'minimum_order_amount' => ['nullable', 'numeric', 'min:0'],
+            'rating' => ['nullable', 'integer', 'min:0', 'max:5'],
             'is_active' => ['boolean'],
         ];
     }
@@ -111,12 +102,9 @@ class Form extends Component
             $this->tax_number = $supplier->tax_number ?? '';
             $this->company_name = $supplier->company_name ?? '';
             $this->contact_person = $supplier->contact_person ?? '';
-            $this->payment_terms = $supplier->payment_terms ?? '';
-            $this->minimum_order_value = decimal_float($supplier->minimum_order_value ?? 0);
-            $this->supplier_rating = $supplier->supplier_rating ?? '';
-            $this->quality_rating = decimal_float($supplier->quality_rating ?? 0);
-            $this->delivery_rating = decimal_float($supplier->delivery_rating ?? 0);
-            $this->service_rating = decimal_float($supplier->service_rating ?? 0);
+            $this->payment_terms_days = $supplier->payment_terms_days;
+            $this->minimum_order_amount = decimal_float($supplier->minimum_order_amount ?? 0);
+            $this->rating = $supplier->rating;
             $this->notes = $supplier->notes ?? '';
             $this->is_active = (bool) ($supplier->is_active ?? true);
         }
