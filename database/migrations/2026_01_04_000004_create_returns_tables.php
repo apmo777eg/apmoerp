@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: sales and purchase returns
- * 
+ *
  * Return notes, sales returns, purchase returns, credit/debit notes.
- * 
+ *
  * Classification: BRANCH-OWNED (transactional)
  */
 return new class extends Migration
@@ -354,7 +354,9 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_crnt_return__slrtn');
             $table->string('type', 30)->default('return'); // return, adjustment, goodwill
+            $table->decimal('amount', 18, 2)->default(0); // NEW-005 FIX
             $table->date('issue_date');
+            $table->date('applied_date')->nullable(); // NEW-005 FIX
             $table->date('expiry_date')->nullable();
             $table->decimal('subtotal', 18, 2)->default(0);
             $table->decimal('tax_amount', 18, 2)->default(0);
@@ -365,8 +367,17 @@ return new class extends Migration
             $table->string('status', 30)->default('draft'); // draft, issued, partially_applied, fully_applied, cancelled
             $table->boolean('is_refundable')->default(true);
             $table->boolean('is_refunded')->default(false);
+            $table->boolean('auto_apply')->default(false); // NEW-005 FIX
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();
+            // NEW-005 FIX: Added accounting integration columns
+            $table->foreignId('journal_entry_id')
+                ->nullable()
+                ->constrained('journal_entries')
+                ->nullOnDelete()
+                ->name('fk_crnt_journal__je');
+            $table->boolean('posted_to_accounting')->default(false);
+            $table->timestamp('posted_at')->nullable();
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -378,6 +389,11 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_crnt_approved_by__usr');
             $table->timestamp('approved_at')->nullable();
+            $table->foreignId('updated_by') // NEW-005 FIX
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_crnt_updated_by__usr');
             $table->timestamps();
             $table->softDeletes();
 
@@ -400,6 +416,7 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_crnta_sale__sale');
             $table->decimal('amount', 18, 2);
+            $table->decimal('applied_amount', 18, 2)->default(0); // NEW-005 FIX: Model uses applied_amount
             $table->date('application_date');
             $table->text('notes')->nullable();
             $table->foreignId('applied_by')
@@ -437,7 +454,9 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_dbnt_return__prrtn');
             $table->string('type', 30)->default('return');
+            $table->decimal('amount', 18, 2)->default(0); // NEW-005 FIX
             $table->date('issue_date');
+            $table->date('applied_date')->nullable(); // NEW-005 FIX
             $table->date('expiry_date')->nullable();
             $table->decimal('subtotal', 18, 2)->default(0);
             $table->decimal('tax_amount', 18, 2)->default(0);
@@ -448,8 +467,17 @@ return new class extends Migration
             $table->string('status', 30)->default('draft');
             $table->boolean('is_refundable')->default(true);
             $table->boolean('is_refunded')->default(false);
+            $table->boolean('auto_apply')->default(false); // NEW-005 FIX
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();
+            // NEW-005 FIX: Added accounting integration columns
+            $table->foreignId('journal_entry_id')
+                ->nullable()
+                ->constrained('journal_entries')
+                ->nullOnDelete()
+                ->name('fk_dbnt_journal__je');
+            $table->boolean('posted_to_accounting')->default(false);
+            $table->timestamp('posted_at')->nullable();
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -461,6 +489,11 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_dbnt_approved_by__usr');
             $table->timestamp('approved_at')->nullable();
+            $table->foreignId('updated_by') // NEW-005 FIX
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_dbnt_updated_by__usr');
             $table->timestamps();
             $table->softDeletes();
 

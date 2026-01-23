@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: bank accounts and transactions
- * 
+ *
  * Bank account management and reconciliation.
- * 
+ *
  * Classification: BRANCH-OWNED
  */
 return new class extends Migration
@@ -153,6 +153,7 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_cfproj_branch__brnch');
             $table->date('projection_date');
+            $table->string('period_type', 30)->default('daily'); // NEW-005 FIX: Added for model compatibility
             $table->decimal('opening_balance', 18, 4)->default(0);
             $table->decimal('expected_inflows', 18, 4)->default(0);
             $table->decimal('expected_outflows', 18, 4)->default(0);
@@ -160,6 +161,9 @@ return new class extends Migration
             $table->decimal('actual_inflows', 18, 4)->default(0);
             $table->decimal('actual_outflows', 18, 4)->default(0);
             $table->decimal('actual_balance', 18, 4)->default(0);
+            $table->decimal('variance', 18, 4)->default(0); // NEW-005 FIX: Added for model compatibility
+            $table->json('inflow_breakdown')->nullable(); // NEW-005 FIX: Added for model compatibility
+            $table->json('outflow_breakdown')->nullable(); // NEW-005 FIX: Added for model compatibility
             $table->string('status', 30)->default('projected'); // projected, actual
             $table->json('inflow_details')->nullable();
             $table->json('outflow_details')->nullable();

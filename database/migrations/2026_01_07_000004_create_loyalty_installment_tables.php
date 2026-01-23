@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: loyalty and installment tables
- * 
+ *
  * Loyalty settings, transactions, installment plans, payments.
- * 
+ *
  * Classification: BRANCH-OWNED
  */
 return new class extends Migration
@@ -84,14 +84,23 @@ return new class extends Migration
                 ->name('fk_instpln_sale__sale');
             $table->decimal('total_amount', 18, 4);
             $table->decimal('down_payment', 18, 4)->default(0);
+            $table->decimal('remaining_amount', 18, 4)->default(0); // NEW-005 FIX
             $table->decimal('financed_amount', 18, 4);
             $table->decimal('interest_rate', 5, 2)->default(0);
             $table->decimal('total_interest', 18, 4)->default(0);
+            $table->unsignedSmallInteger('num_installments')->default(0); // NEW-005 FIX
+            $table->decimal('installment_amount', 18, 4)->default(0); // NEW-005 FIX
             $table->unsignedSmallInteger('installments_count');
             $table->string('frequency', 20)->default('monthly'); // weekly, bi_weekly, monthly
             $table->date('start_date');
             $table->date('end_date');
             $table->string('status', 30)->default('active'); // active, completed, defaulted, cancelled
+            $table->text('notes')->nullable(); // NEW-005 FIX
+            $table->foreignId('created_by') // NEW-005 FIX
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_instpln_created_by__usr');
             $table->timestamps();
             $table->softDeletes();
 
@@ -115,8 +124,14 @@ return new class extends Migration
             $table->string('status', 30)->default('pending'); // pending, paid, partial, overdue
             $table->decimal('late_fee', 18, 4)->default(0);
             $table->string('payment_method', 50)->nullable();
+            $table->string('payment_reference', 100)->nullable(); // NEW-005 FIX
             $table->text('notes')->nullable();
             $table->timestamp('paid_at')->nullable();
+            $table->foreignId('paid_by') // NEW-005 FIX
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_instpay_paid_by__usr');
             $table->timestamps();
 
             $table->unique(['installment_plan_id', 'installment_number'], 'uq_instpay_plan_number');

@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: user preferences and activity tables
- * 
+ *
  * User preferences, favorites, sessions, search history, notifications.
- * 
+ *
  * Classification: USER-OWNED
  */
 return new class extends Migration
@@ -178,12 +178,33 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete()
                 ->name('fk_audlog_user__usr');
+            // NEW-005 FIX: Added columns for impersonation tracking and enhanced audit info
+            $table->foreignId('performed_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_audlog_performed_by__usr');
+            $table->foreignId('impersonating_as_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_audlog_impersonating__usr');
+            $table->foreignId('target_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_audlog_target_user__usr');
             $table->string('auditable_type', 191);
             $table->unsignedBigInteger('auditable_id');
+            $table->string('action', 100)->nullable(); // NEW-005 FIX
+            $table->string('module_key', 100)->nullable(); // NEW-005 FIX
+            $table->string('subject_type', 191)->nullable(); // NEW-005 FIX
+            $table->unsignedBigInteger('subject_id')->nullable(); // NEW-005 FIX
             $table->string('event', 30); // created, updated, deleted, restored
             $table->json('old_values')->nullable();
             $table->json('new_values')->nullable();
             $table->string('url', 500)->nullable();
+            $table->string('ip', 45)->nullable(); // NEW-005 FIX
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->string('tags', 255)->nullable();
@@ -193,7 +214,9 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_audlog_branch__brnch');
             $table->json('extra_attributes')->nullable();
+            $table->json('meta')->nullable(); // NEW-005 FIX
             $table->timestamps();
+            $table->softDeletes(); // NEW-005 FIX: Model uses SoftDeletes
 
             $table->index(['auditable_type', 'auditable_id'], 'idx_audlog_auditable');
             $table->index('user_id', 'idx_audlog_user_id');

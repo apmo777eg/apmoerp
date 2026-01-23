@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: HR and payroll tables
- * 
+ *
  * Employees, attendance, shifts, leave, payroll.
- * 
+ *
  * Classification: BRANCH-OWNED
  */
 return new class extends Migration
@@ -252,6 +252,16 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_lvbal_type__lvtyp');
             $table->unsignedSmallInteger('year');
+            // NEW-005 FIX: Added columns for enhanced balance tracking
+            $table->decimal('opening_balance', 5, 2)->default(0);
+            $table->decimal('annual_quota', 5, 2)->default(0);
+            $table->decimal('accrued', 5, 2)->default(0);
+            $table->decimal('used', 5, 2)->default(0);
+            $table->decimal('pending', 5, 2)->default(0);
+            $table->decimal('available', 5, 2)->default(0);
+            $table->decimal('carry_forward_from_previous', 5, 2)->default(0);
+            $table->date('carry_forward_expiry_date')->nullable();
+            // Original columns
             $table->decimal('entitled_days', 5, 2)->default(0);
             $table->decimal('carried_forward', 5, 2)->default(0);
             $table->decimal('accrued_days', 5, 2)->default(0);
@@ -261,6 +271,7 @@ return new class extends Migration
             $table->decimal('expired_days', 5, 2)->default(0);
             $table->decimal('remaining_days', 5, 2)->default(0);
             $table->date('last_accrual_date')->nullable();
+            $table->text('notes')->nullable(); // NEW-005 FIX
             $table->timestamps();
 
             $table->unique(['employee_id', 'leave_type_id', 'year'], 'uq_lvbal_emp_type_year');
@@ -279,9 +290,18 @@ return new class extends Migration
             $table->decimal('accrual_amount', 5, 2);
             $table->unsignedSmallInteger('cap_amount')->nullable();
             $table->boolean('prorate_for_new_hires')->default(true);
+            // NEW-005 FIX: Added prorate and waiting period columns
+            $table->boolean('prorate_on_joining')->default(true);
+            $table->boolean('prorate_on_leaving')->default(false);
+            $table->unsignedTinyInteger('waiting_period_months')->default(0);
             $table->boolean('is_active')->default(true);
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
+            $table->foreignId('created_by') // NEW-005 FIX
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_lvacr_created_by__usr');
             $table->timestamps();
 
             $table->index('leave_type_id', 'idx_lvacr_type_id');
@@ -334,6 +354,7 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_lvreqa_approver__usr');
             $table->unsignedSmallInteger('level')->default(1);
+            $table->unsignedSmallInteger('approval_level')->default(1); // NEW-005 FIX: Model uses approval_level
             $table->string('status', 30)->default('pending');
             $table->text('comments')->nullable();
             $table->timestamp('responded_at')->nullable();
@@ -355,13 +376,27 @@ return new class extends Migration
                 ->name('fk_lvadj_type__lvtyp');
             $table->unsignedSmallInteger('year');
             $table->decimal('days', 5, 2);
+            $table->decimal('amount', 5, 2)->default(0); // NEW-005 FIX: Model uses amount
             $table->string('adjustment_type', 30); // add, deduct
             $table->text('reason')->nullable();
+            $table->text('notes')->nullable(); // NEW-005 FIX
             $table->foreignId('adjusted_by')
                 ->constrained('users')
                 ->cascadeOnDelete()
                 ->name('fk_lvadj_adjusted_by__usr');
             $table->timestamp('adjusted_at');
+            // NEW-005 FIX: Added approval columns
+            $table->foreignId('approved_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_lvadj_approved_by__usr');
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_lvadj_created_by__usr');
             $table->timestamps();
 
             $table->index('employee_id', 'idx_lvadj_employee_id');
@@ -371,6 +406,7 @@ return new class extends Migration
         // Leave encashments
         Schema::create('leave_encashments', function (Blueprint $table) {
             $table->id();
+            $table->string('encashment_number', 50)->nullable(); // NEW-005 FIX
             $table->foreignId('employee_id')
                 ->constrained('hr_employees')
                 ->cascadeOnDelete()
@@ -381,8 +417,10 @@ return new class extends Migration
                 ->name('fk_lvenc_type__lvtyp');
             $table->unsignedSmallInteger('year');
             $table->decimal('days_encashed', 5, 2);
+            $table->decimal('rate_per_day', 18, 2)->default(0); // NEW-005 FIX
             $table->decimal('daily_rate', 18, 2);
             $table->decimal('total_amount', 18, 2);
+            $table->string('currency', 10)->default('USD'); // NEW-005 FIX
             $table->string('status', 30)->default('pending');
             $table->foreignId('approved_by')
                 ->nullable()
@@ -390,6 +428,13 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_lvenc_approved_by__usr');
             $table->timestamp('approved_at')->nullable();
+            // NEW-005 FIX: Added processed columns
+            $table->foreignId('processed_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_lvenc_processed_by__usr');
+            $table->timestamp('processed_at')->nullable();
             $table->foreignId('paid_by')
                 ->nullable()
                 ->constrained('users')
@@ -398,10 +443,16 @@ return new class extends Migration
             $table->timestamp('paid_at')->nullable();
             $table->unsignedBigInteger('payroll_id')->nullable();
             $table->text('notes')->nullable();
+            $table->foreignId('created_by') // NEW-005 FIX
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_lvenc_created_by__usr');
             $table->timestamps();
 
             $table->index('employee_id', 'idx_lvenc_employee_id');
             $table->index('status', 'idx_lvenc_status');
+            $table->index('encashment_number', 'idx_lvenc_number'); // NEW-005 FIX
         });
 
         // Leave holidays

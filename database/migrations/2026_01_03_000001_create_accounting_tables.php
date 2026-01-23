@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: accounting tables
- * 
+ *
  * Chart of accounts, fiscal periods, and journal entries.
- * 
+ *
  * Classification: BRANCH-OWNED (accounting is branch-scoped)
  */
 return new class extends Migration
@@ -82,6 +82,7 @@ return new class extends Migration
                 ->constrained('branches')
                 ->cascadeOnDelete()
                 ->name('fk_acctmap_branch__brnch');
+            $table->string('module_name', 100)->nullable(); // NEW-005 FIX: Added for model compatibility
             $table->string('mapping_key', 100);
             $table->string('mapping_type', 50);
             $table->foreignId('account_id')
