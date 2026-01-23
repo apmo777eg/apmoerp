@@ -50,6 +50,10 @@ return new class extends Migration
                 ->constrained('vehicles')
                 ->cascadeOnDelete()
                 ->name('fk_vehctr_vehicle__veh');
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_vehctr_branch__brnch');
             $table->foreignId('customer_id')
                 ->constrained('customers')
                 ->cascadeOnDelete()
@@ -74,6 +78,10 @@ return new class extends Migration
                 ->constrained('vehicle_contracts')
                 ->cascadeOnDelete()
                 ->name('fk_vehpay_contract__vehctr');
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_vehpay_branch__brnch');
             $table->string('method', 50);
             $table->decimal('amount', 18, 2);
             $table->timestamp('paid_at');
@@ -98,6 +106,10 @@ return new class extends Migration
                 ->constrained('products')
                 ->nullOnDelete()
                 ->name('fk_warr_product__prd');
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_warr_branch__brnch');
             $table->string('provider', 191);
             $table->date('start_date');
             $table->date('end_date');

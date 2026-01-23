@@ -48,6 +48,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('version')->default(1);
             $table->unsignedSmallInteger('version_number')->default(1);
             $table->boolean('is_public')->default(false);
+            $table->string('access_level', 30)->default('private'); // private, public
             $table->json('metadata')->nullable();
             $table->foreignId('uploaded_by')
                 ->nullable()

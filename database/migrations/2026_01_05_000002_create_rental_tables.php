@@ -190,6 +190,10 @@ return new class extends Migration
                 ->constrained('rental_contracts')
                 ->cascadeOnDelete()
                 ->name('fk_rntinv_contract__rntctr');
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_rntinv_branch__brnch');
             $table->string('code', 50);
             $table->string('period', 50)->nullable();
             $table->date('due_date');

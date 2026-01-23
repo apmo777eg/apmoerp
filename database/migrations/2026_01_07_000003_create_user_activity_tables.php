@@ -162,12 +162,16 @@ return new class extends Migration
             $table->text('value')->nullable();
             $table->string('type', 30)->default('string');
             $table->string('setting_group', 50)->nullable();
+            $table->string('category', 50)->nullable();
+            $table->text('description')->nullable();
+            $table->unsignedSmallInteger('sort_order')->default(0);
             $table->json('options')->nullable();
             $table->boolean('is_public')->default(false);
             $table->boolean('is_encrypted')->default(false);
             $table->timestamps();
 
             $table->index('setting_group', 'idx_sysset_group');
+            $table->index('category', 'idx_sysset_category');
         });
 
         // Audit logs
