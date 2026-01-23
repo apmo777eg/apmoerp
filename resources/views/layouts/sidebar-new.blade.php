@@ -327,7 +327,7 @@
                         ['route' => 'app.inventory.products.index', 'label' => __('All Products'), 'permission' => 'inventory.products.view'],
                         ['route' => 'app.inventory.categories.index', 'label' => __('Categories'), 'permission' => 'inventory.products.view'],
                         ['route' => 'app.inventory.units.index', 'label' => __('Units'), 'permission' => 'inventory.products.view'],
-                        ['route' => 'app.inventory.stock-alerts', 'label' => __('Stock Alerts'), 'permission' => 'inventory.view'],
+                        ['route' => 'app.inventory.stock-alerts', 'label' => __('Stock Alerts'), 'permission' => 'inventory.stock.alerts.view'],
                         ['route' => 'app.inventory.barcodes', 'label' => __('Barcodes'), 'permission' => 'inventory.products.view'],
                         ['route' => 'app.inventory.batches.index', 'label' => __('Batches'), 'permission' => 'inventory.products.view'],
                         ['route' => 'app.inventory.serials.index', 'label' => __('Serial Numbers'), 'permission' => 'inventory.products.view'],
