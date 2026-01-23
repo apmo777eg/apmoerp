@@ -114,7 +114,7 @@ class Form extends Component
                 return;
             }
         } else {
-            if (! $user->can('tickets.manage')) {
+            if (! $user->can('helpdesk.manage')) {
                 abort(403);
             }
         }

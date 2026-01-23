@@ -367,6 +367,7 @@ class PermissionsSeeder extends Seeder
             'rental.contracts.create',
             'rental.contracts.update',
             'rental.contracts.manage',
+            'rental.contracts.manage-all',
             'rental.contracts.renew',
             'rental.contracts.terminate',
             'rental.invoices.collect',

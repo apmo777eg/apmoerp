@@ -212,7 +212,7 @@ class ModulesSeeder extends Seeder
                 'module_key' => 'wood',
                 'slug' => 'wood',
                 'name' => 'Wood & Lumber',
-                'name_ar' => 'الأخشاب والخشب',
+                'name_ar' => 'الأخشاب',
                 'description' => 'Wood inventory with dimensions, types, and conversions',
                 'description_ar' => 'مخزون الأخشاب مع الأبعاد والأنواع والتحويلات',
                 'icon' => 'rectangle-stack',
