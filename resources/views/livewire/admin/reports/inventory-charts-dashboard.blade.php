@@ -34,43 +34,74 @@
         <canvas id="inventoryLowStockChart" class="w-full h-48"></canvas>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('livewire:init', () => {
-            let lowStockChart = null;
+@script
+<script>
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+const componentId = 'inventory-charts-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
 
-            const ctx = document.getElementById('inventoryLowStockChart')?.getContext('2d');
+window.__lwCharts = window.__lwCharts || {};
 
-            if (! ctx) {
-                return;
-            }
+// Destroy existing chart
+if (window.__lwCharts[componentId + ':lowStock']) {
+    window.__lwCharts[componentId + ':lowStock'].destroy();
+    delete window.__lwCharts[componentId + ':lowStock'];
+}
 
-            Livewire.on('inventory-charts-update', (payload) => {
-                const data = payload.chartData || payload || {};
-                const low = data.lowStock || {labels: [], values: []};
+const ctx = document.getElementById('inventoryLowStockChart')?.getContext('2d');
 
-                if (lowStockChart) lowStockChart.destroy();
+function initInventoryChart(data = {}) {
+    if (!ctx) return;
+    
+    const low = data.lowStock || {labels: [], values: []};
 
-                lowStockChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: low.labels,
-                        datasets: [{
-                            label: '{{ __('Stock') }}',
-                            data: low.values,
-                        }],
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { ticks: { font: { size: 10 } } },
-                            y: { ticks: { font: { size: 10 } } },
-                        },
-                    },
-                });
-            });
-        });
-    </script>
+    if (window.__lwCharts[componentId + ':lowStock']) {
+        window.__lwCharts[componentId + ':lowStock'].destroy();
+    }
+
+    window.__lwCharts[componentId + ':lowStock'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: low.labels,
+            datasets: [{
+                label: '{{ __('Stock') }}',
+                data: low.values,
+            }],
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 10 } } },
+                y: { ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+}
+
+// Load Chart.js if not already loaded
+if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = () => initInventoryChart();
+    document.head.appendChild(script);
+} else {
+    initInventoryChart();
+}
+
+// Listen for chart updates from Livewire
+$wire.on('inventory-charts-update', (payload) => {
+    const data = payload.chartData || payload || {};
+    initInventoryChart(data);
+});
+
+// Clean up when navigating away
+document.addEventListener('livewire:navigating', () => {
+    if (window.__lwCharts[componentId + ':lowStock']) {
+        window.__lwCharts[componentId + ':lowStock'].destroy();
+        delete window.__lwCharts[componentId + ':lowStock'];
+    }
+}, { once: true });
+</script>
+@endscript
 </div>

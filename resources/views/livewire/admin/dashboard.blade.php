@@ -265,63 +265,91 @@
     </div>
 </div>
 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Livewire 4 FIX: Added livewire:navigated support for SPA navigation
-        function initSystemDashboardCharts() {
-            const salesCtx = document.getElementById('systemSalesChart')?.getContext('2d');
-            const contractsCtx = document.getElementById('systemContractsChart')?.getContext('2d');
-
-            const salesData = @json($salesChart);
-            const contractsData = @json($contractsChart);
-
-            if (salesCtx && salesData.labels && salesData.labels.length) {
-                new Chart(salesCtx, {
-                    type: 'line',
-                    data: {
-                        labels: salesData.labels,
-                        datasets: [{
-                            label: 'Sales',
-                            data: salesData.data,
-                            tension: 0.35,
-                            fill: true,
-                            borderWidth: 2,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }
-
-            if (contractsCtx && contractsData.labels && contractsData.labels.length) {
-                new Chart(contractsCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: contractsData.labels,
-                        datasets: [{
-                            data: contractsData.data,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
-            }
+@script
+<script>
+    // NEW-02 FIX: Use @script block to prevent duplicate handler registration
+    // Charts are now scoped to this component and properly cleaned up on navigation
+    const componentId = 'admin-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
+    
+    // Initialize global chart storage if not exists
+    window.__lwCharts = window.__lwCharts || {};
+    
+    // Destroy any existing charts for this component
+    if (window.__lwCharts[componentId + ':sales']) {
+        window.__lwCharts[componentId + ':sales'].destroy();
+        delete window.__lwCharts[componentId + ':sales'];
+    }
+    if (window.__lwCharts[componentId + ':contracts']) {
+        window.__lwCharts[componentId + ':contracts'].destroy();
+        delete window.__lwCharts[componentId + ':contracts'];
+    }
+    
+    // Initialize charts
+    function initAdminDashboardCharts() {
+        const salesCtx = document.getElementById('systemSalesChart')?.getContext('2d');
+        const contractsCtx = document.getElementById('systemContractsChart')?.getContext('2d');
+        
+        const salesData = @json($salesChart);
+        const contractsData = @json($contractsChart);
+        
+        if (salesCtx && salesData.labels && salesData.labels.length) {
+            window.__lwCharts[componentId + ':sales'] = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: salesData.labels,
+                    datasets: [{
+                        label: 'Sales',
+                        data: salesData.data,
+                        tension: 0.35,
+                        fill: true,
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
         }
-
-        // Initialize on DOM ready (initial page load)
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initSystemDashboardCharts);
-        } else {
-            initSystemDashboardCharts();
+        
+        if (contractsCtx && contractsData.labels && contractsData.labels.length) {
+            window.__lwCharts[componentId + ':contracts'] = new Chart(contractsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: contractsData.labels,
+                    datasets: [{
+                        data: contractsData.data,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
         }
-
-        // Re-initialize after Livewire SPA navigation
-        document.addEventListener('livewire:navigated', initSystemDashboardCharts);
-    </script>
-@endpush
+    }
+    
+    // Load Chart.js if not already loaded, then initialize
+    if (typeof Chart === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = initAdminDashboardCharts;
+        document.head.appendChild(script);
+    } else {
+        initAdminDashboardCharts();
+    }
+    
+    // Clean up when navigating away
+    document.addEventListener('livewire:navigating', () => {
+        if (window.__lwCharts[componentId + ':sales']) {
+            window.__lwCharts[componentId + ':sales'].destroy();
+            delete window.__lwCharts[componentId + ':sales'];
+        }
+        if (window.__lwCharts[componentId + ':contracts']) {
+            window.__lwCharts[componentId + ':contracts'].destroy();
+            delete window.__lwCharts[componentId + ':contracts'];
+        }
+    }, { once: true });
+</script>
+@endscript

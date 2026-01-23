@@ -7,7 +7,11 @@ namespace App\Services;
 use App\Services\Contracts\BackupServiceInterface;
 use App\Traits\HandlesServiceErrors;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\Process;
 
 class BackupService implements BackupServiceInterface
 {
@@ -198,8 +202,9 @@ class BackupService implements BackupServiceInterface
     }
 
     /**
-     * Restore MySQL database from backup
-     * OLD-UNSOLVED-01 FIX: Extracted from restore() for better organization
+     * Restore MySQL database from backup using Symfony Process
+     *
+     * HIGH-002 FIX: Replaced exec() with Symfony Process for better security and error handling
      */
     protected function restoreMysql(array $config, string $fullPath, bool $isCompressed): void
     {
@@ -209,52 +214,86 @@ class BackupService implements BackupServiceInterface
         $username = $config['username'];
         $password = $config['password'] ?? '';
 
-        // Set password via environment variable to avoid exposure in process list
+        // Set password via environment variable for security
+        $env = [];
         if ($password !== '') {
-            putenv('MYSQL_PWD='.$password);
+            $env['MYSQL_PWD'] = $password;
         }
 
+        // HIGH-002 FIX: Verify mysql binary exists before attempting restore
+        $mysqlPath = $this->findBinary('mysql');
+
+        Log::info('BackupService: Starting MySQL restore', [
+            'database' => $database,
+            'file' => basename($fullPath),
+            'compressed' => $isCompressed,
+        ]);
+
         try {
-            // Build the mysql restore command properly
             if ($isCompressed) {
-                // For compressed files: gunzip -c file.sql.gz | mysql ...
-                $command = sprintf(
-                    'gunzip -c %s | mysql -h %s -P %s -u %s %s 2>&1',
-                    escapeshellarg($fullPath),
-                    escapeshellarg($host),
-                    escapeshellarg((string) $port),
-                    escapeshellarg($username),
-                    escapeshellarg($database)
-                );
+                // For compressed files: decompress first, then pipe to mysql
+                $gunzipPath = $this->findBinary('gunzip');
+
+                // Decompress to temp file first
+                $tempSqlFile = sys_get_temp_dir().'/'.uniqid('restore_', true).'.sql';
+
+                try {
+                    // Decompress
+                    $gunzipProcess = new Process([$gunzipPath, '-c', $fullPath], null, null, null, 600);
+                    $gunzipProcess->run();
+
+                    if (! $gunzipProcess->isSuccessful()) {
+                        throw new ProcessFailedException($gunzipProcess);
+                    }
+
+                    file_put_contents($tempSqlFile, $gunzipProcess->getOutput());
+
+                    // Import
+                    $this->importMysqlFile($mysqlPath, $host, $port, $username, $database, $tempSqlFile, $env);
+                } finally {
+                    if (file_exists($tempSqlFile)) {
+                        unlink($tempSqlFile);
+                    }
+                }
             } else {
-                // For uncompressed files: mysql ... < file.sql
-                $command = sprintf(
-                    'mysql -h %s -P %s -u %s %s < %s 2>&1',
-                    escapeshellarg($host),
-                    escapeshellarg((string) $port),
-                    escapeshellarg($username),
-                    escapeshellarg($database),
-                    escapeshellarg($fullPath)
-                );
+                // For uncompressed files: import directly
+                $this->importMysqlFile($mysqlPath, $host, $port, $username, $database, $fullPath, $env);
             }
 
-            // Execute restore
-            $output = [];
-            $returnVar = 0;
-            exec($command, $output, $returnVar);
-
-            if ($returnVar !== 0) {
-                throw new \RuntimeException('MySQL restore failed: '.implode("\n", $output));
-            }
-        } finally {
-            // Always clear the password from environment
-            putenv('MYSQL_PWD');
+            Log::info('BackupService: MySQL restore completed successfully');
+        } catch (ProcessFailedException $e) {
+            Log::error('BackupService: MySQL restore failed', [
+                'error' => $e->getMessage(),
+                'output' => $e->getProcess()->getErrorOutput(),
+            ]);
+            throw new \RuntimeException('MySQL restore failed: '.$e->getMessage());
         }
     }
 
     /**
-     * Restore PostgreSQL database from backup
-     * OLD-UNSOLVED-01 FIX: Added PostgreSQL restore support
+     * Import a SQL file into MySQL
+     */
+    protected function importMysqlFile(string $mysqlPath, string $host, int $port, string $username, string $database, string $sqlFile, array $env): void
+    {
+        $mysqlProcess = new Process([
+            $mysqlPath,
+            '-h', $host,
+            '-P', (string) $port,
+            '-u', $username,
+            $database,
+        ], null, $env, file_get_contents($sqlFile), 1800); // 30 minute timeout for large databases
+
+        $mysqlProcess->run();
+
+        if (! $mysqlProcess->isSuccessful()) {
+            throw new ProcessFailedException($mysqlProcess);
+        }
+    }
+
+    /**
+     * Restore PostgreSQL database from backup using Symfony Process
+     *
+     * HIGH-002 FIX: Replaced exec() with Symfony Process for better security and error handling
      */
     protected function restorePostgres(array $config, string $fullPath, bool $isCompressed): void
     {
@@ -264,47 +303,103 @@ class BackupService implements BackupServiceInterface
         $username = $config['username'];
         $password = $config['password'] ?? '';
 
-        // Set password via environment variable to avoid exposure in process list
+        // Set password via environment variable for security
+        $env = [];
         if ($password !== '') {
-            putenv('PGPASSWORD='.$password);
+            $env['PGPASSWORD'] = $password;
         }
+
+        // HIGH-002 FIX: Verify psql binary exists before attempting restore
+        $psqlPath = $this->findBinary('psql');
+
+        Log::info('BackupService: Starting PostgreSQL restore', [
+            'database' => $database,
+            'file' => basename($fullPath),
+            'compressed' => $isCompressed,
+        ]);
 
         try {
-            // Build the psql restore command properly
             if ($isCompressed) {
-                // For compressed files: gunzip -c file.sql.gz | psql ...
-                $command = sprintf(
-                    'gunzip -c %s | psql -h %s -p %s -U %s %s 2>&1',
-                    escapeshellarg($fullPath),
-                    escapeshellarg($host),
-                    escapeshellarg((string) $port),
-                    escapeshellarg($username),
-                    escapeshellarg($database)
-                );
+                // For compressed files: decompress first, then pipe to psql
+                $gunzipPath = $this->findBinary('gunzip');
+
+                // Decompress to temp file first
+                $tempSqlFile = sys_get_temp_dir().'/'.uniqid('restore_', true).'.sql';
+
+                try {
+                    // Decompress
+                    $gunzipProcess = new Process([$gunzipPath, '-c', $fullPath], null, null, null, 600);
+                    $gunzipProcess->run();
+
+                    if (! $gunzipProcess->isSuccessful()) {
+                        throw new ProcessFailedException($gunzipProcess);
+                    }
+
+                    file_put_contents($tempSqlFile, $gunzipProcess->getOutput());
+
+                    // Import
+                    $this->importPostgresFile($psqlPath, $host, $port, $username, $database, $tempSqlFile, $env);
+                } finally {
+                    if (file_exists($tempSqlFile)) {
+                        unlink($tempSqlFile);
+                    }
+                }
             } else {
-                // For uncompressed files: psql ... < file.sql
-                $command = sprintf(
-                    'psql -h %s -p %s -U %s %s < %s 2>&1',
-                    escapeshellarg($host),
-                    escapeshellarg((string) $port),
-                    escapeshellarg($username),
-                    escapeshellarg($database),
-                    escapeshellarg($fullPath)
-                );
+                // For uncompressed files: import directly
+                $this->importPostgresFile($psqlPath, $host, $port, $username, $database, $fullPath, $env);
             }
 
-            // Execute restore
-            $output = [];
-            $returnVar = 0;
-            exec($command, $output, $returnVar);
-
-            if ($returnVar !== 0) {
-                throw new \RuntimeException('PostgreSQL restore failed: '.implode("\n", $output));
-            }
-        } finally {
-            // Always clear the password from environment
-            putenv('PGPASSWORD');
+            Log::info('BackupService: PostgreSQL restore completed successfully');
+        } catch (ProcessFailedException $e) {
+            Log::error('BackupService: PostgreSQL restore failed', [
+                'error' => $e->getMessage(),
+                'output' => $e->getProcess()->getErrorOutput(),
+            ]);
+            throw new \RuntimeException('PostgreSQL restore failed: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Import a SQL file into PostgreSQL
+     */
+    protected function importPostgresFile(string $psqlPath, string $host, int $port, string $username, string $database, string $sqlFile, array $env): void
+    {
+        $psqlProcess = new Process([
+            $psqlPath,
+            '-h', $host,
+            '-p', (string) $port,
+            '-U', $username,
+            '-d', $database,
+            '-f', $sqlFile,
+            '--no-password',
+        ], null, $env, null, 1800); // 30 minute timeout for large databases
+
+        $psqlProcess->run();
+
+        if (! $psqlProcess->isSuccessful()) {
+            throw new ProcessFailedException($psqlProcess);
+        }
+    }
+
+    /**
+     * Find a binary executable path
+     *
+     * HIGH-002 FIX: Added binary validation to ensure required tools are available
+     *
+     * @throws \RuntimeException if binary is not found
+     */
+    protected function findBinary(string $name): string
+    {
+        $finder = new ExecutableFinder();
+        $path = $finder->find($name);
+
+        if ($path === null) {
+            throw new \RuntimeException(
+                "Required binary '{$name}' not found. Please ensure it is installed and available in PATH."
+            );
+        }
+
+        return $path;
     }
 
     /**

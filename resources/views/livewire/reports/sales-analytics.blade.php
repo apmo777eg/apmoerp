@@ -146,22 +146,26 @@
     </div>
 </div>
 
-@push('scripts')
+@script
 <script>
-document.addEventListener('livewire:navigated', initCharts);
-document.addEventListener('DOMContentLoaded', initCharts);
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+const componentId = 'sales-analytics-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
 
-let charts = {};
+// Initialize global chart storage if not exists
+window.__lwCharts = window.__lwCharts || {};
 
-function initCharts() {
-    if (typeof Chart === 'undefined') return;
-    
-    Object.values(charts).forEach(chart => chart?.destroy());
-    charts = {};
+// Destroy any existing charts for this component
+['salesTrend', 'payment', 'hourly', 'category'].forEach(type => {
+    if (window.__lwCharts[componentId + ':' + type]) {
+        window.__lwCharts[componentId + ':' + type].destroy();
+        delete window.__lwCharts[componentId + ':' + type];
+    }
+});
 
+function initSalesAnalyticsCharts() {
     const salesTrendCtx = document.getElementById('salesTrendChart');
     if (salesTrendCtx) {
-        charts.salesTrend = new Chart(salesTrendCtx, {
+        window.__lwCharts[componentId + ':salesTrend'] = new Chart(salesTrendCtx, {
             type: 'line',
             data: {
                 labels: @json($salesTrend['labels'] ?? []),
@@ -188,7 +192,7 @@ function initCharts() {
 
     const paymentCtx = document.getElementById('paymentChart');
     if (paymentCtx) {
-        charts.payment = new Chart(paymentCtx, {
+        window.__lwCharts[componentId + ':payment'] = new Chart(paymentCtx, {
             type: 'doughnut',
             data: {
                 labels: @json($paymentBreakdown['labels'] ?? []),
@@ -207,7 +211,7 @@ function initCharts() {
 
     const hourlyCtx = document.getElementById('hourlyChart');
     if (hourlyCtx) {
-        charts.hourly = new Chart(hourlyCtx, {
+        window.__lwCharts[componentId + ':hourly'] = new Chart(hourlyCtx, {
             type: 'bar',
             data: {
                 labels: @json($hourlyDistribution['labels'] ?? []),
@@ -232,7 +236,7 @@ function initCharts() {
 
     const categoryCtx = document.getElementById('categoryChart');
     if (categoryCtx) {
-        charts.category = new Chart(categoryCtx, {
+        window.__lwCharts[componentId + ':category'] = new Chart(categoryCtx, {
             type: 'bar',
             data: {
                 labels: @json($categoryPerformance['labels'] ?? []),
@@ -256,5 +260,25 @@ function initCharts() {
         });
     }
 }
+
+// Load Chart.js if not already loaded, then initialize
+if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = initSalesAnalyticsCharts;
+    document.head.appendChild(script);
+} else {
+    initSalesAnalyticsCharts();
+}
+
+// Clean up when navigating away
+document.addEventListener('livewire:navigating', () => {
+    ['salesTrend', 'payment', 'hourly', 'category'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
+        }
+    });
+}, { once: true });
 </script>
-@endpush
+@endscript

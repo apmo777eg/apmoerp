@@ -172,60 +172,82 @@
     </div>
 </div>
 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Livewire 4 FIX: Use DOMContentLoaded for initial load and 'livewire:navigated' for SPA navigation support
-        function initRentalCharts() {
-            const unitsCtx = document.getElementById('rentalUnitsChart')?.getContext('2d');
-            const contractsCtx = document.getElementById('rentalContractsChart')?.getContext('2d');
-
-            const unitsData = @json($unitsChart);
-            const contractsData = @json($contractsChart);
-
-            if (unitsCtx && unitsData.labels && unitsData.labels.length) {
-                new Chart(unitsCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: unitsData.labels,
-                        datasets: [{
-                            data: unitsData.data,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
-            }
-
-            if (contractsCtx && contractsData.labels && contractsData.labels.length) {
-                new Chart(contractsCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: contractsData.labels,
-                        datasets: [{
-                            data: contractsData.data,
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }
+@script
+<script>
+    // NEW-02/UNFIXED-01 FIX: Use @script block to prevent duplicate handler registration
+    const componentId = 'rental-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
+    
+    // Initialize global chart storage if not exists
+    window.__lwCharts = window.__lwCharts || {};
+    
+    // Destroy any existing charts for this component
+    ['units', 'contracts'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
         }
-
-        // Initialize on DOM ready (initial page load)
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initRentalCharts);
-        } else {
-            initRentalCharts();
+    });
+    
+    function initRentalCharts() {
+        const unitsCtx = document.getElementById('rentalUnitsChart')?.getContext('2d');
+        const contractsCtx = document.getElementById('rentalContractsChart')?.getContext('2d');
+        
+        const unitsData = @json($unitsChart);
+        const contractsData = @json($contractsChart);
+        
+        if (unitsCtx && unitsData.labels && unitsData.labels.length) {
+            window.__lwCharts[componentId + ':units'] = new Chart(unitsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: unitsData.labels,
+                    datasets: [{
+                        data: unitsData.data,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
         }
-
-        // Re-initialize after Livewire SPA navigation
-        document.addEventListener('livewire:navigated', initRentalCharts);
-    </script>
-@endpush
+        
+        if (contractsCtx && contractsData.labels && contractsData.labels.length) {
+            window.__lwCharts[componentId + ':contracts'] = new Chart(contractsCtx, {
+                type: 'bar',
+                data: {
+                    labels: contractsData.labels,
+                    datasets: [{
+                        data: contractsData.data,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    }
+    
+    // Load Chart.js if not already loaded, then initialize
+    if (typeof Chart === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = initRentalCharts;
+        document.head.appendChild(script);
+    } else {
+        initRentalCharts();
+    }
+    
+    // Clean up when navigating away
+    document.addEventListener('livewire:navigating', () => {
+        ['units', 'contracts'].forEach(type => {
+            if (window.__lwCharts[componentId + ':' + type]) {
+                window.__lwCharts[componentId + ':' + type].destroy();
+                delete window.__lwCharts[componentId + ':' + type];
+            }
+        });
+    }, { once: true });
+</script>
+@endscript

@@ -372,6 +372,15 @@ Route::middleware('auth')->group(function () {
             ->name('grn.create')
             ->middleware('can:purchases.manage');
 
+        Route::get('/grn/{id}/edit', \App\Livewire\Purchases\GRN\Form::class)
+            ->name('grn.edit')
+            ->middleware('can:purchases.manage');
+
+        // NEW-03 FIX: Added route for GRN Inspection feature
+        Route::get('/grn/{id}/inspection', \App\Livewire\Purchases\GRN\Inspection::class)
+            ->name('grn.inspection')
+            ->middleware('can:grn.inspect');
+
         // Export & Import
         Route::get('/export', [\App\Http\Controllers\Branch\Purchases\ExportImportController::class, 'exportPurchases'])
             ->name('purchases.export')

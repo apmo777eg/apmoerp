@@ -165,66 +165,89 @@
     </div>
 </div>
 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Livewire 4 FIX: Use DOMContentLoaded for initial load and 'livewire:navigated' for SPA navigation support
-        function initHRMCharts() {
-            const attendanceCtx = document.getElementById('hrmAttendanceChart')?.getContext('2d');
-            const payrollCtx = document.getElementById('hrmPayrollChart')?.getContext('2d');
-
-            const attendanceData = @json($attendanceChart);
-            const payrollData = @json($payrollChart);
-
-            if (attendanceCtx && attendanceData.labels && attendanceData.labels.length) {
-                new Chart(attendanceCtx, {
-                    type: 'line',
-                    data: {
-                        labels: attendanceData.labels,
-                        datasets: [{
-                            label: 'Attendance',
-                            data: attendanceData.data,
-                            tension: 0.35,
-                            fill: true,
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }
-
-            if (payrollCtx && payrollData.labels && payrollData.labels.length) {
-                new Chart(payrollCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: payrollData.labels,
-                        datasets: [{
-                            label: 'Net salary',
-                            data: payrollData.data,
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }
+@script
+<script>
+    // NEW-02/UNFIXED-01 FIX: Use @script block to prevent duplicate handler registration
+    // Charts are now scoped to this component and properly cleaned up on navigation
+    const componentId = 'hrm-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
+    
+    // Initialize global chart storage if not exists
+    window.__lwCharts = window.__lwCharts || {};
+    
+    // Destroy any existing charts for this component
+    ['attendance', 'payroll'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
         }
-
-        // Initialize on DOM ready (initial page load)
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initHRMCharts);
-        } else {
-            initHRMCharts();
+    });
+    
+    function initHRMCharts() {
+        const attendanceCtx = document.getElementById('hrmAttendanceChart')?.getContext('2d');
+        const payrollCtx = document.getElementById('hrmPayrollChart')?.getContext('2d');
+        
+        const attendanceData = @json($attendanceChart);
+        const payrollData = @json($payrollChart);
+        
+        if (attendanceCtx && attendanceData.labels && attendanceData.labels.length) {
+            window.__lwCharts[componentId + ':attendance'] = new Chart(attendanceCtx, {
+                type: 'line',
+                data: {
+                    labels: attendanceData.labels,
+                    datasets: [{
+                        label: 'Attendance',
+                        data: attendanceData.data,
+                        tension: 0.35,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
         }
-
-        // Re-initialize after Livewire SPA navigation
-        document.addEventListener('livewire:navigated', initHRMCharts);
-    </script>
-@endpush
+        
+        if (payrollCtx && payrollData.labels && payrollData.labels.length) {
+            window.__lwCharts[componentId + ':payroll'] = new Chart(payrollCtx, {
+                type: 'bar',
+                data: {
+                    labels: payrollData.labels,
+                    datasets: [{
+                        label: 'Net salary',
+                        data: payrollData.data,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    }
+    
+    // Load Chart.js if not already loaded, then initialize
+    if (typeof Chart === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = initHRMCharts;
+        document.head.appendChild(script);
+    } else {
+        initHRMCharts();
+    }
+    
+    // Clean up when navigating away
+    document.addEventListener('livewire:navigating', () => {
+        ['attendance', 'payroll'].forEach(type => {
+            if (window.__lwCharts[componentId + ':' + type]) {
+                window.__lwCharts[componentId + ':' + type].destroy();
+                delete window.__lwCharts[componentId + ':' + type];
+            }
+        });
+    }, { once: true });
+</script>
+@endscript

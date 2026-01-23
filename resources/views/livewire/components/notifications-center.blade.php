@@ -136,16 +136,34 @@
 
 @script
 <script>
-    // Livewire 4 FIX: Wrap with @script for proper execution timing across SPA navigation
-    // Auto-refresh notifications every 60 seconds
-    const notificationInterval = setInterval(() => {
+    // NEW-01 FIX: Use Livewire's component-scoped cleanup mechanism
+    // The $cleanup function may not be available in all Livewire 4.0.x versions
+    // Using a guard pattern with livewire:navigating event for cleanup instead
+    const componentId = $wire.__instance?.id ?? 'notifications-center-' + Math.random().toString(36).substr(2, 9);
+    const timerKey = `notifications-center:${componentId}`;
+    
+    // Initialize global timer storage if not exists
+    window.__lwTimers = window.__lwTimers || {};
+    
+    // Clear any existing timer for this component
+    if (window.__lwTimers[timerKey]) {
+        clearInterval(window.__lwTimers[timerKey]);
+    }
+    
+    // Set up auto-refresh every 60 seconds
+    window.__lwTimers[timerKey] = setInterval(() => {
         $wire.call('loadNotifications');
     }, 60000);
     
-    // Clean up on component destroy to prevent memory leaks
-    // Use cleanup function that runs when component is removed from DOM
-    $cleanup(() => {
-        clearInterval(notificationInterval);
-    });
+    // Clean up when navigating away (Livewire 4 SPA navigation)
+    const cleanup = () => {
+        if (window.__lwTimers[timerKey]) {
+            clearInterval(window.__lwTimers[timerKey]);
+            delete window.__lwTimers[timerKey];
+        }
+    };
+    
+    // Listen for navigation events to clean up
+    document.addEventListener('livewire:navigating', cleanup, { once: true });
 </script>
 @endscript

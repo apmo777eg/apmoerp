@@ -72,66 +72,103 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('livewire:init', () => {
-            let byDayChart = null;
-            let byBranchChart = null;
+@script
+<script>
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+const componentId = 'pos-charts-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
 
-            const dayCtx = document.getElementById('posSalesByDayChart')?.getContext('2d');
-            const branchCtx = document.getElementById('posSalesByBranchChart')?.getContext('2d');
+window.__lwCharts = window.__lwCharts || {};
 
-            if (! dayCtx || ! branchCtx) {
-                return;
-            }
+// Destroy existing charts
+['byDay', 'byBranch'].forEach(type => {
+    if (window.__lwCharts[componentId + ':' + type]) {
+        window.__lwCharts[componentId + ':' + type].destroy();
+        delete window.__lwCharts[componentId + ':' + type];
+    }
+});
 
-            Livewire.on('pos-charts-update', (payload) => {
-                const data = payload.chartData || payload || {};
-                const byDay = data.salesByDay || {labels: [], values: []};
-                const byBranch = data.salesByBranch || {labels: [], values: []};
+const dayCtx = document.getElementById('posSalesByDayChart')?.getContext('2d');
+const branchCtx = document.getElementById('posSalesByBranchChart')?.getContext('2d');
 
-                if (byDayChart) byDayChart.destroy();
-                if (byBranchChart) byBranchChart.destroy();
+function initPosCharts(data = {}) {
+    if (!dayCtx || !branchCtx) return;
+    
+    const byDay = data.salesByDay || {labels: [], values: []};
+    const byBranch = data.salesByBranch || {labels: [], values: []};
 
-                byDayChart = new Chart(dayCtx, {
-                    type: 'line',
-                    data: {
-                        labels: byDay.labels,
-                        datasets: [{
-                            label: '{{ __('Revenue') }}',
-                            data: byDay.values,
-                            tension: 0.3,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { ticks: { font: { size: 10 } } },
-                            y: { ticks: { font: { size: 10 } } },
-                        },
-                    },
-                });
+    // Destroy existing
+    if (window.__lwCharts[componentId + ':byDay']) {
+        window.__lwCharts[componentId + ':byDay'].destroy();
+    }
+    if (window.__lwCharts[componentId + ':byBranch']) {
+        window.__lwCharts[componentId + ':byBranch'].destroy();
+    }
 
-                byBranchChart = new Chart(branchCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: byBranch.labels,
-                        datasets: [{
-                            label: '{{ __('Revenue') }}',
-                            data: byBranch.values,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { ticks: { font: { size: 10 } } },
-                            y: { ticks: { font: { size: 10 } } },
-                        },
-                    },
-                });
-            });
-        });
-    </script>
+    window.__lwCharts[componentId + ':byDay'] = new Chart(dayCtx, {
+        type: 'line',
+        data: {
+            labels: byDay.labels,
+            datasets: [{
+                label: '{{ __('Revenue') }}',
+                data: byDay.values,
+                tension: 0.3,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 10 } } },
+                y: { ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+
+    window.__lwCharts[componentId + ':byBranch'] = new Chart(branchCtx, {
+        type: 'bar',
+        data: {
+            labels: byBranch.labels,
+            datasets: [{
+                label: '{{ __('Revenue') }}',
+                data: byBranch.values,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 10 } } },
+                y: { ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+}
+
+// Load Chart.js if not already loaded
+if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = () => initPosCharts();
+    document.head.appendChild(script);
+} else {
+    initPosCharts();
+}
+
+// Listen for chart updates from Livewire
+$wire.on('pos-charts-update', (payload) => {
+    const data = payload.chartData || payload || {};
+    initPosCharts(data);
+});
+
+// Clean up when navigating away
+document.addEventListener('livewire:navigating', () => {
+    ['byDay', 'byBranch'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
+        }
+    });
+}, { once: true });
+</script>
+@endscript
 </div>

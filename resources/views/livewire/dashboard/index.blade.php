@@ -395,20 +395,28 @@
     </div>
 </div>
 
-@push('scripts')
-{{-- Chart.js is bundled via Vite in resources/js/app.js, no CDN needed --}}
+@script
 <script>
-// Initialize charts after navigation (handles Livewire wire:navigate)
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+const componentId = 'dashboard-index-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
+
+// Initialize global chart storage if not exists
+window.__lwCharts = window.__lwCharts || {};
+
+// Destroy any existing charts for this component
+['sales', 'inventory'].forEach(type => {
+    if (window.__lwCharts[componentId + ':' + type]) {
+        window.__lwCharts[componentId + ':' + type].destroy();
+        delete window.__lwCharts[componentId + ':' + type];
+    }
+});
+
 function initDashboardCharts() {
     const isRTL = document.documentElement.dir === 'rtl';
     
     const salesCtx = document.getElementById('salesChart');
     if (salesCtx) {
-        // Destroy existing chart if any to prevent duplicates on navigation
-        if (salesCtx._chart) {
-            salesCtx._chart.destroy();
-        }
-        salesCtx._chart = new Chart(salesCtx.getContext('2d'), {
+        window.__lwCharts[componentId + ':sales'] = new Chart(salesCtx.getContext('2d'), {
             type: 'line',
             data: {
                 labels: @json($salesChartData['labels'] ?? []),
@@ -453,11 +461,7 @@ function initDashboardCharts() {
 
     const inventoryCtx = document.getElementById('inventoryChart');
     if (inventoryCtx) {
-        // Destroy existing chart if any to prevent duplicates on navigation
-        if (inventoryCtx._chart) {
-            inventoryCtx._chart.destroy();
-        }
-        inventoryCtx._chart = new Chart(inventoryCtx.getContext('2d'), {
+        window.__lwCharts[componentId + ':inventory'] = new Chart(inventoryCtx.getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['{{ __("In Stock") }}', '{{ __("Low Stock") }}', '{{ __("Out of Stock") }}'],
@@ -488,10 +492,24 @@ function initDashboardCharts() {
     }
 }
 
-// Initialize on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', initDashboardCharts);
+// Load Chart.js if not already loaded, then initialize
+if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = initDashboardCharts;
+    document.head.appendChild(script);
+} else {
+    initDashboardCharts();
+}
 
-// Re-initialize on Livewire navigation (wire:navigate)
-document.addEventListener('livewire:navigated', initDashboardCharts);
+// Clean up when navigating away
+document.addEventListener('livewire:navigating', () => {
+    ['sales', 'inventory'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
+        }
+    });
+}, { once: true });
 </script>
-@endpush
+@endscript

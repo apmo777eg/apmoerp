@@ -1,5 +1,5 @@
 {{-- Customizable Dashboard with Drag-and-Drop Widget System --}}
-<div class="space-y-6" x-data="dashboardWidgets()">
+<div class="space-y-6">
     {{-- Loading Overlay --}}
     <div wire:loading wire:target="refreshData" class="loading-overlay flex items-center justify-center bg-slate-900/50">
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl flex flex-col items-center gap-4">
@@ -126,8 +126,6 @@
     <div 
         id="widgets-container"
         class="space-y-6"
-        x-ref="widgetsContainer"
-        @widget-reordered.window="handleReorder($event.detail)"
     >
         @foreach($widgets as $widget)
             @if($widget['visible'])
@@ -181,48 +179,28 @@
     </div>
 </div>
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+@script
 <script>
-function dashboardWidgets() {
-    return {
-        sortable: null,
-        init() {
-            this.initSortable();
-        },
-        initSortable() {
-            const container = this.$refs.widgetsContainer;
-            if (!container) return;
-            
-            this.sortable = new Sortable(container, {
-                animation: 300,
-                handle: '.widget-item',
-                ghostClass: 'opacity-50',
-                disabled: !@js($isEditing),
-                onEnd: (evt) => {
-                    const order = Array.from(container.querySelectorAll('.widget-item'))
-                        .map(el => el.dataset.widget);
-                    @this.updateWidgetOrder(order);
-                }
-            });
-        },
-        handleReorder(detail) {
-            if (this.sortable) {
-                this.sortable.option('disabled', !detail.isEditing);
-            }
-        }
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+const componentId = 'customizable-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
+
+// Initialize global storages if not exists
+window.__lwCharts = window.__lwCharts || {};
+window.__lwSortables = window.__lwSortables || {};
+
+// Destroy any existing charts for this component
+['sales', 'inventory'].forEach(type => {
+    if (window.__lwCharts[componentId + ':' + type]) {
+        window.__lwCharts[componentId + ':' + type].destroy();
+        delete window.__lwCharts[componentId + ':' + type];
     }
+});
+
+// Destroy existing sortable if any
+if (window.__lwSortables[componentId]) {
+    window.__lwSortables[componentId].destroy();
+    delete window.__lwSortables[componentId];
 }
-
-// Initialize charts when Livewire updates
-document.addEventListener('livewire:init', () => {
-    initDashboardCharts();
-});
-
-document.addEventListener('livewire:navigated', () => {
-    initDashboardCharts();
-});
 
 function initDashboardCharts() {
     const isRTL = document.documentElement.dir === 'rtl';
@@ -230,7 +208,7 @@ function initDashboardCharts() {
     // Sales Chart
     const salesCtx = document.getElementById('salesChart');
     if (salesCtx) {
-        new Chart(salesCtx.getContext('2d'), {
+        window.__lwCharts[componentId + ':sales'] = new Chart(salesCtx.getContext('2d'), {
             type: 'line',
             data: {
                 labels: @json($salesChartData['labels'] ?? []),
@@ -263,7 +241,7 @@ function initDashboardCharts() {
     // Inventory Chart
     const inventoryCtx = document.getElementById('inventoryChart');
     if (inventoryCtx) {
-        new Chart(inventoryCtx.getContext('2d'), {
+        window.__lwCharts[componentId + ':inventory'] = new Chart(inventoryCtx.getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['{{ __("In Stock") }}', '{{ __("Low Stock") }}', '{{ __("Out of Stock") }}'],
@@ -286,5 +264,71 @@ function initDashboardCharts() {
         });
     }
 }
+
+function initSortable() {
+    const container = document.getElementById('widgets-container');
+    if (!container || typeof Sortable === 'undefined') return;
+    
+    window.__lwSortables[componentId] = new Sortable(container, {
+        animation: 300,
+        handle: '.widget-item',
+        ghostClass: 'opacity-50',
+        disabled: !@json($isEditing),
+        onEnd: (evt) => {
+            const order = Array.from(container.querySelectorAll('.widget-item'))
+                .map(el => el.dataset.widget);
+            $wire.updateWidgetOrder(order);
+        }
+    });
+}
+
+// Load dependencies and initialize
+function initAll() {
+    initDashboardCharts();
+    initSortable();
+}
+
+// Load Chart.js and Sortable if not already loaded
+let scriptsLoaded = 0;
+const scriptsNeeded = 2;
+
+function checkAllLoaded() {
+    scriptsLoaded++;
+    if (scriptsLoaded >= scriptsNeeded) {
+        initAll();
+    }
+}
+
+if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = checkAllLoaded;
+    document.head.appendChild(script);
+} else {
+    checkAllLoaded();
+}
+
+if (typeof Sortable === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
+    script.onload = checkAllLoaded;
+    document.head.appendChild(script);
+} else {
+    checkAllLoaded();
+}
+
+// Clean up when navigating away
+document.addEventListener('livewire:navigating', () => {
+    ['sales', 'inventory'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
+        }
+    });
+    if (window.__lwSortables[componentId]) {
+        window.__lwSortables[componentId].destroy();
+        delete window.__lwSortables[componentId];
+    }
+}, { once: true });
 </script>
-@endpush
+@endscript

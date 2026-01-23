@@ -356,74 +356,103 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('livewire:init', () => {
-            let revenueChart = null;
-            let ordersChart = null;
+@script
+<script>
+// UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
+const componentId = 'orders-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
 
-            const revenueCtx = document.getElementById('revenueBySourceChart')?.getContext('2d');
-            const ordersCtx = document.getElementById('ordersByDayChart')?.getContext('2d');
+window.__lwCharts = window.__lwCharts || {};
 
-            if (! revenueCtx || ! ordersCtx) {
-                return;
-            }
+// Destroy existing charts
+['revenue', 'orders'].forEach(type => {
+    if (window.__lwCharts[componentId + ':' + type]) {
+        window.__lwCharts[componentId + ':' + type].destroy();
+        delete window.__lwCharts[componentId + ':' + type];
+    }
+});
 
-            Livewire.on('store-orders-charts-update', (payload) => {
-                const data = payload.chartData || payload || {};
-                const bySource = data.revenueBySource || {labels: [], values: []};
-                const byDay = data.ordersByDay || {labels: [], values: []};
+const revenueCtx = document.getElementById('revenueBySourceChart')?.getContext('2d');
+const ordersCtx = document.getElementById('ordersByDayChart')?.getContext('2d');
 
-                if (revenueChart) {
-                    revenueChart.destroy();
-                }
-                if (ordersChart) {
-                    ordersChart.destroy();
-                }
+function initStoreOrdersCharts(data = {}) {
+    if (!revenueCtx || !ordersCtx) return;
+    
+    const bySource = data.revenueBySource || {labels: [], values: []};
+    const byDay = data.ordersByDay || {labels: [], values: []};
 
-                revenueChart = new Chart(revenueCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: bySource.labels,
-                        datasets: [{
-                            label: '{{ __('Revenue') }}',
-                            data: bySource.values,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false },
-                        },
-                        scales: {
-                            x: { ticks: { font: { size: 10 } } },
-                            y: { ticks: { font: { size: 10 } } },
-                        },
-                    },
-                });
+    // Destroy existing
+    if (window.__lwCharts[componentId + ':revenue']) {
+        window.__lwCharts[componentId + ':revenue'].destroy();
+    }
+    if (window.__lwCharts[componentId + ':orders']) {
+        window.__lwCharts[componentId + ':orders'].destroy();
+    }
 
-                ordersChart = new Chart(ordersCtx, {
-                    type: 'line',
-                    data: {
-                        labels: byDay.labels,
-                        datasets: [{
-                            label: '{{ __('Revenue') }}',
-                            data: byDay.values,
-                            tension: 0.3,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false },
-                        },
-                        scales: {
-                            x: { ticks: { font: { size: 10 } } },
-                            y: { ticks: { font: { size: 10 } } },
-                        },
-                    },
-                });
-            });
-        });
-    </script>
+    window.__lwCharts[componentId + ':revenue'] = new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: bySource.labels,
+            datasets: [{
+                label: '{{ __('Revenue') }}',
+                data: bySource.values,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 10 } } },
+                y: { ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+
+    window.__lwCharts[componentId + ':orders'] = new Chart(ordersCtx, {
+        type: 'line',
+        data: {
+            labels: byDay.labels,
+            datasets: [{
+                label: '{{ __('Revenue') }}',
+                data: byDay.values,
+                tension: 0.3,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 10 } } },
+                y: { ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+}
+
+// Load Chart.js if not already loaded
+if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = () => initStoreOrdersCharts();
+    document.head.appendChild(script);
+} else {
+    initStoreOrdersCharts();
+}
+
+// Listen for chart updates from Livewire
+$wire.on('store-orders-charts-update', (payload) => {
+    const data = payload.chartData || payload || {};
+    initStoreOrdersCharts(data);
+});
+
+// Clean up when navigating away
+document.addEventListener('livewire:navigating', () => {
+    ['revenue', 'orders'].forEach(type => {
+        if (window.__lwCharts[componentId + ':' + type]) {
+            window.__lwCharts[componentId + ':' + type].destroy();
+            delete window.__lwCharts[componentId + ':' + type];
+        }
+    });
+}, { once: true });
+</script>
+@endscript
 </div>

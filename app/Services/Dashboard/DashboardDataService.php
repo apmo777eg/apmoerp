@@ -45,21 +45,43 @@ class DashboardDataService
 
     /**
      * Generate widget data based on widget type.
+     *
+     * NEW-001/NEW-003 FIX: Added unified widget key mapping and proper logging for unsupported widgets.
+     * Widget keys from Livewire components (sales_today, revenue_month, etc.) are now mapped
+     * to the appropriate data generators.
      */
     public function generateWidgetData(DashboardWidget $widget, int $userId, ?int $branchId): array
     {
         $data = match ($widget->key) {
+            // Core sales widgets
             'sales_today' => $this->generateSalesTodayData($branchId),
             'sales_this_week' => $this->generateSalesWeekData($branchId),
-            'sales_this_month' => $this->generateSalesMonthData($branchId),
+            'sales_this_month', 'revenue_month' => $this->generateSalesMonthData($branchId),
+
+            // Product/Inventory widgets
             'top_selling_products' => $this->generateTopSellingProductsData($branchId),
+            'total_products' => $this->generateTotalProductsData($branchId),
+            'low_stock_alerts', 'low_stock' => $this->generateLowStockAlertsData($branchId),
+
+            // Customer widgets
             'top_customers' => $this->generateTopCustomersData($branchId),
-            'low_stock_alerts' => $this->generateLowStockAlertsData($branchId),
+            'total_customers' => $this->generateTotalCustomersData($branchId),
+
+            // Order widgets
+            'pending_orders' => $this->generatePendingOrdersData($branchId),
+
+            // Finance/Accounting widgets
             'rent_invoices_due' => $this->generateRentInvoicesDueData($branchId),
             'cash_bank_balance' => $this->generateCashBankBalanceData($branchId),
+
+            // Helpdesk widgets
             'tickets_summary' => $this->generateTicketsSummaryData($branchId),
+
+            // HR widgets
             'attendance_snapshot' => $this->generateAttendanceSnapshotData($branchId),
-            default => ['message' => 'Widget data generator not implemented for: '.$widget->key],
+
+            // NEW-003 FIX: Log warning for unsupported widget keys instead of silent failure
+            default => $this->handleUnsupportedWidget($widget->key),
         };
 
         return [
@@ -67,6 +89,103 @@ class DashboardDataService
             'widget_key' => $widget->key,
             'data' => $data,
             'generated_at' => now()->toISOString(),
+        ];
+    }
+
+    /**
+     * Handle unsupported widget keys with proper logging
+     *
+     * NEW-003 FIX: Log warning when an unsupported widget key is requested
+     */
+    protected function handleUnsupportedWidget(string $key): array
+    {
+        \Illuminate\Support\Facades\Log::warning('DashboardDataService: Unsupported widget key requested', [
+            'widget_key' => $key,
+            'available_keys' => [
+                'sales_today', 'sales_this_week', 'sales_this_month', 'revenue_month',
+                'top_selling_products', 'total_products', 'low_stock_alerts', 'low_stock',
+                'top_customers', 'total_customers', 'pending_orders',
+                'rent_invoices_due', 'cash_bank_balance', 'tickets_summary', 'attendance_snapshot',
+            ],
+        ]);
+
+        return [
+            'message' => 'Widget data generator not implemented for: '.$key,
+            'status' => 'unsupported',
+        ];
+    }
+
+    /**
+     * Generate total products count data.
+     *
+     * NEW-001 FIX: Added generator for 'total_products' widget key used in Livewire components
+     */
+    public function generateTotalProductsData(?int $branchId): array
+    {
+        $query = DB::table('products')
+            ->whereNull('deleted_at');
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $totalProducts = $query->count();
+        $activeProducts = (clone $query)->where('status', 'active')->count();
+
+        return [
+            'total_products' => $totalProducts,
+            'active_products' => $activeProducts,
+        ];
+    }
+
+    /**
+     * Generate total customers count data.
+     *
+     * NEW-001 FIX: Added generator for 'total_customers' widget key used in Livewire components
+     */
+    public function generateTotalCustomersData(?int $branchId): array
+    {
+        $query = DB::table('customers')
+            ->whereNull('deleted_at');
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $totalCustomers = $query->count();
+        $newThisMonth = (clone $query)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+
+        return [
+            'total_customers' => $totalCustomers,
+            'new_this_month' => $newThisMonth,
+        ];
+    }
+
+    /**
+     * Generate pending orders count data.
+     *
+     * NEW-001 FIX: Added generator for 'pending_orders' widget key used in Livewire components
+     */
+    public function generatePendingOrdersData(?int $branchId): array
+    {
+        $query = DB::table('sales')
+            ->whereNull('deleted_at')
+            ->where('status', 'pending');
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $pendingCount = $query->count();
+        $pendingTotal = $query->sum('total_amount') ?? 0;
+
+        return [
+            'pending_orders' => $pendingCount,
+            'pending_total' => $pendingTotal,
+            'currency' => setting('general.default_currency', 'EGP'),
         ];
     }
 

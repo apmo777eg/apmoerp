@@ -10,7 +10,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\ExecutableFinder;
+use Symfony\Component\Process\Process;
 
 class BackupDatabaseJob implements ShouldQueue
 {
@@ -77,44 +81,64 @@ class BackupDatabaseJob implements ShouldQueue
     }
 
     /**
-     * Backup MySQL database using mysqldump
+     * Backup MySQL database using mysqldump via Symfony Process
+     *
+     * HIGH-002 FIX: Replaced exec() with Symfony Process for better security and error handling:
+     * - Proper timeout handling (prevents hanging processes)
+     * - Binary availability validation
+     * - Secure environment variable handling
+     * - Detailed logging for debugging
      */
     protected function backupMysql(array $db, $disk, string $backupDir, string $path): void
     {
-        // Minimal portable fallback using mysqldump with environment variable for password
-        // Using MYSQL_PWD env var to avoid password exposure in process list
-        // For production, consider using spatie/laravel-backup or .my.cnf config files
+        // HIGH-002 FIX: Verify mysqldump binary exists before attempting backup
+        $mysqldumpPath = $this->findBinary('mysqldump');
 
-        // Set password via environment variable instead of command line
+        // Create temp file for the dump
+        $tempSqlFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql';
+        $tempGzFile = $tempSqlFile.'.gz';
+
+        // Set password via environment variable instead of command line for security
+        $env = [];
         $password = $db['password'] ?? '';
         if ($password !== '') {
-            putenv('MYSQL_PWD='.$password);
+            $env['MYSQL_PWD'] = $password;
         }
 
         try {
-            // Create temp file for the dump, then move to disk
-            $tempFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql.gz';
+            // HIGH-002 FIX: Use Symfony Process with proper timeout and error handling
+            $mysqldumpProcess = new Process([
+                $mysqldumpPath,
+                '-h', $db['host'] ?? '127.0.0.1',
+                '-P', (string) ($db['port'] ?? 3306),
+                '-u', $db['username'] ?? '',
+                '--single-transaction',
+                '--routines',
+                '--triggers',
+                $db['database'] ?? '',
+            ], null, $env, null, 600); // 10 minute timeout
 
-            // V55-HIGH-01 FIX: Use bash with pipefail option to catch mysqldump failures
-            // Without pipefail, the pipe only reports the exit code of gzip, which may succeed
-            // even if mysqldump fails, resulting in an empty or corrupted backup file.
-            // All values are from config and properly escaped - no user input
-            $innerCmd = sprintf(
-                'mysqldump -h%s -u%s %s | gzip > %s',
-                escapeshellarg($db['host'] ?? '127.0.0.1'),
-                escapeshellarg($db['username'] ?? ''),
-                escapeshellarg($db['database'] ?? ''),
-                escapeshellarg($tempFile)
-            );
-            $cmd = sprintf('bash -o pipefail -c %s', escapeshellarg($innerCmd));
+            Log::info('BackupDatabaseJob: Starting MySQL backup', [
+                'database' => $db['database'] ?? 'unknown',
+                'host' => $db['host'] ?? '127.0.0.1',
+            ]);
 
-            // Execute with proper error handling
-            $output = [];
-            $returnCode = 0;
-            exec($cmd, $output, $returnCode);
+            $mysqldumpProcess->run();
 
-            if ($returnCode !== 0) {
-                throw new \RuntimeException('Backup command failed with exit code: '.$returnCode);
+            if (! $mysqldumpProcess->isSuccessful()) {
+                throw new ProcessFailedException($mysqldumpProcess);
+            }
+
+            // Write SQL output to temp file
+            file_put_contents($tempSqlFile, $mysqldumpProcess->getOutput());
+
+            // Compress the SQL file using gzip
+            $gzipPath = $this->findBinary('gzip');
+            $gzipProcess = new Process([$gzipPath, '-9', '-f', $tempSqlFile], null, null, null, 300);
+            $gzipProcess->run();
+
+            if (! $gzipProcess->isSuccessful()) {
+                throw new ProcessFailedException($gzipProcess);
             }
 
             // Ensure backup directory exists on disk
@@ -122,8 +146,8 @@ class BackupDatabaseJob implements ShouldQueue
                 $disk->makeDirectory(trim($backupDir, '/'));
             }
 
-            // Upload temp file to the configured disk using stream to avoid memory issues
-            $stream = fopen($tempFile, 'rb');
+            // Upload compressed file to the configured disk using stream
+            $stream = fopen($tempGzFile, 'rb');
             if ($stream === false) {
                 throw new \RuntimeException('Failed to open temp backup file for reading');
             }
@@ -136,54 +160,74 @@ class BackupDatabaseJob implements ShouldQueue
                 }
             }
 
-            // Clean up temp file with proper error handling
-            if (file_exists($tempFile) && ! unlink($tempFile)) {
-                // Log warning but don't fail - the backup was successful
-                report(new \RuntimeException('Failed to clean up temp backup file: '.$tempFile));
-            }
+            Log::info('BackupDatabaseJob: MySQL backup completed successfully', ['path' => $path]);
         } finally {
-            // Clear the password from environment
-            putenv('MYSQL_PWD');
+            // Clean up temp files
+            foreach ([$tempSqlFile, $tempGzFile] as $file) {
+                if (file_exists($file) && ! unlink($file)) {
+                    Log::warning('BackupDatabaseJob: Failed to clean up temp file', ['file' => $file]);
+                }
+            }
         }
     }
 
     /**
-     * Backup PostgreSQL database using pg_dump
-     * OLD-UNSOLVED-01 FIX: Added PostgreSQL backup support
+     * Backup PostgreSQL database using pg_dump via Symfony Process
+     *
+     * HIGH-002 FIX: Replaced exec() with Symfony Process for better security and error handling:
+     * - Proper timeout handling (prevents hanging processes)
+     * - Binary availability validation
+     * - Secure environment variable handling
+     * - Detailed logging for debugging
      */
     protected function backupPostgres(array $db, $disk, string $backupDir, string $path): void
     {
-        // Set password via environment variable to avoid exposure in process list
+        // HIGH-002 FIX: Verify pg_dump binary exists before attempting backup
+        $pgdumpPath = $this->findBinary('pg_dump');
+
+        // Create temp file for the dump
+        $tempSqlFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql';
+        $tempGzFile = $tempSqlFile.'.gz';
+
+        // Set password via environment variable for security
+        $env = [];
         $password = $db['password'] ?? '';
         if ($password !== '') {
-            putenv('PGPASSWORD='.$password);
+            $env['PGPASSWORD'] = $password;
         }
 
         try {
-            // Create temp file for the dump, then move to disk
-            $tempFile = sys_get_temp_dir().'/'.uniqid('backup_', true).'.sql.gz';
+            // HIGH-002 FIX: Use Symfony Process with proper timeout and error handling
+            $pgdumpProcess = new Process([
+                $pgdumpPath,
+                '-h', $db['host'] ?? '127.0.0.1',
+                '-p', (string) ($db['port'] ?? 5432),
+                '-U', $db['username'] ?? '',
+                '-d', $db['database'] ?? '',
+                '--no-password',
+            ], null, $env, null, 600); // 10 minute timeout
 
-            // V55-HIGH-01 FIX: Use bash with pipefail option to catch pg_dump failures
-            // Without pipefail, the pipe only reports the exit code of gzip, which may succeed
-            // even if pg_dump fails, resulting in an empty or corrupted backup file.
-            // All values are from config - no user input
-            $innerCmd = sprintf(
-                'pg_dump -h %s -p %s -U %s %s | gzip > %s',
-                escapeshellarg($db['host'] ?? '127.0.0.1'),
-                escapeshellarg((string) ($db['port'] ?? '5432')),
-                escapeshellarg($db['username'] ?? ''),
-                escapeshellarg($db['database'] ?? ''),
-                escapeshellarg($tempFile)
-            );
-            $cmd = sprintf('bash -o pipefail -c %s', escapeshellarg($innerCmd));
+            Log::info('BackupDatabaseJob: Starting PostgreSQL backup', [
+                'database' => $db['database'] ?? 'unknown',
+                'host' => $db['host'] ?? '127.0.0.1',
+            ]);
 
-            // Execute with proper error handling
-            $output = [];
-            $returnCode = 0;
-            exec($cmd, $output, $returnCode);
+            $pgdumpProcess->run();
 
-            if ($returnCode !== 0) {
-                throw new \RuntimeException('PostgreSQL backup command failed with exit code: '.$returnCode);
+            if (! $pgdumpProcess->isSuccessful()) {
+                throw new ProcessFailedException($pgdumpProcess);
+            }
+
+            // Write SQL output to temp file
+            file_put_contents($tempSqlFile, $pgdumpProcess->getOutput());
+
+            // Compress the SQL file using gzip
+            $gzipPath = $this->findBinary('gzip');
+            $gzipProcess = new Process([$gzipPath, '-9', '-f', $tempSqlFile], null, null, null, 300);
+            $gzipProcess->run();
+
+            if (! $gzipProcess->isSuccessful()) {
+                throw new ProcessFailedException($gzipProcess);
             }
 
             // Ensure backup directory exists on disk
@@ -191,8 +235,8 @@ class BackupDatabaseJob implements ShouldQueue
                 $disk->makeDirectory(trim($backupDir, '/'));
             }
 
-            // Upload temp file to the configured disk using stream to avoid memory issues
-            $stream = fopen($tempFile, 'rb');
+            // Upload compressed file to the configured disk using stream
+            $stream = fopen($tempGzFile, 'rb');
             if ($stream === false) {
                 throw new \RuntimeException('Failed to open temp backup file for reading');
             }
@@ -205,15 +249,37 @@ class BackupDatabaseJob implements ShouldQueue
                 }
             }
 
-            // Clean up temp file with proper error handling
-            if (file_exists($tempFile) && ! unlink($tempFile)) {
-                // Log warning but don't fail - the backup was successful
-                report(new \RuntimeException('Failed to clean up temp backup file: '.$tempFile));
-            }
+            Log::info('BackupDatabaseJob: PostgreSQL backup completed successfully', ['path' => $path]);
         } finally {
-            // Clear the password from environment
-            putenv('PGPASSWORD');
+            // Clean up temp files
+            foreach ([$tempSqlFile, $tempGzFile] as $file) {
+                if (file_exists($file) && ! unlink($file)) {
+                    Log::warning('BackupDatabaseJob: Failed to clean up temp file', ['file' => $file]);
+                }
+            }
         }
+    }
+
+    /**
+     * Find a binary executable path
+     *
+     * HIGH-002 FIX: Added binary validation to ensure required tools are available
+     *
+     * @throws \RuntimeException if binary is not found
+     */
+    protected function findBinary(string $name): string
+    {
+        $finder = new ExecutableFinder();
+        $path = $finder->find($name);
+
+        if ($path === null) {
+            throw new \RuntimeException(
+                "Required binary '{$name}' not found. Please ensure it is installed and available in PATH. ".
+                'For production, consider installing spatie/laravel-backup for multi-database support.'
+            );
+        }
+
+        return $path;
     }
 
     public function tags(): array
