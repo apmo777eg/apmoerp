@@ -55,7 +55,7 @@ return new class extends Migration
         // Report templates (global)
         Schema::create('report_templates', function (Blueprint $table) {
             $table->id();
-            $table->string('key', 100)->unique('uq_rpttpl_key');
+            $table->string('template_key', 100)->unique('uq_rpttpl_key');
             $table->string('name', 191);
             $table->text('description')->nullable();
             $table->string('route_name', 191)->nullable();

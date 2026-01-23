@@ -92,8 +92,8 @@ return new class extends Migration
             $table->boolean('is_visible')->default(true);
             $table->boolean('show_in_list')->default(false);
             $table->boolean('show_in_export')->default(false);
-            $table->unsignedSmallInteger('order')->default(0);
-            $table->json('default')->nullable();
+            $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->json('default_value')->nullable();
             $table->json('meta')->nullable();
             $table->string('field_category', 50)->nullable();
             $table->json('validation_rules')->nullable();

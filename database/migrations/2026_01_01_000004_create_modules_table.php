@@ -19,7 +19,7 @@ return new class extends Migration
     {
         Schema::create('modules', function (Blueprint $table) {
             $table->id();
-            $table->string('key', 50)->unique('uq_mod_key');
+            $table->string('module_key', 50)->unique('uq_mod_key');
             $table->string('slug', 100)->unique('uq_mod_slug');
             $table->string('name', 191);
             $table->string('name_ar', 191)->nullable();

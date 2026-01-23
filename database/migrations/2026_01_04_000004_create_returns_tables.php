@@ -154,7 +154,7 @@ return new class extends Migration
             $table->decimal('discount', 18, 4)->default(0);
             $table->decimal('tax_amount', 18, 4)->default(0);
             $table->decimal('line_total', 18, 4)->default(0);
-            $table->string('condition', 30)->nullable(); // good, damaged, defective
+            $table->string('item_condition', 30)->nullable(); // good, damaged, defective
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('restock')->default(true);
@@ -275,7 +275,7 @@ return new class extends Migration
             $table->decimal('unit_cost', 18, 4)->default(0);
             $table->decimal('tax_amount', 18, 4)->default(0);
             $table->decimal('line_total', 18, 4)->default(0);
-            $table->string('condition', 30)->nullable();
+            $table->string('item_condition', 30)->nullable();
             $table->string('batch_number', 100)->nullable();
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();

@@ -158,16 +158,16 @@ return new class extends Migration
         // System settings
         Schema::create('system_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('key', 100)->unique('uq_sysset_key');
+            $table->string('setting_key', 100)->unique('uq_sysset_key');
             $table->text('value')->nullable();
             $table->string('type', 30)->default('string');
-            $table->string('group', 50)->nullable();
+            $table->string('setting_group', 50)->nullable();
             $table->json('options')->nullable();
             $table->boolean('is_public')->default(false);
             $table->boolean('is_encrypted')->default(false);
             $table->timestamps();
 
-            $table->index('group', 'idx_sysset_group');
+            $table->index('setting_group', 'idx_sysset_group');
         });
 
         // Audit logs

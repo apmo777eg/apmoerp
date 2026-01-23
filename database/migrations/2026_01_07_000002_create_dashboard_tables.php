@@ -20,7 +20,7 @@ return new class extends Migration
         // Dashboard widgets (global)
         Schema::create('dashboard_widgets', function (Blueprint $table) {
             $table->id();
-            $table->string('key', 100)->unique('uq_dshwgt_key');
+            $table->string('widget_key', 100)->unique('uq_dshwgt_key');
             $table->string('name', 191);
             $table->string('name_ar', 191)->nullable();
             $table->text('description')->nullable();

@@ -124,10 +124,9 @@ return new class extends Migration
             $table->primary([$pivotPermission, $pivotRole], 'pk_rhp');
         });
 
-        // Clear cache after migration
-        app('cache')
-            ->store(config('permission.cache.store') !== 'default' ? config('permission.cache.store') : null)
-            ->forget(config('permission.cache.key'));
+        // Note: Cache clearing is skipped here since the cache table may not exist yet.
+        // The permission cache will be cleared automatically when the application boots
+        // or when permissions are first accessed.
     }
 
     public function down(): void
