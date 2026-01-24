@@ -30,7 +30,7 @@ class BranchSeeder extends Seeder
                 'is_main' => true,
                 'timezone' => 'Africa/Cairo',
                 'currency' => 'EGP',
-                'settings' => json_encode([
+                'settings' => [
                     'working_hours' => [
                         'start' => '09:00',
                         'end' => '18:00',
@@ -38,7 +38,7 @@ class BranchSeeder extends Seeder
                     'working_days' => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
                     'fiscal_year_start' => '01-01',
                     'default_tax_rate' => 14,
-                ]),
+                ],
             ]
         );
 
@@ -57,7 +57,7 @@ class BranchSeeder extends Seeder
                 'timezone' => 'Africa/Cairo',
                 'currency' => 'EGP',
                 'parent_id' => $branch->id,
-                'settings' => json_encode([
+                'settings' => [
                     'working_hours' => [
                         'start' => '10:00',
                         'end' => '22:00',
@@ -65,7 +65,7 @@ class BranchSeeder extends Seeder
                     'working_days' => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
                     'fiscal_year_start' => '01-01',
                     'default_tax_rate' => 14,
-                ]),
+                ],
             ]
         );
     }

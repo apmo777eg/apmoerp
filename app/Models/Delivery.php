@@ -20,6 +20,7 @@ class Delivery extends BaseModel
      * 2026_01_04_000005_create_sales_purchases_tables.php
      */
     protected $fillable = [
+        'branch_id',
         'sale_id',
         'reference_number',
         'status',

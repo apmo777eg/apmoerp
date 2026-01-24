@@ -1,3 +1,4 @@
+<div>
 {{-- Branch Switcher Component - Fixed Position (Not Floating) --}}
 @if($canSwitch && is_array($branches) && count($branches) > 0)
 <div class="px-3 py-3 border-b border-slate-700/50 bg-slate-800/30">
@@ -144,3 +145,4 @@
     });
 @endscript
 @endif
+</div>

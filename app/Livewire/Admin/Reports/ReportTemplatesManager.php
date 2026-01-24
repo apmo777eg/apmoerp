@@ -91,7 +91,7 @@ class ReportTemplatesManager extends Component
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('report_templates', 'key')->ignore($this->editingId),
+                Rule::unique('report_templates', 'template_key')->ignore($this->editingId),
             ],
             'name' => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:255'],
