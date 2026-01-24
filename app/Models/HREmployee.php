@@ -165,7 +165,7 @@ class HREmployee extends BaseModel
 
     public function setCodeAttribute($value)
     {
-        $this->attributes['employee_code'] = $value;
+        $this->attributes['employee_code'] = $value ? (string) $value : null;
     }
 
     public function getNameAttribute(): string
@@ -176,8 +176,17 @@ class HREmployee extends BaseModel
     public function setNameAttribute($value)
     {
         // When setting name, split it into first_name and last_name
-        $parts = explode(' ', trim($value), 2);
-        $this->attributes['first_name'] = $parts[0] ?? '';
+        // Note: This assumes Western naming convention. For proper handling,
+        // use first_name and last_name directly when possible.
+        $value = trim((string) $value);
+        if ($value === '') {
+            $this->attributes['first_name'] = '';
+            $this->attributes['last_name'] = '';
+            return;
+        }
+        
+        $parts = explode(' ', $value, 2);
+        $this->attributes['first_name'] = $parts[0];
         $this->attributes['last_name'] = $parts[1] ?? '';
     }
 
@@ -188,7 +197,10 @@ class HREmployee extends BaseModel
 
     public function setSalaryAttribute($value)
     {
-        $this->attributes['basic_salary'] = $value;
+        // Convert to decimal with 4 decimal places for consistency
+        $this->attributes['basic_salary'] = $value !== null && $value !== '' 
+            ? (string) number_format((float) $value, 4, '.', '') 
+            : null;
     }
 
     public function getDateOfBirthAttribute()
