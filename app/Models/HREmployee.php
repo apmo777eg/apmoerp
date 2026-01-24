@@ -22,6 +22,8 @@ class HREmployee extends BaseModel
     protected $fillable = [
         'branch_id',
         'user_id',
+        'code',
+        'name',
         'employee_code',
         // Personal info
         'first_name',
@@ -158,11 +160,6 @@ class HREmployee extends BaseModel
     }
 
     // Backward compatibility accessors
-    public function getNameAttribute(): string
-    {
-        return trim($this->first_name.' '.$this->last_name);
-    }
-
     public function getDateOfBirthAttribute()
     {
         return $this->birth_date;
@@ -181,8 +178,19 @@ class HREmployee extends BaseModel
     protected static function booted(): void
     {
         static::creating(function (self $employee): void {
+            // Auto-generate code if empty
+            if (empty($employee->code)) {
+                $employee->code = 'EMP-'.Str::upper(Str::random(8));
+            }
+            
+            // Sync employee_code with code for backward compatibility
             if (empty($employee->employee_code)) {
-                $employee->employee_code = $employee->code ?? 'EMP-'.Str::upper(Str::random(8));
+                $employee->employee_code = $employee->code;
+            }
+            
+            // Auto-generate name from first_name and last_name
+            if (empty($employee->name) && ($employee->first_name || $employee->last_name)) {
+                $employee->name = trim(($employee->first_name ?? '').' '.($employee->last_name ?? ''));
             }
             
             // Sync is_active with status on creation
@@ -192,6 +200,16 @@ class HREmployee extends BaseModel
         });
 
         static::updating(function (self $employee): void {
+            // Sync employee_code with code if code changed
+            if ($employee->isDirty('code')) {
+                $employee->employee_code = $employee->code;
+            }
+            
+            // Auto-update name if first_name or last_name changed
+            if ($employee->isDirty(['first_name', 'last_name'])) {
+                $employee->name = trim(($employee->first_name ?? '').' '.($employee->last_name ?? ''));
+            }
+            
             // Sync is_active with status on update
             if ($employee->isDirty('status')) {
                 $employee->is_active = ($employee->status === 'active');
