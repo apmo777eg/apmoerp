@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Product Export Test Suite
@@ -28,7 +29,7 @@ class ProductExportTest extends TestCase
     public function test_products_table_has_code_column(): void
     {
         $this->assertTrue(
-            \Schema::hasColumn('products', 'code'),
+            Schema::hasColumn('products', 'code'),
             'Products table should have code column'
         );
     }
