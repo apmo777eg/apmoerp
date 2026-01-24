@@ -24,6 +24,11 @@ class BranchSettings extends Component
 
     public array $rows = [];
 
+    /**
+     * Track deleted setting IDs for proper database cleanup
+     */
+    public array $deletedIds = [];
+
     public function mount(?int $branch = null): void
     {
         // Authorization check - must have settings.branch permission
@@ -90,7 +95,12 @@ class BranchSettings extends Component
     public function removeRow(int $index): void
     {
         if (isset($this->rows[$index])) {
+            // Track the ID for deletion if it exists in database
+            if (isset($this->rows[$index]['id']) && $this->rows[$index]['id']) {
+                $this->deletedIds[] = $this->rows[$index]['id'];
+            }
             unset($this->rows[$index]);
+            $this->rows = array_values($this->rows);
         }
     }
 
@@ -120,6 +130,13 @@ class BranchSettings extends Component
             ->all();
 
         DB::transaction(function () use ($prefix): void {
+            // Delete removed settings first
+            if (! empty($this->deletedIds)) {
+                SystemSetting::query()
+                    ->whereIn('id', $this->deletedIds)
+                    ->delete();
+            }
+
             foreach ($this->rows as $row) {
                 $plainKey = trim((string) ($row['key'] ?? ''));
                 if ($plainKey === '') {
@@ -201,6 +218,9 @@ class BranchSettings extends Component
                 ],
             ]);
         }
+
+        // Reset deleted IDs after successful save
+        $this->deletedIds = [];
 
         session()->flash('status', __('Branch settings saved successfully.'));
 
