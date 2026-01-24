@@ -86,7 +86,20 @@ class ExportFunctionalityTest extends TestCase
         $class = new \ReflectionClass(\App\Livewire\Inventory\Products\Index::class);
         $hasExport = $class->hasMethod('export') || $class->hasMethod('downloadExcel');
         
-        $this->assertTrue($hasExport || true, 'Products Index export checked');
+        $this->assertTrue($hasExport, 'Products Index should have export method');
+    }
+
+    public function test_products_export_includes_all_necessary_columns(): void
+    {
+        $exportService = app(\App\Services\ExportService::class);
+        $columns = $exportService->getAvailableColumns('products');
+
+        // Check for essential columns
+        $essentialColumns = ['id', 'code', 'name', 'sku', 'barcode', 'status'];
+        
+        foreach ($essentialColumns as $column) {
+            $this->assertArrayHasKey($column, $columns, "Products export should include $column column");
+        }
     }
 
     /* ========================================
