@@ -35,9 +35,9 @@ use Livewire\Component;
  *
  * @security-reviewed V40 - SQL expressions validated via DatabaseCompatibilityService
  */
+#[Layout('layouts.app')]
 class SalesAnalytics extends Component
 {
-    #[Layout('layouts.app')]
     public string $dateRange = 'month';
 
     public ?string $dateFrom = null;

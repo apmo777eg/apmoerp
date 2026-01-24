@@ -86,7 +86,10 @@ class Form extends Component
 
         $user = Auth::user();
         $this->productId = $product;
-        $this->form['branch_id'] = (int) ($user?->branch_id ?? 0);
+        
+        // V78-FIX: Respect admin branch context for Super Admin/users with branches.view-all
+        $branchId = $this->resolveBranchId($user);
+        $this->form['branch_id'] = $branchId;
 
         if ($this->form['branch_id'] === 0) {
             abort(403);
@@ -317,7 +320,8 @@ class Form extends Component
         $this->authorize('inventory.products.manage');
 
         $user = Auth::user();
-        $this->form['branch_id'] = (int) ($user?->branch_id ?? $this->form['branch_id']);
+        // V78-FIX: Use resolveBranchId for consistency with mount()
+        $this->form['branch_id'] = $this->resolveBranchId($user);
         if ($this->form['branch_id'] === 0) {
             abort(403);
         }
@@ -432,5 +436,38 @@ class Form extends Component
             'categories' => $this->categories,
             'units' => $this->units,
         ]);
+    }
+
+    /**
+     * Resolve the effective branch ID for the current user.
+     * V78-FIX: Respects admin branch context from session for Super Admin/users with branches.view-all.
+     */
+    private function resolveBranchId(?object $user): int
+    {
+        if (! $user) {
+            return 0;
+        }
+
+        // Check if user can switch branches (Super Admin or branches.view-all permission)
+        $canSwitchBranches = $user->hasRole('Super Admin') || $user->can('branches.view-all');
+
+        if ($canSwitchBranches) {
+            // Check session for admin_branch_context set by BranchSwitcher
+            $sessionBranchId = session('admin_branch_context');
+
+            if ($sessionBranchId !== null) {
+                // Validate the session branch ID is valid and active
+                $branchExists = \App\Models\Branch::where('id', $sessionBranchId)
+                    ->where('is_active', true)
+                    ->exists();
+
+                if ($branchExists) {
+                    return (int) $sessionBranchId;
+                }
+            }
+        }
+
+        // Fall back to user's primary branch_id
+        return (int) ($user->branch_id ?? 0);
     }
 }

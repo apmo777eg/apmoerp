@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class Modules extends Component
 {
-    #[Layout('layouts.app')]
     public Branch $branch;
 
     public array $modules = [];

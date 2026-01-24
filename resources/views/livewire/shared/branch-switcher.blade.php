@@ -137,7 +137,8 @@
 @endif
 @script
 Livewire.on('branch-switched', () => {
-    Livewire.navigate(window.location.href);
+    // Force full page reload to refresh all session-dependent components (sidebar, dashboard data)
+    window.location.reload();
 });
 @endscript
 </div>

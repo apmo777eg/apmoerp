@@ -10,11 +10,11 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.app')]
 class TranslationManager extends Component
 {
     use WithPagination;
 
-    #[Layout('layouts.app')]
     public string $search = '';
 
     public string $selectedLang = 'ar';

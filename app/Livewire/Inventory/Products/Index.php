@@ -13,6 +13,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.app')]
 class Index extends Component
 {
     use HasExport;
@@ -27,7 +28,6 @@ class Index extends Component
     #[Url]
     public ?int $moduleId = null;
 
-    #[Layout('layouts.app')]
     public function mount(): void
     {
         $user = Auth::user();

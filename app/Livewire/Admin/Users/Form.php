@@ -16,11 +16,11 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Spatie\Permission\Models\Role as WebRole;
 
+#[Layout('layouts.app')]
 class Form extends Component
 {
     use HandlesErrors;
 
-    #[Layout('layouts.app')]
     public ?int $userId = null;
 
     /**

@@ -13,9 +13,9 @@ use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
+#[Layout('layouts.app')]
 class SystemSettings extends Component
 {
-    #[Layout('layouts.app')]
     public array $rows = [];
 
     /**

@@ -8,9 +8,9 @@ use App\Services\AuthService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.guest')]
 class ResetPassword extends Component
 {
-    #[Layout('layouts.guest')]
     public string $token = '';
 
     public string $email = '';

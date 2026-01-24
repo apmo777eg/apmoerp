@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.guest')]
 class Login extends Component
 {
-    #[Layout('layouts.guest')]
     public string $credential = '';
 
     public string $password = '';

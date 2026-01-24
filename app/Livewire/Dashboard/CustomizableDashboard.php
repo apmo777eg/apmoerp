@@ -22,11 +22,10 @@ use Livewire\Component;
  *
  * Uses shared LoadsDashboardData trait for optimized data loading.
  */
+#[Layout('layouts.app')]
 class CustomizableDashboard extends Component
 {
     use LoadsDashboardData;
-
-    #[Layout('layouts.app')]
 
     // Dashboard configuration
     public array $widgets = [];

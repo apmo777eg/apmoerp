@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class ProductFields extends Component
 {
-    #[Layout('layouts.app')]
     public ?int $moduleId = null;
 
     public ?Module $module = null;

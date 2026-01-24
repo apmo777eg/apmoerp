@@ -14,11 +14,11 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
+#[Layout('layouts.app')]
 class Edit extends Component
 {
     use WithFileUploads;
 
-    #[Layout('layouts.app')]
     public string $name = '';
 
     public string $email = '';

@@ -10,13 +10,13 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.app')]
 class Index extends Component
 {
     use WithPagination;
 
     public string $search = '';
 
-    #[Layout('layouts.app')]
     public function mount(): void
     {
         $user = Auth::user();

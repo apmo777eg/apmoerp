@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class BranchSettings extends Component
 {
-    #[Layout('layouts.app')]
     public ?int $branchId = null;
 
     /**

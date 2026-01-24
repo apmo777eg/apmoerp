@@ -15,11 +15,11 @@ use Livewire\Component;
  * Main dashboard view with statistics, charts, and recent data.
  * Uses shared LoadsDashboardData trait for data loading logic.
  */
+#[Layout('layouts.app')]
 class Index extends Component
 {
     use LoadsDashboardData;
 
-    #[Layout('layouts.app')]
     public array $stats = [];
 
     public array $salesChartData = [];

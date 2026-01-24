@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class Terminal extends Component
 {
-    #[Layout('layouts.app')]
     public int $branchId;
 
     public string $branchName = '';

@@ -8,9 +8,9 @@ use App\Services\AuthService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.guest')]
 class ForgotPassword extends Component
 {
-    #[Layout('layouts.guest')]
     public string $email = '';
 
     public bool $emailSent = false;
