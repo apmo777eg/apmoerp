@@ -253,12 +253,6 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.includes('/livewire/') || request.headers.get('X-Livewire')) {
         return;
     }
-    
-    // Skip requests with Livewire-specific content types
-    const acceptHeader = request.headers.get('accept') || '';
-    if (acceptHeader.includes('application/json') && request.headers.get('X-Livewire')) {
-        return;
-    }
 
     // API requests - Network first, fallback to cache
     if (url.pathname.startsWith('/api/')) {

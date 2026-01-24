@@ -1074,7 +1074,8 @@
                     </div>
                 </div>
                 
-                {{-- Always show Profile and Logout --}}
+                {{-- Always show Profile and Logout when sidebar is empty --}}
+                {{-- These provide essential navigation when user has no module permissions --}}
                 <div class="erp-sidebar-items border-t border-slate-700/50 pt-3 mt-3">
                     @if(Route::has('profile.edit'))
                     <a 
