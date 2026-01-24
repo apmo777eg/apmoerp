@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionsSeeder::class,
             RolesSeeder::class,
-            ModulesSeeder::class,
-            BranchSeeder::class,
+            BranchSeeder::class,         // Branches must exist before modules link to them
+            ModulesSeeder::class,         // This now also links core modules to branches
             UsersSeeder::class,
             CurrenciesSeeder::class,
             TaxesSeeder::class,

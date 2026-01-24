@@ -20,14 +20,23 @@ if ($user->hasRole('Super Admin')) {
     }
 } else {
     // Get actions based on roles
+    // Map role names to action groups from config
     $roleGroups = [
+        'Admin' => ['admin', 'manager', 'sales', 'purchases', 'inventory', 'hrm'],
+        'Manager' => ['manager', 'sales', 'purchases', 'inventory'],
+        'Accountant' => ['manager'],
+        'HR Manager' => ['hrm', 'manager'],
+        'Sales Manager' => ['sales', 'manager'],
+        'Salesperson' => ['sales'],
+        'Warehouse Manager' => ['inventory', 'purchases'],
+        'Warehouse Staff' => ['inventory'],
         'Cashier' => ['sales'],
+        'Employee' => [], // Basic employees see no quick actions
+        'Viewer' => [], // Viewers see no quick actions
+        // Legacy mappings for backwards compatibility
         'Sales' => ['sales'],
         'Purchasing' => ['purchases'],
         'Inventory Manager' => ['inventory'],
-        'HR Manager' => ['hrm'],
-        'Accountant' => ['manager'],
-        'Manager' => ['manager', 'sales', 'inventory'],
     ];
     
     $userRoleNames = $user->roles->pluck('name')->toArray();

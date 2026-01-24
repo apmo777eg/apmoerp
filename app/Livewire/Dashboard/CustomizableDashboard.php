@@ -212,7 +212,7 @@ class CustomizableDashboard extends Component
     protected function loadModuleStats(): void
     {
         $user = Auth::user();
-        $branch = $user->branch ?? $user->currentBranch ?? null;
+        $branch = $user->branch ?? $user->getCurrentBranch() ?? null;
 
         if (! $branch) {
             return;
@@ -344,7 +344,7 @@ class CustomizableDashboard extends Component
     {
         $user = Auth::user();
         $preferences = $user->preferences ?? [];
-        $branch = $user->currentBranch ?? null;
+        $branch = $user->getCurrentBranch() ?? null;
 
         // Get saved widget order or use defaults
         $this->widgetOrder = $preferences['dashboard_widget_order'] ?? array_keys($this->availableWidgets);

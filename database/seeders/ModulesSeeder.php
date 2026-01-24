@@ -310,5 +310,33 @@ class ModulesSeeder extends Seeder
                 $moduleData
             );
         }
+
+        // Enable core modules for all branches by default
+        $this->enableCoreModulesForBranches();
+    }
+
+    /**
+     * Enable core modules for all existing branches
+     * This ensures the sidebar works correctly for all users
+     */
+    protected function enableCoreModulesForBranches(): void
+    {
+        $branches = \App\Models\Branch::select('id')->get();
+        $coreModules = Module::where('is_core', true)->get();
+
+        foreach ($branches as $branch) {
+            foreach ($coreModules as $module) {
+                \App\Models\BranchModule::updateOrCreate(
+                    [
+                        'branch_id' => $branch->id,
+                        'module_id' => $module->id,
+                    ],
+                    [
+                        'module_key' => $module->module_key,
+                        'enabled' => true,
+                    ]
+                );
+            }
+        }
     }
 }
