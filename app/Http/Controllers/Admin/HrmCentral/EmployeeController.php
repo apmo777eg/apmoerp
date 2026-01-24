@@ -14,7 +14,14 @@ class EmployeeController extends Controller
     {
         $per = min(max($request->integer('per_page', 20), 1), 100);
         $rows = HREmployee::query()
-            ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->q.'%'))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $term = '%'.$request->q.'%';
+                $q->where(function ($inner) use ($term) {
+                    $inner->where('first_name', 'like', $term)
+                        ->orWhere('last_name', 'like', $term)
+                        ->orWhere('employee_code', 'like', $term);
+                });
+            })
             ->orderByDesc('id')->paginate($per);
 
         return $this->ok($rows);
