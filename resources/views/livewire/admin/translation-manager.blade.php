@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">{{ __('Translation Management') }}</h2>
         <p class="text-gray-600 dark:text-gray-400">{{ __('Manage translations for Arabic and English languages') }}</p>

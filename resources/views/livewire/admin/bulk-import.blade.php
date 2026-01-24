@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     @section('page-header')
         <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">{{ __('Bulk Import') }}</h1>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ __('Import data from Excel, CSV files, or Google Sheets') }}</p>

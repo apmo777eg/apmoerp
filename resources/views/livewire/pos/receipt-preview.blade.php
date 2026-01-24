@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     @if($receiptData)
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-sm mx-auto p-4">
             {{-- Receipt Header --}}

@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     <div class="mb-6">
         <div class="flex items-center gap-4">
             <a href="{{ route('admin.translations.index') }}" 

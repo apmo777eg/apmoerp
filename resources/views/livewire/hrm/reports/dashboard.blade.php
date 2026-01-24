@@ -163,7 +163,7 @@
             </table>
         </div>
     </div>
-</div>
+
 
 @script
     // NEW-02/UNFIXED-01 FIX: Use @script block to prevent duplicate handler registration
@@ -249,3 +249,4 @@
         });
     }, { once: true });
 @endscript
+</div>

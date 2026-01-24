@@ -1,5 +1,4 @@
-<div>
-{{-- Branch Switcher Component - Fixed Position (Not Floating) --}}
+<div class="branch-switcher-wrapper">
 @if($canSwitch && is_array($branches) && count($branches) > 0)
 <div class="px-3 py-3 border-b border-slate-700/50 bg-slate-800/30">
     {{-- Header with Role indicator --}}
@@ -135,14 +134,10 @@
         </div>
     @endif
 </div>
-
-@script
-    // Livewire 4 FIX: Wrap with @script for proper execution timing
-    Livewire.on('branch-switched', () => {
-        // Use Livewire.navigate for SPA-friendly navigation instead of full reload
-        // This refreshes the page content while preserving SPA state
-        Livewire.navigate(window.location.href);
-    });
-@endscript
 @endif
+@script
+Livewire.on('branch-switched', () => {
+    Livewire.navigate(window.location.href);
+});
+@endscript
 </div>

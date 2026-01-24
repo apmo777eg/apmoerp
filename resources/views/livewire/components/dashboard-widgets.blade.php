@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold text-slate-800">{{ __('Quick Stats') }}</h2>
         <button 

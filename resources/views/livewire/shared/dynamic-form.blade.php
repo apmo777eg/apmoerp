@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
 @php
     $dir = app()->getLocale() === 'ar' ? 'rtl' : 'ltr';
     $gridCols = match($columns ?? 1) {

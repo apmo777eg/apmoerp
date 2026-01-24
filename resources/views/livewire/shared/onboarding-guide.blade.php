@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     {{-- Onboarding Trigger Button (optional - can be placed in header) --}}
     @if(!$showGuide)
         <button 

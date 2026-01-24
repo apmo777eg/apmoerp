@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     @section('page-title', __('Purchase Returns'))
 
     <div class="erp-page-container">

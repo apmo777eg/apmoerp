@@ -1,4 +1,4 @@
-<div>
+<div class="lw-component">
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
