@@ -73,8 +73,9 @@ class Index extends Component
                 $term = '%'.$this->search.'%';
 
                 $q->whereHas('employee', function ($employeeQuery) use ($term) {
-                    $employeeQuery->where('name', 'like', $term)
-                        ->orWhere('code', 'like', $term);
+                    $employeeQuery->where('first_name', 'like', $term)
+                        ->orWhere('last_name', 'like', $term)
+                        ->orWhere('employee_code', 'like', $term);
                 });
             })
             ->when($this->status, function ($q) {

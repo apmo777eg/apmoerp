@@ -197,10 +197,13 @@ class HREmployee extends BaseModel
 
     public function setSalaryAttribute($value)
     {
-        // Convert to decimal with 4 decimal places for consistency
-        $this->attributes['basic_salary'] = $value !== null && $value !== '' 
-            ? (string) number_format((float) $value, 4, '.', '') 
-            : null;
+        // Let Eloquent's decimal:4 casting handle the conversion
+        // Just ensure we pass a numeric value or null
+        if ($value === null || $value === '') {
+            $this->attributes['basic_salary'] = null;
+        } else {
+            $this->attributes['basic_salary'] = $value;
+        }
     }
 
     public function getDateOfBirthAttribute()
@@ -221,8 +224,9 @@ class HREmployee extends BaseModel
     protected static function booted(): void
     {
         static::creating(function (self $employee): void {
+            // Generate employee code if not already set
             if (empty($employee->employee_code)) {
-                $employee->employee_code = $employee->code ?? 'EMP-'.Str::upper(Str::random(8));
+                $employee->employee_code = 'EMP-'.Str::upper(Str::random(8));
             }
             
             // Sync is_active with status on creation

@@ -101,8 +101,9 @@ class Index extends Component
                 $term = '%'.$this->search.'%';
 
                 $q->where(function ($inner) use ($term) {
-                    $inner->where('name', 'like', $term)
-                        ->orWhere('code', 'like', $term)
+                    $inner->where('first_name', 'like', $term)
+                        ->orWhere('last_name', 'like', $term)
+                        ->orWhere('employee_code', 'like', $term)
                         ->orWhere('position', 'like', $term)
                         ->orWhere('phone', 'like', $term)
                         ->orWhere('email', 'like', $term)
