@@ -26,7 +26,7 @@ class Index extends Component
 
     public function mount(): void
     {
-        $this->authorize('purchases.manage');
+        $this->authorize('purchases.view');
     }
 
     public function updatingSearch()
