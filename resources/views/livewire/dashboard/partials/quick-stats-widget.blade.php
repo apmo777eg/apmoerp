@@ -1,4 +1,3 @@
-{{-- Quick Stats Widget --}}
 <div class="grid gap-4 sm:grid-cols-3">
     <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex items-center gap-4">
         <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">

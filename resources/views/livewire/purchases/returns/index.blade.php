@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/purchases/returns/index.blade.php --}}
 <div>
     @section('page-title', __('Purchase Returns'))
 

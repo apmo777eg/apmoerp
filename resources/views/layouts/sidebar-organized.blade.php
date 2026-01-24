@@ -1,2 +1,2 @@
 {{-- Organized sidebar wrapper to keep compatibility with existing layout --}}
-@include('layouts.sidebar')
+@include('layouts.sidebar-new')

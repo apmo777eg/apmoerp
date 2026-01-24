@@ -1,9 +1,9 @@
+<div class="p-6 max-w-4xl mx-auto">
 @php
     $locale = app()->getLocale();
     $dir = $locale === 'ar' ? 'rtl' : 'ltr';
 @endphp
 
-<div class="p-6 max-w-4xl mx-auto">
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-800">{{ __('My Profile') }}</h1>
         <p class="text-slate-500">{{ __('Manage your account settings and change your password') }}</p>

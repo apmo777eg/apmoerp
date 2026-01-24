@@ -1,4 +1,3 @@
-{{-- Performance Insights Widget --}}
 <div class="grid gap-4 lg:grid-cols-3">
     @php
         $weeklyChange = $trendIndicators['weekly_sales']['change'] ?? 0;

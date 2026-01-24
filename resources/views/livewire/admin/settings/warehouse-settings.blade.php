@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/admin/settings/warehouse-settings.blade.php --}}
 <div class="space-y-6">
     <div>
         <h2 class="text-2xl font-bold text-slate-800">{{ __('Warehouse Settings') }}</h2>

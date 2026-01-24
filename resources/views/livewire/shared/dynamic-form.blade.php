@@ -1,16 +1,4 @@
-{{-- resources/views/livewire/shared/dynamic-form.blade.php --}}
-{{--
-SECURITY (V37-XSS-07): XSS Prevention via sanitize_svg_icon()
-=============================================================
-This component uses unescaped Blade output for the $icon field from form schema. This is safe because:
-1. $icon content is passed through sanitize_svg_icon() which uses DOM-based
-   allow-list sanitization (see app/Helpers/helpers.php for details)
-2. Form schemas are defined by developers in PHP code, not user input
-3. Even if icon data were manipulated, sanitize_svg_icon() blocks dangerous content
-
-Static analysis tools may flag unescaped output as XSS risks. This is a false positive
-when the content is passed through sanitize_svg_icon().
---}}
+<div>
 @php
     $dir = app()->getLocale() === 'ar' ? 'rtl' : 'ltr';
     $gridCols = match($columns ?? 1) {
@@ -20,8 +8,8 @@ when the content is passed through sanitize_svg_icon().
         default => 'grid-cols-1'
     };
 @endphp
-
 <form wire:submit.prevent="submit" class="space-y-6 {{ $dir === 'rtl' ? 'text-right' : 'text-left' }}">
+
     <div class="grid {{ $gridCols }} gap-4">
         @foreach ($schema as $field)
             @php
@@ -338,3 +326,4 @@ when the content is passed through sanitize_svg_icon().
         @endif
     </div>
 </form>
+</div>

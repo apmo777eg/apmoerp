@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/components/export-column-selector.blade.php --}}
 <div>
     <button type="button" wire:click="openModal" class="erp-btn erp-btn-secondary flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,14 +1,4 @@
-{{-- Module Stats Widget (Generic template for module-specific widgets) --}}
-{{-- 
-    Expected $widgetConfig structure:
-    [
-        'key' => string,        // Widget identifier (e.g., 'motorcycle_stats')
-        'title' => string,      // English title
-        'title_ar' => string,   // Arabic title (optional)
-        'icon' => string,       // Emoji icon
-        'module' => string,     // Module name (e.g., 'motorcycle', 'spares')
-    ]
---}}
+<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
 @php
     $widgetKey = $widgetConfig['key'] ?? 'unknown';
     $widgetTitle = $widgetConfig['title_ar'] ?? $widgetConfig['title'] ?? __('Module Statistics');
@@ -18,7 +8,7 @@
     // Get module stats from the parent component if available
     $moduleStats = $moduleStatsData[$moduleName] ?? null;
 @endphp
-<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+
     <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
             <span class="text-2xl">{{ $widgetIcon }}</span>

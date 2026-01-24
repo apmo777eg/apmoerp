@@ -1,9 +1,9 @@
+<div class="p-6">
 @php
     $locale = app()->getLocale();
     $dir = $locale === 'ar' ? 'rtl' : 'ltr';
 @endphp
 
-<div class="p-6">
     <div class="mb-6">
         <div class="flex items-center justify-between">
             <div>

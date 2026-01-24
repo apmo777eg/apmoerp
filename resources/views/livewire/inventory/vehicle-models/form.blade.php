@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/inventory/vehicle-models/form.blade.php --}}
 <div class="mx-auto max-w-2xl space-y-6">
     {{-- Header --}}
     <div class="flex items-center justify-between">

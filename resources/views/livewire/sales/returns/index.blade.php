@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/sales/returns/index.blade.php --}}
 <div>
     @section('page-title', __('Sales Returns'))
 

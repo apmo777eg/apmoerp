@@ -1,4 +1,3 @@
-{{-- Low Stock Widget --}}
 <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-slate-800 dark:text-white">{{ __('Low Stock Alerts') }}</h3>

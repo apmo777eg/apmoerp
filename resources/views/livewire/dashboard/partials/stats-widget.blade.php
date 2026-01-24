@@ -1,4 +1,3 @@
-{{-- Stats Cards Widget --}}
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <div class="rounded-2xl border border-emerald-100 dark:border-emerald-900 bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/30">
         <div class="flex items-center justify-between">

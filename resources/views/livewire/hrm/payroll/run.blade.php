@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/hrm/payroll/run.blade.php --}}
 <div class="space-y-4 max-w-xl">
     <div>
         <h1 class="text-lg font-semibold text-slate-800 dark:text-slate-100">

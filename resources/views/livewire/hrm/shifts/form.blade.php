@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/hrm/shifts/form.blade.php --}}
 <div class="space-y-6 max-w-3xl mx-auto">
     <div class="flex items-center justify-between gap-2">
         <div>

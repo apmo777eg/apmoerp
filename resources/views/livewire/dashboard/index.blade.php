@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/dashboard/index.blade.php --}}
 <div class="space-y-6">
     {{-- Loading Overlay --}}
     <div wire:loading wire:target="refreshData" class="loading-overlay flex items-center justify-center bg-slate-900/50">

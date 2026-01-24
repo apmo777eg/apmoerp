@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/hrm/payroll/index.blade.php --}}
 <div class="space-y-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>

@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/dashboard/quick-actions.blade.php --}}
 <div class="space-y-4">
     <h3 class="text-lg font-semibold text-slate-700">{{ __('Quick Actions') }}</h3>
     

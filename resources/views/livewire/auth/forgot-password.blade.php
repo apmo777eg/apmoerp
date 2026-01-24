@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/auth/forgot-password.blade.php --}}
 <div class="space-y-4">
     <div class="space-y-1 text-center">
         <h1 class="text-lg font-semibold text-slate-800 dark:text-white">

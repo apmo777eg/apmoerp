@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/command-palette.blade.php --}}
 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
     {{-- Search Input --}}
     <div class="relative">

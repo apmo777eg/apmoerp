@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/notifications/dropdown.blade.php --}}
 <div
     x-data="{ open: false }"
     x-on:click.outside="open = false"

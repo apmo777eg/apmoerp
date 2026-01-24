@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/admin/settings/branch-settings.blade.php --}}
 <div class="space-y-4">
     <div class="flex flex-col gap-1">
         <h1 class="text-lg font-semibold text-slate-800">

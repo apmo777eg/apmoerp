@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/admin/settings/purchases-settings.blade.php --}}
 <div class="space-y-6">
     <div>
         <h2 class="text-2xl font-bold text-slate-800">{{ __('Purchase Settings') }}</h2>

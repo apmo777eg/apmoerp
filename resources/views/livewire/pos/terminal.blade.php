@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/pos/terminal.blade.php --}}
 <div
     x-data="erpPosTerminal({ 
         branchId: {{ $branchId }},

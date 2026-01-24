@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/inventory/vehicle-models.blade.php --}}
 <div class="space-y-4">
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

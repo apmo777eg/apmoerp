@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/inventory/products/index.blade.php --}}
 <div class="space-y-4">
     {{-- Global Loading Overlay --}}
     <div wire:loading.delay class="loading-overlay bg-slate-900/20 flex items-center justify-center">

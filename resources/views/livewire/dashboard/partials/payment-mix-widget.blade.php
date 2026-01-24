@@ -1,9 +1,9 @@
-{{-- Payment Mix Widget --}}
+<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
 @php
     $totalPayments = array_sum($paymentMethodsData['data'] ?? []);
     $totalPaymentAmount = array_sum($paymentMethodsData['totals'] ?? []);
 @endphp
-<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+
     <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-semibold text-slate-800 dark:text-white">{{ __('Payment mix (This month)') }}</h3>
         <span class="text-xs text-slate-500 dark:text-slate-400">{{ __('Total') }}: {{ number_format($totalPaymentAmount ?? 0, 2) }} {{ __('EGP') }}</span>

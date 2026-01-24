@@ -1,9 +1,3 @@
-{{-- resources/views/livewire/shared/global-search.blade.php --}}
-{{-- 
-    Global Search using Livewire 4 #[Json] actions
-    The search is handled client-side with Alpine.js calling $wire.search() 
-    which returns JSON without rerendering the component.
---}}
 <div 
     class="relative"
     x-data="{

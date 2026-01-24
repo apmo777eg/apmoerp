@@ -1,21 +1,8 @@
-{{-- resources/views/livewire/shared/dynamic-table.blade.php --}}
-{{--
-SECURITY (V37-XSS-08): XSS Prevention via sanitize_svg_icon()
-=============================================================
-This component uses unescaped Blade output for action icons. This is safe because:
-1. Action icons are passed through sanitize_svg_icon() which uses DOM-based
-   allow-list sanitization (see app/Helpers/helpers.php for details)
-2. Action definitions come from developer-controlled PHP code, not user input
-3. Even if icon data were manipulated, sanitize_svg_icon() blocks dangerous content
-
-Static analysis tools may flag unescaped output as XSS risks. This is a false positive
-when the content is passed through sanitize_svg_icon().
---}}
+<div class="space-y-4">
 @php
     $dir = app()->getLocale() === 'ar' ? 'rtl' : 'ltr';
 @endphp
 
-<div class="space-y-4">
     {{-- Filters Bar --}}
     @if ($showSearch || $showFilters || !empty($filters))
         <div class="erp-card p-4">

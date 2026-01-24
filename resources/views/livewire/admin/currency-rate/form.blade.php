@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/admin/currency-rate/form.blade.php --}}
 <div class="space-y-4">
     <div class="flex items-center justify-between gap-2">
         <div>

@@ -1,4 +1,3 @@
-{{-- resources/views/livewire/admin/settings/system-settings.blade.php --}}
 <div class="space-y-6">
 
     {{-- Header --}}

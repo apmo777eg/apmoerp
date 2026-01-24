@@ -1,5 +1,3 @@
-@section('title', __('Two-Factor Authentication'))
-
 <div class="text-center">
     <div class="mb-6">
         <div class="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
