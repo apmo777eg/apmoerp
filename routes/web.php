@@ -1097,6 +1097,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('can:branches.manage')
             ->whereNumber('branch');
 
+        Route::get('/branches/compare', \App\Livewire\Admin\Branches\Compare::class)
+            ->name('branches.compare')
+            ->middleware('can:branches.manage');
+
         // Modules Management
         Route::get('/modules', ModulesIndexPage::class)
             ->name('modules.index')
@@ -1338,6 +1342,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/templates', ReportTemplatesManager::class)
                 ->name('templates')
                 ->middleware('can:reports.templates');
+
+            Route::get('/advanced-analytics', \App\Livewire\Admin\Analytics\AdvancedDashboard::class)
+                ->name('advanced-analytics')
+                ->middleware('can:reports.view');
         });
 
         // Export customization
