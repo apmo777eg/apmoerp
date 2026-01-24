@@ -1,4 +1,4 @@
-<form wire:submit.prevent="submit" class="space-y-6 {{ (app()->getLocale() === 'ar' ? 'rtl' : 'ltr') === 'rtl' ? 'text-right' : 'text-left' }}">
+<div>
 @php
     $dir = app()->getLocale() === 'ar' ? 'rtl' : 'ltr';
     $gridCols = match($columns ?? 1) {
@@ -8,6 +8,7 @@
         default => 'grid-cols-1'
     };
 @endphp
+<form wire:submit.prevent="submit" class="space-y-6 {{ $dir === 'rtl' ? 'text-right' : 'text-left' }}">
 
     <div class="grid {{ $gridCols }} gap-4">
         @foreach ($schema as $field)
@@ -325,3 +326,4 @@
         @endif
     </div>
 </form>
+</div>
