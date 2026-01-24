@@ -314,6 +314,21 @@
                         preventDefault();
                         window.erpHandleSessionExpired(status);
                     }
+                    // Handle 403 Forbidden - redirect to dashboard with message
+                    if (status === 403) {
+                        preventDefault();
+                        if (window.erpShowNotification) {
+                            window.erpShowNotification('{{ __("You do not have permission to perform this action.") }}', 'error');
+                        }
+                        // Redirect to dashboard after a short delay
+                        setTimeout(() => {
+                            if (window.Livewire && typeof Livewire.navigate === 'function') {
+                                Livewire.navigate('{{ route("dashboard") }}');
+                            } else {
+                                window.location.href = '{{ route("dashboard") }}';
+                            }
+                        }, 1500);
+                    }
                 });
             });
         });

@@ -11,7 +11,7 @@
  * - IndexedDB for offline data storage
  */
 
-const CACHE_VERSION = 'v1.1.0';
+const CACHE_VERSION = 'v1.2.0';
 const CACHE_NAME = `hugouserp-${CACHE_VERSION}`;
 const API_CACHE_NAME = `hugouserp-api-${CACHE_VERSION}`;
 const DB_NAME = 'hugouserp-offline';
@@ -239,7 +239,7 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Skip non-GET requests
+    // Skip non-GET requests (Livewire uses POST for updates)
     if (request.method !== 'GET') {
         return;
     }
@@ -249,8 +249,14 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Skip livewire internal requests
-    if (url.pathname.includes('/livewire/')) {
+    // Skip livewire internal requests (both URL and header-based detection)
+    if (url.pathname.includes('/livewire/') || request.headers.get('X-Livewire')) {
+        return;
+    }
+    
+    // Skip requests with Livewire-specific content types
+    const acceptHeader = request.headers.get('accept') || '';
+    if (acceptHeader.includes('application/json') && request.headers.get('X-Livewire')) {
         return;
     }
 

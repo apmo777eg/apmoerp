@@ -1059,6 +1059,52 @@
 
     {{-- Sidebar Navigation --}}
     <nav class="erp-sidebar-nav" x-show="!isSearching()" data-sidebar-main-nav>
+        @if(empty($filteredSections))
+            {{-- Fallback when no menu items are visible due to permissions --}}
+            <div class="erp-sidebar-section">
+                <div class="px-3 py-4">
+                    <div class="flex flex-col items-center text-center gap-3 py-8">
+                        <div class="w-16 h-16 flex items-center justify-center rounded-full bg-slate-800/50">
+                            <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm text-slate-400">{{ __('No modules available.') }}</p>
+                        <p class="text-xs text-slate-500">{{ __('Please contact your administrator if you believe this is an error.') }}</p>
+                    </div>
+                </div>
+                
+                {{-- Always show Profile and Logout --}}
+                <div class="erp-sidebar-items border-t border-slate-700/50 pt-3 mt-3">
+                    @if(Route::has('profile.edit'))
+                    <a 
+                        href="{{ route('profile.edit') }}"
+                        @click="sidebarOpen = false"
+                        class="erp-sidebar-item"
+                    >
+                        <span class="erp-sidebar-item-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </span>
+                        <span>{{ __('Profile') }}</span>
+                    </a>
+                    @endif
+                    
+                    <form method="POST" action="{{ route('logout') }}" class="w-full">
+                        @csrf
+                        <button type="submit" class="erp-sidebar-item w-full text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                            <span class="erp-sidebar-item-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                            </span>
+                            <span>{{ __('Logout') }}</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
         @foreach($filteredSections as $sectionIndex => $section)
             <div class="erp-sidebar-section">
                 {{-- Section Header --}}
