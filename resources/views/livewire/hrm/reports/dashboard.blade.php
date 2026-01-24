@@ -166,7 +166,6 @@
 </div>
 
 @script
-<script>
     // NEW-02/UNFIXED-01 FIX: Use @script block to prevent duplicate handler registration
     // Charts are now scoped to this component and properly cleaned up on navigation
     const componentId = 'hrm-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
@@ -232,10 +231,10 @@
     
     // Load Chart.js if not already loaded, then initialize
     if (typeof Chart === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = initHRMCharts;
-        document.head.appendChild(script);
+        const scriptEl = document.createElement('script');
+        scriptEl.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        scriptEl.onload = initHRMCharts;
+        document.head.appendChild(scriptEl);
     } else {
         initHRMCharts();
     }
@@ -249,5 +248,4 @@
             }
         });
     }, { once: true });
-</script>
 @endscript

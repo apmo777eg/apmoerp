@@ -84,9 +84,15 @@ class PermissionsSeeder extends Seeder
         return [
             'system.view-notifications',
             'system.backup.manage',
+            'system.impersonate',
             'impersonate.users',
             'access-all-branches',
             'import.manage',
+            'audit.view',
+            'files.view',
+            'files.delete',
+            'permissions.view',
+            'permissions.manage',
         ];
     }
 
@@ -100,11 +106,11 @@ class PermissionsSeeder extends Seeder
     protected function getUserPermissions(): array
     {
         return [
+            'users.view',
             'users.manage',
             'users.create',
             'users.edit',
-            'view',
-            'update',
+            'users.update',
         ];
     }
 
@@ -127,6 +133,8 @@ class PermissionsSeeder extends Seeder
             'branches.update',
             'branches.manage',
             'branches.settings',
+            'branches.modules.view',
+            'branches.modules.manage',
             'branch.employees.manage',
             'branch.reports.view',
             'branch.settings.manage',
@@ -152,6 +160,7 @@ class PermissionsSeeder extends Seeder
             'pos.use',
             'pos.offline.report.view',
             'pos.daily-report.view',
+            'pos.session.manage',
         ];
     }
 
@@ -175,6 +184,8 @@ class PermissionsSeeder extends Seeder
             'products.view-cost',
             'products.create',
             'products.update',
+            'products.manage',
+            'products.delete',
             'products.import',
             'products.image.upload',
             'stock.adjust',
@@ -206,6 +217,7 @@ class PermissionsSeeder extends Seeder
             'sales.export',
             'sales.import',
             'sales.installments.view',
+            'sales.orders.create',
         ];
     }
 
@@ -221,9 +233,12 @@ class PermissionsSeeder extends Seeder
             'purchases.pay',
             'purchases.receive',
             'purchases.return',
+            'purchases.import',
+            'purchases.export',
             'purchases.requisitions.view',
             'purchases.requisitions.create',
             'purchases.requisitions.approve',
+            'purchases.requisitions.manage',
             'grn.create',
             'grn.update',
             'grn.delete',
@@ -480,7 +495,10 @@ class PermissionsSeeder extends Seeder
     protected function getModulePermissions(): array
     {
         return [
+            'modules.view',
             'modules.manage',
+            'modules.fields.view',
+            'modules.fields.manage',
         ];
     }
 

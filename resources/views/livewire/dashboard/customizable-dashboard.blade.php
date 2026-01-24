@@ -180,7 +180,6 @@
 </div>
 
 @script
-<script>
 // UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
 const componentId = 'customizable-dashboard-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
 
@@ -300,19 +299,19 @@ function checkAllLoaded() {
 }
 
 if (typeof Chart === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-    script.onload = checkAllLoaded;
-    document.head.appendChild(script);
+    const scriptEl = document.createElement('script');
+    scriptEl.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    scriptEl.onload = checkAllLoaded;
+    document.head.appendChild(scriptEl);
 } else {
     checkAllLoaded();
 }
 
 if (typeof Sortable === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
-    script.onload = checkAllLoaded;
-    document.head.appendChild(script);
+    const sortableScript = document.createElement('script');
+    sortableScript.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
+    sortableScript.onload = checkAllLoaded;
+    document.head.appendChild(sortableScript);
 } else {
     checkAllLoaded();
 }
@@ -330,5 +329,4 @@ document.addEventListener('livewire:navigating', () => {
         delete window.__lwSortables[componentId];
     }
 }, { once: true });
-</script>
 @endscript

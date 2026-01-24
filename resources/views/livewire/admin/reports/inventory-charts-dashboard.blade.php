@@ -35,7 +35,6 @@
     </div>
 
 @script
-<script>
 // UNFIXED-01 FIX: Use @script block for proper Livewire 4 component-scoped JavaScript
 const componentId = 'inventory-charts-' + ($wire.__instance?.id ?? Math.random().toString(36).substr(2, 9));
 
@@ -81,10 +80,10 @@ function initInventoryChart(data = {}) {
 
 // Load Chart.js if not already loaded
 if (typeof Chart === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-    script.onload = () => initInventoryChart();
-    document.head.appendChild(script);
+    const scriptEl = document.createElement('script');
+    scriptEl.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    scriptEl.onload = () => initInventoryChart();
+    document.head.appendChild(scriptEl);
 } else {
     initInventoryChart();
 }
@@ -102,6 +101,5 @@ document.addEventListener('livewire:navigating', () => {
         delete window.__lwCharts[componentId + ':lowStock'];
     }
 }, { once: true });
-</script>
 @endscript
 </div>

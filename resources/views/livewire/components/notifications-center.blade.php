@@ -135,7 +135,6 @@
 </div>
 
 @script
-<script>
     // NEW-01 FIX: Use Livewire's component-scoped cleanup mechanism
     // The $cleanup function may not be available in all Livewire 4.0.x versions
     // Using a guard pattern with livewire:navigating event for cleanup instead
@@ -165,5 +164,4 @@
     
     // Listen for navigation events to clean up
     document.addEventListener('livewire:navigating', cleanup, { once: true });
-</script>
 @endscript
