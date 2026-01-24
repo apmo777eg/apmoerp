@@ -128,7 +128,7 @@ class GlobalSearchService
         ],
         'employees' => [
             'model' => HREmployee::class,
-            'title' => ['first_name', 'last_name', 'email'],
+            'title' => ['name', 'code', 'email'],
             'content' => ['phone', 'position'],
             'icon' => '👨‍💼',
             'route' => 'hrm.employees.show',

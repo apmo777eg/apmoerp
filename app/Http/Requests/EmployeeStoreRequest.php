@@ -19,7 +19,7 @@ class EmployeeStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_code' => $this->flexibleCode(required: true, max: 50), // Allow separators in employee codes
+            'code' => $this->flexibleCode(required: true, max: 50), // Allow separators in employee codes
             'name' => $this->multilingualString(required: true, max: 255),
             'email' => ['required', 'email', 'max:255', 'unique:hr_employees,email'],
             'phone' => ['required', 'string', 'max:20'],

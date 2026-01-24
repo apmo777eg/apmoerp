@@ -55,11 +55,9 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete()
                 ->name('fk_hremp_user__usr');
-            $table->string('employee_code', 50);
-            $table->string('first_name', 100);
-            $table->string('last_name', 100);
-            $table->string('first_name_ar', 100)->nullable();
-            $table->string('last_name_ar', 100)->nullable();
+            $table->string('code', 50)->unique(); // Employee code (searchable, unique)
+            $table->string('name', 255); // Full employee name (searchable)
+            $table->string('name_ar', 255)->nullable(); // Full Arabic name
             $table->string('email', 191)->nullable();
             $table->string('phone', 50)->nullable();
             $table->string('mobile', 50)->nullable();
@@ -90,7 +88,7 @@ return new class extends Migration
             $table->string('employment_type', 30)->default('full_time'); // full_time, part_time, contract, intern
             $table->string('status', 30)->default('active'); // active, probation, on_leave, terminated, resigned
             $table->boolean('is_active')->default(true);
-            $table->decimal('basic_salary', 18, 4)->default(0);
+            $table->decimal('salary', 18, 4)->default(0);
             $table->string('salary_currency', 10)->default('USD');
             $table->string('payment_method', 50)->nullable();
             $table->string('bank_name', 100)->nullable();
@@ -114,7 +112,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['branch_id', 'employee_code'], 'uq_hremp_branch_code');
             $table->index('branch_id', 'idx_hremp_branch_id');
             $table->index('user_id', 'idx_hremp_user_id');
             $table->index('department', 'idx_hremp_department');
@@ -502,7 +499,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('month');
             $table->string('status', 30)->default('draft'); // draft, calculated, approved, paid
             // Earnings
-            $table->decimal('basic_salary', 18, 4)->default(0);
+            $table->decimal('salary', 18, 4)->default(0);
             $table->decimal('housing_allowance', 18, 4)->default(0);
             $table->decimal('transport_allowance', 18, 4)->default(0);
             $table->decimal('meal_allowance', 18, 4)->default(0);

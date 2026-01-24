@@ -69,11 +69,11 @@ class ImportService
             ],
             'employees' => [
                 'name' => __('Employees'),
-                'required_columns' => ['first_name', 'last_name'],
+                'required_columns' => ['code', 'name'],
                 'optional_columns' => ['email', 'phone', 'department', 'position', 'hire_date', 'salary', 'address', 'emergency_contact'],
                 'validation_rules' => [
-                    'first_name' => 'required|string|max:255',
-                    'last_name' => 'required|string|max:255',
+                    'code' => 'required|string|max:50',
+                    'name' => 'required|string|max:255',
                     'email' => 'nullable|email|max:255',
                     'phone' => 'nullable|string|max:50',
                     'department' => 'nullable|string|max:100',

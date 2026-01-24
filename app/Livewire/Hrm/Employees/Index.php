@@ -133,7 +133,7 @@ class Index extends Component
         $totalEmployees = (clone $baseQuery)->count();
         $activeEmployees = (clone $baseQuery)->where('is_active', true)->count();
         $inactiveEmployees = $totalEmployees - $activeEmployees;
-        $totalSalary = (clone $baseQuery)->where('is_active', true)->sum('basic_salary');
+        $totalSalary = (clone $baseQuery)->where('is_active', true)->sum('salary');
 
         // Get departments/positions for filter - combine null and empty check
         $departments = HREmployee::query()

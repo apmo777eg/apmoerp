@@ -22,12 +22,10 @@ class HREmployee extends BaseModel
     protected $fillable = [
         'branch_id',
         'user_id',
-        'employee_code',
+        'code',
+        'name',
+        'name_ar',
         // Personal info
-        'first_name',
-        'last_name',
-        'first_name_ar',
-        'last_name_ar',
         'email',
         'phone',
         'mobile',
@@ -58,7 +56,7 @@ class HREmployee extends BaseModel
         'status',
         'is_active',
         // Salary info
-        'basic_salary',
+        'salary',
         'salary_currency',
         'payment_method',
         'bank_name',
@@ -87,7 +85,7 @@ class HREmployee extends BaseModel
 
     protected $casts = [
         'is_active' => 'boolean',
-        'basic_salary' => 'decimal:4',
+        'salary' => 'decimal:4',
         'housing_allowance' => 'decimal:4',
         'transport_allowance' => 'decimal:4',
         'meal_allowance' => 'decimal:4',
@@ -158,16 +156,6 @@ class HREmployee extends BaseModel
     }
 
     // Backward compatibility accessors
-    public function getNameAttribute(): string
-    {
-        return trim($this->first_name.' '.$this->last_name);
-    }
-
-    public function getSalaryAttribute()
-    {
-        return $this->basic_salary;
-    }
-
     public function getDateOfBirthAttribute()
     {
         return $this->birth_date;
@@ -180,14 +168,15 @@ class HREmployee extends BaseModel
 
     public function getFullNameArAttribute(): string
     {
-        return trim(($this->first_name_ar ?? '').' '.($this->last_name_ar ?? ''));
+        return $this->name_ar ?? '';
     }
 
     protected static function booted(): void
     {
         static::creating(function (self $employee): void {
-            if (empty($employee->employee_code)) {
-                $employee->employee_code = $employee->code ?? 'EMP-'.Str::upper(Str::random(8));
+            // Auto-generate code if empty
+            if (empty($employee->code)) {
+                $employee->code = 'EMP-'.Str::upper(Str::random(8));
             }
             
             // Sync is_active with status on creation

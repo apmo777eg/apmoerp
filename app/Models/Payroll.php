@@ -17,7 +17,7 @@ class Payroll extends BaseModel
         'year',
         'month',
         'status',
-        'basic_salary',
+        'salary',
         'housing_allowance',
         'transport_allowance',
         'meal_allowance',
@@ -50,7 +50,7 @@ class Payroll extends BaseModel
     ];
 
     protected $casts = [
-        'basic_salary' => 'decimal:4',
+        'salary' => 'decimal:4',
         'housing_allowance' => 'decimal:4',
         'transport_allowance' => 'decimal:4',
         'meal_allowance' => 'decimal:4',

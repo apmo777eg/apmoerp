@@ -34,7 +34,7 @@ class PayslipService
     public function getPayslipBreakdown(Payroll $payroll): array
     {
         return [
-            'basic_salary' => [
+            'salary' => [
                 'label' => __('Basic Salary'),
                 'amount' => $payroll->basic,
                 'type' => 'earning',
@@ -367,13 +367,13 @@ class PayslipService
                 $attributes = $properties['attributes'] ?? [];
                 $old = $properties['old'] ?? [];
 
-                // Check if basic_salary was changed
-                if (isset($attributes['basic_salary']) && isset($old['basic_salary'])) {
+                // Check if salary was changed
+                if (isset($attributes['salary']) && isset($old['salary'])) {
                     $changes[] = [
                         'effective_date' => $activity->created_at->format('Y-m-d'),
                         // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                        'old_salary' => decimal_float($old['basic_salary']),
-                        'new_salary' => decimal_float($attributes['basic_salary']),
+                        'old_salary' => decimal_float($old['salary']),
+                        'new_salary' => decimal_float($attributes['salary']),
                     ];
                 }
             }

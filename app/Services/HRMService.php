@@ -130,7 +130,7 @@ class HRMService implements HRMServiceInterface
                             'employee_id' => $emp->getKey(),
                             'year' => $year,
                             'month' => $month,
-                            'basic_salary' => $basic,
+                            'salary' => $basic,
                             'housing_allowance' => $housingAllowance,
                             'transport_allowance' => $transportAllowance,
                             'other_allowances' => $otherAllowance,

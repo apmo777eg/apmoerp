@@ -18,7 +18,7 @@ class EmployeeUpdateRequest extends FormRequest
         $employeeId = $this->route('employee') ? $this->route('employee')->id : 'NULL';
 
         return [
-            'employee_code' => ['sometimes', 'required', 'string', 'max:50', 'unique:hr_employees,employee_code,'.$employeeId],
+            'code' => ['sometimes', 'required', 'string', 'max:50', 'unique:hr_employees,code,'.$employeeId],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:hr_employees,email,'.$employeeId],
             'phone' => ['sometimes', 'required', 'string', 'max:20'],
