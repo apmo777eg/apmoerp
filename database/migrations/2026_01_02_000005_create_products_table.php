@@ -36,7 +36,6 @@ return new class extends Migration
             
             // Basic info
             $table->string('name', 191);
-            $table->string('code', 50)->nullable();
             $table->string('sku', 100);
             $table->string('barcode', 100)->nullable();
             $table->string('thumbnail', 500)->nullable();

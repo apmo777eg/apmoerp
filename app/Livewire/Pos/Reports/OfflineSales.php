@@ -11,7 +11,6 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Layout('layouts.app')]
 class OfflineSales extends Component
 {
     use WithPagination;
@@ -28,6 +27,7 @@ class OfflineSales extends Component
 
     public ?string $dateTo = null;
 
+    #[Layout('layouts.app')]
     public function mount(): void
     {
         $user = Auth::user();

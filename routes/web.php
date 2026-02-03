@@ -139,11 +139,8 @@ Route::get('/csrf-token', function () {
 // Export download endpoint - handles file downloads from exports
 Route::get('/download/export', function () {
     try {
-        // V78-FIX: Use actual_user_id() to handle impersonation correctly
-        $currentUserId = actual_user_id() ?? auth()->id();
-        
         logger()->info('Export download requested', [
-            'user_id' => $currentUserId,
+            'user_id' => auth()->id(),
             'session_has_export' => session()->has('export_file'),
         ]);
 
@@ -152,15 +149,15 @@ Route::get('/download/export', function () {
         if (! $exportInfo || ! isset($exportInfo['path'], $exportInfo['name'], $exportInfo['user_id'])) {
             logger()->warning('Export file not found in session', [
                 'export_info' => $exportInfo,
-                'user_id' => $currentUserId,
+                'user_id' => auth()->id(),
             ]);
             abort(404, 'Export file not found or expired');
         }
 
-        if ((int) $exportInfo['user_id'] !== $currentUserId) {
+        if ((int) $exportInfo['user_id'] !== auth()->id()) {
             logger()->warning('Unauthorized export download attempt', [
                 'file_user_id' => $exportInfo['user_id'],
-                'current_user_id' => $currentUserId,
+                'current_user_id' => auth()->id(),
             ]);
             abort(403, 'You are not authorized to download this export');
         }

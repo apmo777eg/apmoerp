@@ -14,7 +14,7 @@
 {{-- Use x-teleport to render modal at body level, escaping any parent CSS context --}}
 <template x-teleport="body">
     <div 
-        x-data="{ open: @entangle('showExportModal') }"
+        x-data="{ open: true }"
         x-show="open"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0"
