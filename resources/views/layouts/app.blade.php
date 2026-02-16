@@ -52,8 +52,12 @@
         button, input, select, textarea { max-width: 100%; }
 
         /* Performance optimizations */
-        .erp-card, .sidebar-link, table {
+        /* NOTE: Avoid paint containment on `.erp-card` to prevent clipping dropdowns/tooltips (e.g. icon pickers). */
+        .sidebar-link, table {
             contain: content;
+        }
+        .erp-card {
+            contain: layout style;
         }
         
         /* Hardware acceleration for animations */
@@ -312,6 +316,8 @@
             let serverErrorCount = 0;
             const MAX_SERVER_ERRORS = 3;
             const ERROR_RESET_MS = 30000; // Reset counter after 30 seconds
+            let lastServerErrorToastAt = 0;
+            const ERROR_TOAST_THROTTLE_MS = 8000; // Avoid spamming the user
             
             Livewire.hook('commit', ({ fail }) => {
                 fail(({ status, preventDefault }) => {
@@ -340,16 +346,34 @@
                         serverErrorCount++;
                         clearTimeout(window.__erpErrorResetTimer);
                         window.__erpErrorResetTimer = setTimeout(() => { serverErrorCount = 0; }, ERROR_RESET_MS);
-                        
+
+                        // Notify user (throttled)
+                        const now = Date.now();
+                        if (now - lastServerErrorToastAt > ERROR_TOAST_THROTTLE_MS) {
+                            lastServerErrorToastAt = now;
+                            if (window.erpShowNotification) {
+                                window.erpShowNotification('{{ __("Server error. Please try again.") }}', 'error');
+                            } else if (window.erpShowToast) {
+                                window.erpShowToast('{{ __("Server error. Please try again.") }}', { type: 'error' });
+                            }
+                        }
+
                         if (serverErrorCount < MAX_SERVER_ERRORS) {
                             @if(config('app.debug'))
                             console.error('[ERP] Server error (500) on Livewire request. Error count:', serverErrorCount);
                             @endif
                         } else {
+                            // After repeated failures, suggest a full reload.
+                            if (window.erpShowNotification) {
+                                window.erpShowNotification('{{ __("Multiple server errors detected. Please reload the page.") }}', 'error');
+                            } else if (window.erpShowToast) {
+                                window.erpShowToast('{{ __("Multiple server errors detected. Please reload the page.") }}', { type: 'error' });
+                            }
                             @if(config('app.debug'))
                             console.error('[ERP] Too many server errors. Stopping automatic retries.');
                             @endif
                         }
+                    }
                     }
                 });
             });
@@ -359,47 +383,41 @@
     // Handle export downloads - triggered from Livewire components
     document.addEventListener('livewire:init', () => {
         Livewire.on('trigger-download', (params) => {
-            console.log('Export download event received:', params);
-            
             // Extract URL from various possible formats
-            // Livewire v3 sends named parameters as object properties
+            // Livewire v3/v4 sends named parameters as object properties
             let url = null;
+
             if (typeof params === 'string') {
                 url = params;
             } else if (params && typeof params === 'object') {
-                // Try different possible formats
                 url = params.url || params[0]?.url || params[0];
             }
-            
-            console.log('Extracted URL:', url);
-            
-            if (url) {
-                // Create a temporary anchor element to trigger download
-                // This method is more reliable than iframe for downloads
-                const link = document.createElement('a');
-                link.href = url;
-                link.style.display = 'none';
-                // Browser will use the filename from the Content-Disposition header
-                document.body.appendChild(link);
-                
-                // Trigger the download
-                link.click();
-                
-                // Clean up after a short delay
-                setTimeout(() => {
-                    if (document.body.contains(link)) {
-                        document.body.removeChild(link);
-                    }
-                }, 100);
-                
-                console.log('Export download triggered successfully');
-            } else {
-                console.error('No URL found in export download event:', params);
+
+            if (!url) {
+                @if(config('app.debug'))
+                console.error('[ERP] Export download failed: no URL found in event payload', params);
+                @endif
+                return;
             }
+
+            // Trigger download without leaving the current page.
+            // Using a hidden iframe is generally more reliable across browsers for programmatic downloads
+            // (and avoids popup blockers compared to window.open).
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            document.body.appendChild(iframe);
+
+            // Cleanup after a minute (download may take time on slow connections)
+            setTimeout(() => {
+                try {
+                    iframe.remove();
+                } catch (e) {}
+            }, 60000);
         });
     });
-    
-    // Handle theme changes from UserPreferences
+
+// Handle theme changes from UserPreferences
     document.addEventListener('livewire:init', () => {
         Livewire.on('theme-changed', (event) => {
             const theme = event.theme || event[0]?.theme || event[0];
@@ -430,35 +448,81 @@
 <div id="page-loading" class="livewire-progress-bar" style="display:none;transform:scaleX(0);"></div>
 
 <script>
-    // Intelligent prefetching - preload links on hover
-    // This function is called on initial load and after Livewire Navigate
+    // Intelligent prefetching - preload likely-next pages on hover/touch.
+    // IMPORTANT:
+    // - Prefetching *all* internal links can create unnecessary load on the server.
+    // - We only prefetch links that use Livewire navigation (wire:navigate).
+    // - We also respect network conditions (save-data / slow connections).
     (function() {
         const prefetchedUrls = new Set();
         const MAX_PREFETCHES = 20; // Limit to prevent memory issues
+        const SKIP_PREFIXES = [
+            // Avoid prefetching heavy/side-effect pages
+            '/pos',
+            '/admin/backup',
+            '/admin/reports/export',
+            '/admin/exports',
+            '/download',
+        ];
+
+        function canPrefetch() {
+            if (!navigator.onLine) return false;
+            const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (!conn) return true;
+            if (conn.saveData) return false;
+            const type = (conn.effectiveType || '').toLowerCase();
+            if (type.includes('2g')) return false;
+            return true;
+        }
+
+        function shouldSkip(href) {
+            if (!href) return true;
+            if (href.includes('#')) return true;
+            if (prefetchedUrls.has(href)) return true;
+            if (prefetchedUrls.size >= MAX_PREFETCHES) return true;
+            return SKIP_PREFIXES.some((p) => href.startsWith(p));
+        }
+
+        function doPrefetch(href) {
+            if (!canPrefetch() || shouldSkip(href)) return;
+
+            prefetchedUrls.add(href);
+            const prefetch = document.createElement('link');
+            prefetch.rel = 'prefetch';
+            // Hint to the browser what we are prefetching (safe even if ignored)
+            prefetch.as = 'document';
+            prefetch.href = href;
+            document.head.appendChild(prefetch);
+
+            // Remove prefetch link after 30 seconds to free memory
+            setTimeout(() => {
+                if (prefetch.parentNode) {
+                    prefetch.remove();
+                }
+            }, 30000);
+        }
         
         function initPrefetching() {
-            document.querySelectorAll('a[href^="/"]').forEach(link => {
+            // Only prefetch Livewire-navigated links.
+            // (The attribute name contains ':' which needs escaping in querySelector)
+            document.querySelectorAll('a[wire\\:navigate][href^="/"]').forEach(link => {
                 // Skip links that already have prefetch listener
                 if (link.dataset.prefetchInit) return;
                 link.dataset.prefetchInit = 'true';
-                
-                link.addEventListener('mouseenter', function() {
+
+                const handler = function() {
                     const href = this.getAttribute('href');
-                    if (href && !prefetchedUrls.has(href) && !href.includes('#') && prefetchedUrls.size < MAX_PREFETCHES) {
-                        prefetchedUrls.add(href);
-                        const prefetch = document.createElement('link');
-                        prefetch.rel = 'prefetch';
-                        prefetch.href = href;
-                        document.head.appendChild(prefetch);
-                        
-                        // Remove prefetch link after 30 seconds to free memory
-                        setTimeout(() => {
-                            if (prefetch.parentNode) {
-                                prefetch.remove();
-                            }
-                        }, 30000);
+                    // Defer work to idle time to keep hover interactions snappy
+                    if (window.requestIdleCallback) {
+                        requestIdleCallback(() => doPrefetch(href), { timeout: 500 });
+                    } else {
+                        setTimeout(() => doPrefetch(href), 0);
                     }
-                }, { once: true, passive: true });
+                };
+
+                link.addEventListener('mouseenter', handler, { once: true, passive: true });
+                // Mobile: prefetch on touchstart
+                link.addEventListener('touchstart', handler, { once: true, passive: true });
             });
         }
         

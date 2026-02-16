@@ -16,7 +16,7 @@
             <p class="text-sm text-slate-500">{{ __('Track and manage all expenses') }}</p>
         </div>
         <div class="flex items-center gap-2">
-            <button wire:click="openExportModal" class="erp-btn erp-btn-secondary">
+            <button type="button" wire:click="openExportModal" class="erp-btn erp-btn-secondary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 {{ __('Export') }}
             </button>
@@ -104,7 +104,7 @@
                                     <a href="{{ route('app.expenses.edit', $expense) }}" class="text-blue-600 hover:text-blue-800">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>
-                                    <button wire:click="delete({{ $expense->id }})" wire:loading.attr="disabled" wire:loading.class="opacity-50" wire:target="delete({{ $expense->id }})" wire:confirm="{{ __('Delete this expense?') }}" class="text-red-600 hover:text-red-800">
+                                    <button type="button" wire:click="delete({{ $expense->id }})" wire:loading.attr="disabled" wire:loading.class="opacity-50" wire:target="delete({{ $expense->id }})" wire:confirm="{{ __('Delete this expense?') }}" class="text-red-600 hover:text-red-800">
                                         <svg wire:loading.remove wire:target="delete({{ $expense->id }})" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         <svg wire:loading wire:target="delete({{ $expense->id }})" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

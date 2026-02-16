@@ -19,7 +19,7 @@ if (class_exists('\App\Models\SavedReportView')) {
         <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
             {{ __('Saved Views') }}
         </h4>
-        <button 
+        <button type="button" 
             wire:click="saveCurrentView"
             class="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-500 flex items-center gap-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ if (class_exists('\App\Models\SavedReportView')) {
                     </p>
                 </div>
             </div>
-            <button 
+            <button type="button" 
                 wire:click.stop="deleteView({{ $view->id }})"
                 class="flex-shrink-0 text-red-600 hover:text-red-700 dark:text-red-500 p-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -11,13 +11,13 @@
 >
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-            <h1 class="text-lg font-semibold text-slate-800">
+            <h1 class="text-lg font-semibold text-slate-800 dark:text-slate-100">
                 {{ __('POS Terminal') }}
             </h1>
-            <p class="text-sm text-slate-500">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
                 {{ __('Fast selling screen connected to the API (products search + checkout).') }}
             </p>
-            <p class="mt-1 text-xs text-emerald-600">
+            <p class="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
                 {{ __('Branch:') }} {{ $branchName }}
             </p>
         </div>
@@ -45,28 +45,28 @@
     </div>
 
 
-    <div class="flex flex-wrap items-center justify-end gap-2 text-[11px] text-slate-600">
-        <div class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5" title="{{ __('Display currency for reference only. All payments processed in base currency.') }}">
-            <span class="text-blue-600">{{ __('View in') }}:</span>
-            <select x-model="displayCurrency" class="bg-transparent border-0 text-xs text-blue-700 font-medium focus:ring-0 py-0 pr-5 cursor-pointer">
+    <div class="flex flex-wrap items-center justify-end gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+        <div class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 px-2 py-0.5" title="{{ __('Display currency for reference only. All payments processed in base currency.') }}">
+            <span class="text-blue-600 dark:text-blue-300">{{ __('View in') }}:</span>
+            <select x-model="displayCurrency" class="bg-transparent border-0 text-xs text-blue-700 dark:text-blue-200 font-medium focus:ring-0 py-0 pr-5 cursor-pointer">
                 @foreach($currencies as $currency)
                     <option value="{{ $currency->code }}">{{ $currency->code }}@if($currency->is_base) ({{ __('Base') }})@endif</option>
                 @endforeach
             </select>
         </div>
-        <div class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5"
+        <div class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20 px-2 py-0.5"
              x-show="offlineQueue && offlineQueue.length">
             <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
             <span x-text="offlineQueue.length + ' {{ __('pending offline orders') }}'"></span>
         </div>
         <button type="button"
                 x-on:click="syncOfflineQueue && syncOfflineQueue()"
-                class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 hover:bg-sky-100">
+                class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-900/20 px-2 py-0.5 hover:bg-sky-100 dark:hover:bg-sky-900/30">
             <span class="h-2 w-2 rounded-full bg-sky-400"></span>
             <span>{{ __('Sync now') }}</span>
         </button>
         <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5"
-              :class="offline ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'">
+              :class="offline ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200'">
             <span class="h-2 w-2 rounded-full"
                   :class="offline ? 'bg-amber-500' : 'bg-emerald-500'"></span>
             <span x-text="offline ? '{{ __('Offline mode') }}' : '{{ __('Online') }}'"></span>
@@ -77,9 +77,9 @@
     <template x-if="message">
         <div class="rounded-2xl border px-3 py-2 text-xs"
              :class="{
-                'border-emerald-200 bg-emerald-50 text-emerald-800': message.type === 'success',
-                'border-red-200 bg-red-50 text-red-700': message.type === 'error',
-                'border-slate-200 bg-slate-50 text-slate-700': message.type === 'info'
+                'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200': message.type === 'success',
+                'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200': message.type === 'error',
+                'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200': message.type === 'info'
              }"
         >
             <div class="flex items-center justify-between gap-2">
@@ -96,31 +96,31 @@
     <div class="grid gap-4 lg:grid-cols-3">
         {{-- Products list --}}
         <div class="lg:col-span-2 space-y-3">
-            <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs shadow-sm shadow-emerald-500/10">
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-3 text-xs shadow-sm shadow-emerald-500/10">
                 <div class="flex items-center justify-between gap-2 mb-2">
-                    <h2 class="text-sm font-semibold text-slate-800">
+                    <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {{ __('Products') }}
                     </h2>
-                    <p class="text-[0.7rem] text-slate-500" x-show="offline">
+                    <p class="text-[0.7rem] text-slate-500 dark:text-slate-400" x-show="offline">
                         {{ __('Offline mode: product search requires internet.') }}
                     </p>
                 </div>
 
                 <template x-if="!products.length && search.length < 2">
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ __('Start typing at least 2 characters to search for products.') }}
                     </p>
                 </template>
 
                 <template x-if="isSearching && search.length >= 2">
-                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <span class="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-500"></span>
                         <span>{{ __('Loading products...') }}</span>
                     </div>
                 </template>
 
                 <template x-if="!products.length && search.length >= 2 && !isSearching">
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ __('No products found for this search.') }}
                     </p>
                 </template>
@@ -129,10 +129,10 @@
                     <template x-for="product in products" :key="product.id ?? product.product_id">
                         <button type="button"
                                 x-on:click="addProduct(product)"
-                                class="flex flex-col items-start rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 px-3 py-2 text-start text-xs text-slate-800 shadow-sm shadow-emerald-500/30 hover:border-emerald-300 hover:shadow-md">
+                                class="flex flex-col items-start rounded-2xl border border-emerald-100 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-900/20 px-3 py-2 text-start text-xs text-slate-800 dark:text-slate-100 shadow-sm shadow-emerald-500/30 hover:border-emerald-300 dark:hover:border-emerald-400/40 hover:shadow-md">
                             <span class="font-semibold truncate" x-text="product.name ?? product.label ?? 'Item'"></span>
-                            <span class="mt-0.5 text-[0.7rem] text-slate-500 truncate" x-text="product.sku ?? product.code ?? ''"></span>
-                            <span class="mt-1 text-[0.75rem] font-semibold text-emerald-700" x-text="(product.default_price ?? product.price ?? product.sale_price ?? 0).toFixed(2) + ' ' + (product.price_currency ?? baseCurrency)"></span>
+                            <span class="mt-0.5 text-[0.7rem] text-slate-500 dark:text-slate-400 truncate" x-text="product.sku ?? product.code ?? ''"></span>
+                            <span class="mt-1 text-[0.75rem] font-semibold text-emerald-700 dark:text-emerald-300" x-text="(product.default_price ?? product.price ?? product.sale_price ?? 0).toFixed(2) + ' ' + (product.price_currency ?? baseCurrency)"></span>
                         </button>
                     </template>
                 </div>
@@ -141,56 +141,56 @@
 
         {{-- Cart --}}
         <div class="space-y-3">
-            <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs shadow-sm shadow-emerald-500/10">
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-3 text-xs shadow-sm shadow-emerald-500/10">
                 <div class="flex items-center justify-between gap-2 mb-1">
-                    <h2 class="text-sm font-semibold text-slate-800">
+                    <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {{ __('Cart') }}
                     </h2>
-                    <p class="text-[0.7rem] text-slate-500" x-show="offline">
+                    <p class="text-[0.7rem] text-slate-500 dark:text-slate-400" x-show="offline">
                         {{ __('Offline: checkout will be queued locally.') }}
                     </p>
                 </div>
 
                 <template x-if="!cart.length">
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ __('No items yet. Choose products from the list.') }}
                     </p>
                 </template>
 
                 <div class="space-y-2 max-h-64 overflow-y-auto" x-show="cart.length">
                     <template x-for="(item, index) in cart" :key="index">
-                        <div class="flex items-start justify-between gap-2 rounded-xl bg-slate-50 px-2 py-1.5">
+                        <div class="flex items-start justify-between gap-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 px-2 py-1.5">
                             <div class="flex-1">
-                                <p class="text-xs font-semibold text-slate-800 truncate" x-text="item.name"></p>
-                                <p class="text-[0.7rem] text-slate-500 truncate" x-text="'#' + item.product_id"></p>
-                                <div class="mt-1 flex items-center gap-1 text-[0.7rem] text-slate-600">
+                                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate" x-text="item.name"></p>
+                                <p class="text-[0.7rem] text-slate-500 dark:text-slate-400 truncate" x-text="'#' + item.product_id"></p>
+                                <div class="mt-1 flex items-center gap-1 text-[0.7rem] text-slate-600 dark:text-slate-300">
                                     <span>{{ __('Qty') }}</span>
                                     <input type="number" min="1" step="1"
                                            x-model.number="item.qty"
                                            x-on:change="updateQty(index, item.qty)"
-                                           class="h-7 w-14 rounded-lg border border-slate-200 bg-white px-1 text-[0.7rem]">
+                                           class="erp-input h-7 w-14 px-1 text-[0.7rem]">
                                     <span class="ml-1">{{ __('Price') }}</span>
                                     <input type="number" min="0" step="0.01"
                                            x-model.number="item.price"
                                            x-on:change="updatePrice(index, item.price)"
-                                           class="h-7 w-20 rounded-lg border border-slate-200 bg-white px-1 text-[0.7rem]">
+                                           class="erp-input h-7 w-20 px-1 text-[0.7rem]">
                                 </div>
                                 {{-- Discount per item --}}
-                                <div class="mt-1 flex items-center gap-1 text-[0.7rem] text-slate-600">
+                                <div class="mt-1 flex items-center gap-1 text-[0.7rem] text-slate-600 dark:text-slate-300">
                                     <span>{{ __('Discount') }}</span>
                                     <input type="number" min="0" max="100" step="1"
                                            x-model.number="item.discount"
-                                           class="h-7 w-14 rounded-lg border border-slate-200 bg-white px-1 text-[0.7rem]">
+                                           class="erp-input h-7 w-14 px-1 text-[0.7rem]">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-1">
                                 <button type="button"
                                         x-on:click="removeItem(index)"
-                                        class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[0.65rem] font-semibold text-red-700 hover:bg-red-100">
+                                        class="inline-flex items-center rounded-full bg-red-50 dark:bg-red-500/10 px-2 py-0.5 text-[0.65rem] font-semibold text-red-700 dark:text-red-200 hover:bg-red-100 dark:hover:bg-red-500/20">
                                     {{ __('Remove') }}
                                 </button>
-                                <p class="text-[0.75rem] font-semibold text-slate-800"
+                                <p class="text-[0.75rem] font-semibold text-slate-800 dark:text-slate-100"
                                    x-text="calculateItemTotal(item).toFixed(2) + ' ' + (item.price_currency ?? baseCurrency)"></p>
                             </div>
                         </div>
@@ -198,20 +198,20 @@
                 </div>
 
                 {{-- Totals --}}
-                <div class="mt-3 border-t border-slate-200 pt-2 space-y-1 text-xs">
+                <div class="mt-3 border-t border-slate-200 dark:border-slate-700 pt-2 space-y-1 text-xs">
                     <div class="flex justify-between">
-                        <span class="text-slate-600">{{ __('Subtotal') }}</span>
+                        <span class="text-slate-600 dark:text-slate-300">{{ __('Subtotal') }}</span>
                         <span x-text="subtotal.toFixed(2) + ' ' + baseCurrency"></span>
                     </div>
-                    <div class="flex justify-between text-amber-600" x-show="discountTotal > 0">
+                    <div class="flex justify-between text-amber-600 dark:text-amber-300" x-show="discountTotal > 0">
                         <span>{{ __('Discount') }}</span>
                         <span x-text="'-' + discountTotal.toFixed(2) + ' ' + baseCurrency"></span>
                     </div>
-                    <div class="flex justify-between font-semibold text-emerald-700 text-base pt-1 border-t">
+                    <div class="flex justify-between font-semibold text-emerald-700 dark:text-emerald-300 text-base pt-1 border-t border-slate-200 dark:border-slate-700">
                         <span>{{ __('Total') }}</span>
                         <span x-text="total.toFixed(2) + ' ' + baseCurrency"></span>
                     </div>
-                    <div class="flex justify-between text-xs text-blue-500 bg-blue-50 rounded px-1 py-0.5 mt-1" x-show="displayCurrency !== baseCurrency">
+                    <div class="flex justify-between text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/20 rounded px-1 py-0.5 mt-1" x-show="displayCurrency !== baseCurrency">
                         <span>≈ {{ __('Approx.') }}</span>
                         <span x-text="formatCurrency(total)"></span>
                     </div>
@@ -240,19 +240,19 @@
          x-cloak
          class="z-modal fixed inset-0 flex items-center justify-center bg-black/50"
          x-transition>
-        <div class="w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl p-6" x-on:click.outside="showPaymentModal = false">
-            <h3 class="text-lg font-semibold text-slate-800 mb-4">{{ __('Payment') }}</h3>
+        <div class="w-full max-w-lg mx-4 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6" x-on:click.outside="showPaymentModal = false">
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">{{ __('Payment') }}</h3>
             
-            <div class="mb-4 p-3 bg-emerald-50 rounded-xl">
+            <div class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
                 <div class="flex justify-between text-sm">
-                    <span class="text-slate-600">{{ __('Total Amount') }}</span>
-                    <span class="font-bold text-emerald-700 text-lg" x-text="total.toFixed(2) + ' ' + baseCurrency"></span>
+                    <span class="text-slate-600 dark:text-slate-300">{{ __('Total Amount') }}</span>
+                    <span class="font-bold text-emerald-700 dark:text-emerald-300 text-lg" x-text="total.toFixed(2) + ' ' + baseCurrency"></span>
                 </div>
                 <div class="flex justify-between text-sm mt-2" x-show="totalPaid > 0">
-                    <span class="text-slate-600">{{ __('Paid') }}</span>
-                    <span class="font-semibold text-blue-600" x-text="totalPaid.toFixed(2) + ' ' + baseCurrency"></span>
+                    <span class="text-slate-600 dark:text-slate-300">{{ __('Paid') }}</span>
+                    <span class="font-semibold text-blue-600 dark:text-blue-300" x-text="totalPaid.toFixed(2) + ' ' + baseCurrency"></span>
                 </div>
-                <div class="flex justify-between text-sm mt-2" :class="remaining > 0 ? 'text-red-600' : 'text-emerald-600'">
+                <div class="flex justify-between text-sm mt-2" :class="remaining > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'">
                     <span>{{ __('Remaining') }}</span>
                     <span class="font-semibold" x-text="remaining.toFixed(2) + ' ' + baseCurrency"></span>
                 </div>
@@ -261,7 +261,7 @@
             {{-- Payment Methods --}}
             <div class="space-y-3 mb-4">
                 <template x-for="(payment, index) in payments" :key="index">
-                    <div class="p-3 border border-slate-200 rounded-xl">
+                    <div class="p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/60 dark:bg-slate-800/40">
                         <div class="flex items-center gap-3">
                             <select x-model="payment.method" class="erp-input flex-1">
                                 <option value="cash">{{ __('Cash') }}</option>
@@ -277,7 +277,7 @@
                             <button type="button" 
                                     x-on:click="removePayment(index)"
                                     x-show="payments.length > 1"
-                                    class="text-red-500 hover:text-red-700">
+                                    class="text-red-500 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -307,23 +307,23 @@
 
             {{-- Quick Cash Buttons --}}
             <div class="flex flex-wrap gap-2 mb-4" x-show="payments.length === 1 && payments[0].method === 'cash'">
-                <button type="button" x-on:click="payments[0].amount = total" class="px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-full hover:bg-emerald-200">{{ __('Exact') }}</button>
-                <button type="button" x-on:click="payments[0].amount = Math.ceil(total / 10) * 10" class="px-3 py-1 text-xs bg-slate-100 text-slate-700 rounded-full hover:bg-slate-200">{{ __('Round 10') }}</button>
-                <button type="button" x-on:click="payments[0].amount = Math.ceil(total / 50) * 50" class="px-3 py-1 text-xs bg-slate-100 text-slate-700 rounded-full hover:bg-slate-200">{{ __('Round 50') }}</button>
-                <button type="button" x-on:click="payments[0].amount = Math.ceil(total / 100) * 100" class="px-3 py-1 text-xs bg-slate-100 text-slate-700 rounded-full hover:bg-slate-200">{{ __('Round 100') }}</button>
+                <button type="button" x-on:click="payments[0].amount = total" class="px-3 py-1 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-500/30">{{ __('Exact') }}</button>
+                <button type="button" x-on:click="payments[0].amount = Math.ceil(total / 10) * 10" class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">{{ __('Round 10') }}</button>
+                <button type="button" x-on:click="payments[0].amount = Math.ceil(total / 50) * 50" class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">{{ __('Round 50') }}</button>
+                <button type="button" x-on:click="payments[0].amount = Math.ceil(total / 100) * 100" class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">{{ __('Round 100') }}</button>
             </div>
 
             <button type="button" 
                     x-on:click="addPayment()"
-                    class="w-full mb-4 py-2 text-sm text-emerald-600 border border-dashed border-emerald-300 rounded-xl hover:bg-emerald-50">
+                    class="w-full mb-4 py-2 text-sm text-emerald-700 dark:text-emerald-200 border border-dashed border-emerald-300 dark:border-emerald-700 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-500/10">
                 + {{ __('Add Payment Method') }}
             </button>
 
             {{-- Change --}}
-            <div class="p-3 bg-amber-50 rounded-xl mb-4" x-show="change > 0">
+            <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl mb-4 border border-amber-200 dark:border-amber-800" x-show="change > 0">
                 <div class="flex justify-between">
-                    <span class="text-amber-700">{{ __('Change to return') }}</span>
-                    <span class="font-bold text-amber-700 text-lg" x-text="change.toFixed(2) + ' ' + baseCurrency"></span>
+                    <span class="text-amber-700 dark:text-amber-200">{{ __('Change to return') }}</span>
+                    <span class="font-bold text-amber-700 dark:text-amber-200 text-lg" x-text="change.toFixed(2) + ' ' + baseCurrency"></span>
                 </div>
             </div>
 
@@ -349,13 +349,13 @@
          x-cloak
          class="z-modal fixed inset-0 flex items-center justify-center bg-black/50"
          x-transition>
-        <div class="w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl p-6" x-on:click.outside="showSessionModal = false">
-            <h3 class="text-lg font-semibold text-slate-800 mb-4" x-text="currentSession ? '{{ __('Close Session') }}' : '{{ __('Open Session') }}'"></h3>
+        <div class="w-full max-w-md mx-4 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6" x-on:click.outside="showSessionModal = false">
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4" x-text="currentSession ? '{{ __('Close Session') }}' : '{{ __('Open Session') }}'"></h3>
             
             {{-- Open Session Form --}}
             <div x-show="!currentSession">
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Opening Cash') }}</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Opening Cash') }}</label>
                     <input type="number" x-model.number="sessionOpeningCash" step="0.01" min="0" class="erp-input w-full" placeholder="0.00">
                 </div>
                 <button type="button" 
@@ -367,37 +367,37 @@
             
             {{-- Close Session Form --}}
             <div x-show="currentSession">
-                <div class="mb-4 p-3 bg-slate-50 rounded-xl text-sm">
+                <div class="mb-4 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-sm border border-slate-200 dark:border-slate-700">
                     <div class="flex justify-between mb-2">
-                        <span class="text-slate-600">{{ __('Opening Cash') }}</span>
+                        <span class="text-slate-600 dark:text-slate-300">{{ __('Opening Cash') }}</span>
                         <span x-text="(currentSession?.opening_cash ?? 0).toFixed(2) + ' ' + baseCurrency"></span>
                     </div>
                     <div class="flex justify-between mb-2">
-                        <span class="text-slate-600">{{ __('Opened At') }}</span>
+                        <span class="text-slate-600 dark:text-slate-300">{{ __('Opened At') }}</span>
                         <span x-text="currentSession?.opened_at ?? '-'"></span>
                     </div>
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Closing Cash') }}</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Closing Cash') }}</label>
                     <input type="number" x-model.number="sessionClosingCash" step="0.01" min="0" class="erp-input w-full" placeholder="0.00">
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Notes') }}</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ __('Notes') }}</label>
                     <textarea x-model="sessionNotes" class="erp-input w-full" rows="2" placeholder="{{ __('Any notes about this session...') }}"></textarea>
                 </div>
                 
                 <button type="button" 
                         x-on:click="closeSession()"
-                        class="erp-btn-primary w-full bg-red-600 hover:bg-red-700">
+                        class="erp-btn-danger w-full">
                     {{ __('Close Session') }}
                 </button>
             </div>
             
             <button type="button" 
                     x-on:click="showSessionModal = false"
-                    class="mt-3 w-full py-2 text-sm text-slate-600 hover:text-slate-800">
+                    class="mt-3 w-full py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 dark:hover:text-slate-100">
                 {{ __('Cancel') }}
             </button>
         </div>

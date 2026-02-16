@@ -40,7 +40,7 @@
                                     </p>
                                 </div>
                                 @if(!in_array($product->id, $selectedProducts))
-                                    <button wire:click="addProduct({{ $product->id }})" 
+                                    <button type="button" wire:click="addProduct({{ $product->id }})" 
                                             class="erp-btn-primary text-sm px-3 py-1.5">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -67,7 +67,7 @@
                             </svg>
                             {{ __('Selected Products') }} ({{ count($selectedProducts) }})
                         </h3>
-                        <button wire:click="clearAll" class="text-sm text-red-600 hover:text-red-700">
+                        <button type="button" wire:click="clearAll" class="text-sm text-red-600 hover:text-red-700">
                             {{ __('Clear All') }}
                         </button>
                     </div>
@@ -88,7 +88,7 @@
                                                min="1" max="100"
                                                class="erp-input w-20 text-center">
                                     </div>
-                                    <button wire:click="removeProduct({{ $product->id }})" 
+                                    <button type="button" wire:click="removeProduct({{ $product->id }})" 
                                             class="text-red-500 hover:text-red-700 p-1">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -155,7 +155,7 @@
             </div>
 
             <div class="erp-card p-4">
-                <button wire:click="togglePreview" 
+                <button type="button" wire:click="togglePreview" 
                         class="w-full erp-btn-secondary mb-3"
                         @if(count($selectedProducts) === 0) disabled @endif>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +165,7 @@
                     {{ __('Preview Labels') }}
                 </button>
 
-                <button onclick="window.print()" 
+                <button type="button" onclick="window.print()" 
                         class="w-full erp-btn-primary"
                         @if(count($selectedProducts) === 0) disabled @endif>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +182,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
                 <div class="px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white flex items-center justify-between">
                     <h3 class="text-lg font-semibold">{{ __('Label Preview') }}</h3>
-                    <button wire:click="togglePreview" class="text-white/80 hover:text-white">
+                    <button type="button" wire:click="togglePreview" class="text-white/80 hover:text-white">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>

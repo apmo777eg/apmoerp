@@ -156,7 +156,7 @@
 
     {{-- Action Buttons --}}
     <div class="flex flex-col sm:flex-row items-center justify-end gap-3">
-        <button wire:click="rejectGRN" 
+        <button type="button" wire:click="rejectGRN" 
                 wire:loading.attr="disabled"
                 class="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50">
             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +164,7 @@
             </svg>
             {{ __('Reject GRN') }}
         </button>
-        <button wire:click="partialAccept"
+        <button type="button" wire:click="partialAccept"
                 wire:loading.attr="disabled"
                 class="w-full sm:w-auto px-6 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors disabled:opacity-50">
             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +172,7 @@
             </svg>
             {{ __('Partial Accept') }}
         </button>
-        <button wire:click="acceptGRN"
+        <button type="button" wire:click="acceptGRN"
                 wire:loading.attr="disabled"
                 class="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50">
             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

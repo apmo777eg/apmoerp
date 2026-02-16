@@ -17,11 +17,11 @@
 
         {{-- Navigation --}}
         <div class="flex items-center gap-2">
-            <button wire:click="previousPeriod" class="erp-btn erp-btn-secondary text-sm">
+            <button type="button" wire:click="previousPeriod" class="erp-btn erp-btn-secondary text-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <button wire:click="goToToday" class="erp-btn erp-btn-secondary text-sm">{{ __('Today') }}</button>
-            <button wire:click="nextPeriod" class="erp-btn erp-btn-secondary text-sm">
+            <button type="button" wire:click="goToToday" class="erp-btn erp-btn-secondary text-sm">{{ __('Today') }}</button>
+            <button type="button" wire:click="nextPeriod" class="erp-btn erp-btn-secondary text-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </button>
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300 ml-2">

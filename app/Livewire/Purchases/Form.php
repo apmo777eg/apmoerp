@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Purchases;
 
 use App\Events\PurchaseReceived;
+use App\Enums\PurchaseStatus;
 use App\Livewire\Concerns\HandlesErrors;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -13,6 +14,7 @@ use App\Models\Supplier;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
@@ -108,7 +110,7 @@ class Form extends Component
                 },
             ],
             'reference_no' => 'nullable|string|max:100',
-            'status' => 'required|in:draft,pending,posted,received,cancelled',
+            'status' => ['required', Rule::in(PurchaseStatus::values())],
             'currency' => 'nullable|string|max:3',
             'notes' => 'nullable|string',
             'expected_date' => 'nullable|date',

@@ -30,7 +30,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">{{ __('No approval workflow active') }}</p>
             
             @can('purchases.approve')
-                <button wire:click="initiateWorkflow" class="mt-4 erp-btn erp-btn-secondary text-sm">
+                <button type="button" wire:click="initiateWorkflow" class="mt-4 erp-btn erp-btn-secondary text-sm">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -89,11 +89,11 @@
             {{-- Action Buttons --}}
             @if($workflowInstance->status === 'pending' && $canApprove)
                 <div class="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                    <button wire:click="$set('showApproveModal', true)" class="flex-1 erp-btn bg-green-600 hover:bg-green-700 text-white text-sm">
+                    <button type="button" wire:click="$set('showApproveModal', true)" class="flex-1 erp-btn bg-green-600 hover:bg-green-700 text-white text-sm">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         {{ __('Approve') }}
                     </button>
-                    <button wire:click="$set('showRejectModal', true)" class="flex-1 erp-btn bg-red-600 hover:bg-red-700 text-white text-sm">
+                    <button type="button" wire:click="$set('showRejectModal', true)" class="flex-1 erp-btn bg-red-600 hover:bg-red-700 text-white text-sm">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         {{ __('Reject') }}
                     </button>
@@ -103,7 +103,7 @@
             {{-- Cancel Button --}}
             @if($workflowInstance->status === 'pending' && $workflowInstance->initiated_by === auth()->id())
                 <div class="pt-2">
-                    <button wire:click="cancelWorkflow" wire:confirm="{{ __('Are you sure you want to cancel this approval request?') }}" class="text-xs text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400">
+                    <button type="button" wire:click="cancelWorkflow" wire:confirm="{{ __('Are you sure you want to cancel this approval request?') }}" class="text-xs text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400">
                         {{ __('Cancel Request') }}
                     </button>
                 </div>
@@ -123,8 +123,8 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button wire:click="$set('showApproveModal', false)" class="flex-1 erp-btn erp-btn-secondary">{{ __('Cancel') }}</button>
-                    <button wire:click="approve" class="flex-1 erp-btn bg-green-600 hover:bg-green-700 text-white">{{ __('Confirm Approval') }}</button>
+                    <button type="button" wire:click="$set('showApproveModal', false)" class="flex-1 erp-btn erp-btn-secondary">{{ __('Cancel') }}</button>
+                    <button type="button" wire:click="approve" class="flex-1 erp-btn bg-green-600 hover:bg-green-700 text-white">{{ __('Confirm Approval') }}</button>
                 </div>
             </div>
         </div>
@@ -143,8 +143,8 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button wire:click="$set('showRejectModal', false)" class="flex-1 erp-btn erp-btn-secondary">{{ __('Cancel') }}</button>
-                    <button wire:click="reject" class="flex-1 erp-btn bg-red-600 hover:bg-red-700 text-white">{{ __('Confirm Rejection') }}</button>
+                    <button type="button" wire:click="$set('showRejectModal', false)" class="flex-1 erp-btn erp-btn-secondary">{{ __('Cancel') }}</button>
+                    <button type="button" wire:click="reject" class="flex-1 erp-btn bg-red-600 hover:bg-red-700 text-white">{{ __('Confirm Rejection') }}</button>
                 </div>
             </div>
         </div>

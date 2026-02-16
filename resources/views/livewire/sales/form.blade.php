@@ -51,11 +51,27 @@
 
                 <div>
                     <label class="erp-label">{{ __('Status') }}</label>
+                    @php
+                        $statusOptions = [
+                            'draft' => __('Draft'),
+                            'pending' => __('Pending'),
+                            'processing' => __('Processing'),
+                            'confirmed' => __('Confirmed'),
+                            'posted' => __('Posted'),
+                            'completed' => __('Completed'),
+                            'cancelled' => __('Cancelled'),
+                            'refunded' => __('Refunded'),
+                        ];
+                    @endphp
                     <select wire:model="status" class="erp-input">
-                        <option value="draft">{{ __('Draft') }}</option>
-                        <option value="pending">{{ __('Pending') }}</option>
-                        <option value="completed">{{ __('Completed') }}</option>
-                        <option value="cancelled">{{ __('Cancelled') }}</option>
+                        {{-- If the current status isn't in our standard list (legacy/integration), show it to avoid accidental changes. --}}
+                        @if(!empty($status) && !array_key_exists($status, $statusOptions))
+                            <option value="{{ $status }}">{{ __(ucfirst(str_replace('_', ' ', $status))) }}</option>
+                        @endif
+
+                        @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
 

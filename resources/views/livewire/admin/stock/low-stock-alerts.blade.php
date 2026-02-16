@@ -38,7 +38,7 @@
                 </select>
             </div>
             
-            <button wire:click="refreshAlerts" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+            <button type="button" wire:click="refreshAlerts" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
                 {{ __('Refresh Alerts') }}
             </button>
         </div>
@@ -84,12 +84,12 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($alert->status === 'active')
-                                <button wire:click="acknowledgeAlert({{ $alert->id }})" class="text-yellow-600 hover:text-yellow-800 mr-2">
+                                <button type="button" wire:click="acknowledgeAlert({{ $alert->id }})" class="text-yellow-600 hover:text-yellow-800 mr-2">
                                     {{ __('Acknowledge') }}
                                 </button>
                             @endif
                             @if($alert->status !== 'resolved')
-                                <button wire:click="resolveAlert({{ $alert->id }})" class="text-green-600 hover:text-green-800">
+                                <button type="button" wire:click="resolveAlert({{ $alert->id }})" class="text-green-600 hover:text-green-800">
                                     {{ __('Resolve') }}
                                 </button>
                             @endif

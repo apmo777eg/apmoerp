@@ -52,7 +52,7 @@
             </div>
 
             <div class="flex items-end">
-                <button wire:click="generateReport" class="w-full px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition">
+                <button type="button" wire:click="generateReport" class="w-full px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition">
                     {{ __('Update Report') }}
                 </button>
             </div>

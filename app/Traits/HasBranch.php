@@ -10,6 +10,7 @@ use App\Services\BranchContextManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * HasBranch - Unified trait for branch-aware models
@@ -23,6 +24,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 trait HasBranch
 {
+    /**
+     * Cache table -> has branch_id column.
+     *
+     * Important for performance (avoids repeated Schema::hasColumn calls),
+     * and for safety when migrations are out of sync.
+     *
+     * @var array<string, bool>
+     */
+    protected static array $branchIdColumnCache = [];
+
     public static function bootHasBranch(): void
     {
         // Apply global branch scope for multi-tenancy isolation
@@ -30,9 +41,13 @@ trait HasBranch
 
         static::creating(function (Model $model): void {
             // Only auto-assign branch_id if:
-            // 1. The model doesn't already have a branch_id
-            // 2. The model has branch_id in its fillable attributes (table has the column)
-            if (! $model->getAttribute('branch_id') && in_array('branch_id', $model->getFillable(), true)) {
+            // 1) branch_id is not explicitly set
+            // 2) the underlying table actually has a branch_id column
+            //
+            // V57-HIGH-01 FIX: Use schema inspection (cached) instead of relying on $fillable.
+            // $fillable can omit branch_id for valid mass-assignment reasons, which previously
+            // caused records to be created with NULL branch_id and then disappear due to BranchScope.
+            if (! $model->getAttribute('branch_id') && static::tableHasBranchIdColumn($model)) {
                 // First try the model's own currentBranchId method
                 if (method_exists($model, 'currentBranchId')) {
                     $branchId = $model->currentBranchId();
@@ -50,6 +65,29 @@ trait HasBranch
                 }
             }
         });
+    }
+
+    /**
+     * Determine if a model's table has a branch_id column.
+     *
+     * We cache the result by table name to avoid repeated schema queries.
+     * If schema inspection fails (e.g., during early bootstrap/migrations),
+     * we fall back to the legacy $fillable heuristic.
+     */
+    protected static function tableHasBranchIdColumn(Model $model): bool
+    {
+        $table = $model->getTable();
+
+        if (array_key_exists($table, static::$branchIdColumnCache)) {
+            return static::$branchIdColumnCache[$table];
+        }
+
+        try {
+            return static::$branchIdColumnCache[$table] = Schema::hasColumn($table, 'branch_id');
+        } catch (\Throwable) {
+            // Best-effort fallback – avoids crashing bootstrapping tasks.
+            return static::$branchIdColumnCache[$table] = in_array('branch_id', $model->getFillable(), true);
+        }
     }
 
     /**

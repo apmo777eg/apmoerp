@@ -53,7 +53,7 @@
                         <td class="px-6 py-4 text-sm">{{ $priority->getResolutionTimeFormatted() }}</td>
                         <td class="px-6 py-4 text-sm">{{ $priority->tickets_count }}</td>
                         <td class="px-6 py-4">
-                            <button wire:click="toggleActive({{ $priority->id }})" class="px-2 py-1 text-xs font-semibold rounded 
+                            <button type="button" wire:click="toggleActive({{ $priority->id }})" class="px-2 py-1 text-xs font-semibold rounded 
                                 {{ $priority->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800' }}">
                                 {{ $priority->is_active ? __('Active') : __('Inactive') }}
                             </button>
@@ -61,7 +61,7 @@
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('app.helpdesk.priorities.edit', $priority->id) }}" class="text-blue-600 hover:text-blue-900">{{ __('Edit') }}</a>
-                                <button wire:click="delete({{ $priority->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
+                                <button type="button" wire:click="delete({{ $priority->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
                             </div>
                         </td>
                     </tr>

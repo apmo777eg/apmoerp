@@ -132,7 +132,7 @@ $positionClasses = match($position) {
                 </div>
 
                 {{-- Close Button --}}
-                <button 
+                <button type="button" aria-label="Close"
                     @click="remove(toast.id)"
                     class="flex-shrink-0 p-1 rounded-lg transition-colors"
                     :class="{

@@ -51,7 +51,7 @@
 
             {{-- Compare Button --}}
             <div class="flex items-end">
-                <button wire:click="compare" 
+                <button type="button" wire:click="compare" 
                         class="erp-btn-primary w-full"
                         @if(!$branch1Id || !$branch2Id) disabled aria-disabled="true" @endif>
                     {{ __('Compare') }}
@@ -110,12 +110,12 @@
                 {{ __('Sync Modules') }}
             </h3>
             <div class="flex gap-4">
-                <button wire:click="syncModules('to_branch1')" 
+                <button type="button" wire:click="syncModules('to_branch1')" 
                         class="erp-btn-secondary"
                         wire:confirm="{{ __('Are you sure you want to sync modules to the first branch?') }}">
                     {{ __('Sync to') }} {{ $comparison['branch1']['name'] ?? __('Branch 1') }}
                 </button>
-                <button wire:click="syncModules('to_branch2')" 
+                <button type="button" wire:click="syncModules('to_branch2')" 
                         class="erp-btn-secondary"
                         wire:confirm="{{ __('Are you sure you want to sync modules to the second branch?') }}">
                     {{ __('Sync to') }} {{ $comparison['branch2']['name'] ?? __('Branch 2') }}

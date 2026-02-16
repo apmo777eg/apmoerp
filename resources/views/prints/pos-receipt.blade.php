@@ -294,7 +294,7 @@
     
     {{-- Print Button (hidden when printing) --}}
     <div class="no-print" style="text-align: center; margin-top: 20px;">
-        <button onclick="window.print()" style="padding: 10px 30px; font-size: 14px; cursor: pointer;">
+        <button type="button" onclick="window.print()" style="padding: 10px 30px; font-size: 14px; cursor: pointer;">
             {{ __('Print Receipt') }}
         </button>
     </div>

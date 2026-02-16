@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Concerns;
 
+use App\Enums\SaleStatus;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\Sale;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\StockService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Shared Dashboard Data Loading Logic
@@ -45,6 +47,16 @@ trait LoadsDashboardData
     protected bool $isAdmin = false;
 
     /**
+     * Dashboard data loading errors (non-fatal)
+     *
+     * When any widget query fails, we record the error and fall back to safe defaults
+     * instead of crashing the whole dashboard with a 500.
+     */
+    public array $dashboardErrors = [];
+
+    public bool $dashboardHasErrors = false;
+
+    /**
      * Initialize dashboard context
      */
     protected function initializeDashboardContext(): void
@@ -63,7 +75,15 @@ trait LoadsDashboardData
 
         // Use case-insensitive role check - seeder uses "Super Admin" (Title Case)
         $this->isAdmin = $user->hasAnyRole(['Super Admin', 'super-admin', 'Admin', 'admin']);
-        $this->cacheTtl = (int) (\App\Models\SystemSetting::where('setting_key', 'advanced.cache_ttl')->value('value') ?? 300);
+        $ttl = null;
+        try {
+            $ttl = \App\Models\SystemSetting::where('setting_key', 'advanced.cache_ttl')->value('value');
+        } catch (\Throwable) {
+            // If settings table isn't ready or query fails, fall back safely.
+            $ttl = null;
+        }
+
+        $this->cacheTtl = (int) ($ttl ?? 300);
     }
 
     /**
@@ -93,6 +113,36 @@ trait LoadsDashboardData
         }
 
         return $query;
+    }
+
+
+    /**
+     * Record a non-fatal dashboard error and keep rendering with safe defaults.
+     *
+     * We intentionally avoid throwing here, because the dashboard is a *read-only* overview.
+     * A single widget query failing should not take down the whole page.
+     */
+    protected function recordDashboardError(string $context, \Throwable $e): void
+    {
+        $this->dashboardHasErrors = true;
+
+        $this->dashboardErrors[] = [
+            'context' => $context,
+            'message' => config('app.debug') ? $e->getMessage() : __('Something went wrong while loading dashboard data.'),
+        ];
+
+        // Best-effort logging (never crash the UI because logging failed)
+        try {
+            Log::error('Dashboard data load error', [
+                'context' => $context,
+                'branch_id' => $this->branchId,
+                'is_admin' => $this->isAdmin,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+        } catch (\Throwable) {
+            // ignore
+        }
     }
 
     /**
@@ -133,33 +183,53 @@ trait LoadsDashboardData
     {
         $cacheKey = "{$this->getCachePrefix()}:stats";
 
-        $this->stats = Cache::remember($cacheKey, $this->cacheTtl, function () {
-            $today = now()->startOfDay();
-            $startOfMonth = now()->startOfMonth();
+        try {
+            $this->stats = Cache::remember($cacheKey, $this->cacheTtl, function () {
+                $today = now()->startOfDay();
+                $startOfMonth = now()->startOfMonth();
 
-            $salesQuery = $this->scopeQueryToBranch(Sale::query());
-            $productsQuery = $this->scopeQueryToBranch(Product::query());
+                $salesQuery = $this->scopeQueryToBranch(Sale::query());
+                $productsQuery = $this->scopeQueryToBranch(Product::query());
 
-            // V30-CRIT-01 FIX: Use sale_date (business date) instead of created_at
-            // This ensures synced/backdated sales appear on the correct business day
-            return [
-                'today_sales' => number_format(
-                    (clone $salesQuery)->whereDate('sale_date', $today)->sum('total_amount') ?? 0,
-                    2
-                ),
-                'month_sales' => number_format(
-                    (clone $salesQuery)->where('sale_date', '>=', $startOfMonth)->sum('total_amount') ?? 0,
-                    2
-                ),
-                'open_invoices' => (clone $salesQuery)->where('status', 'pending')->count(),
-                'active_branches' => $this->isAdmin ? Branch::where('is_active', true)->count() : 1,
-                'active_users' => $this->isAdmin
-                    ? User::where('is_active', true)->count()
-                    : User::where('is_active', true)->where('branch_id', $this->branchId)->count(),
-                'total_products' => (clone $productsQuery)->count(),
-                'low_stock_count' => $this->calculateLowStockCount($productsQuery),
+                // V30-CRIT-01 FIX: Use sale_date (business date) instead of created_at
+                // This ensures synced/backdated sales appear on the correct business day
+                return [
+                    'today_sales' => number_format(
+                        (clone $salesQuery)->whereDate('sale_date', $today)->sum('total_amount') ?? 0,
+                        2
+                    ),
+                    'month_sales' => number_format(
+                        (clone $salesQuery)->where('sale_date', '>=', $startOfMonth)->sum('total_amount') ?? 0,
+                        2
+                    ),
+                    'open_invoices' => (clone $salesQuery)
+                        ->whereNotIn('status', SaleStatus::nonRevenueStatuses())
+                        ->where(function ($q) {
+                            $q->whereNull('payment_status')
+                                ->orWhere('payment_status', '!=', 'paid');
+                        })
+                        ->count(),
+                    'active_branches' => $this->isAdmin ? Branch::where('is_active', true)->count() : 1,
+                    'active_users' => $this->isAdmin
+                        ? User::where('is_active', true)->count()
+                        : User::where('is_active', true)->where('branch_id', $this->branchId)->count(),
+                    'total_products' => (clone $productsQuery)->count(),
+                    'low_stock_count' => $this->calculateLowStockCount($productsQuery),
+                ];
+            });
+        } catch (\Throwable $e) {
+            $this->recordDashboardError('stats', $e);
+
+            $this->stats = [
+                'today_sales' => '0.00',
+                'month_sales' => '0.00',
+                'open_invoices' => 0,
+                'active_branches' => $this->isAdmin ? 0 : 1,
+                'active_users' => 0,
+                'total_products' => 0,
+                'low_stock_count' => 0,
             ];
-        });
+        }
     }
 
     /**
@@ -194,26 +264,52 @@ trait LoadsDashboardData
     {
         $cacheKey = "{$this->getCachePrefix()}:chart_data";
 
-        $chartData = Cache::remember($cacheKey, $this->cacheTtl, function () {
-            // Sales chart data
-            $salesData = $this->buildSalesChartData();
+        $fallback = [
+            'sales' => ['labels' => [], 'data' => [], 'total' => '0.00'],
+            'payment' => ['labels' => [], 'data' => [], 'totals' => []],
+            'inventory' => ['in_stock' => 0, 'low_stock' => 0, 'out_of_stock' => 0],
+        ];
 
-            // Payment methods data
-            $paymentData = $this->buildPaymentMethodsData();
+        try {
+            $chartData = Cache::remember($cacheKey, $this->cacheTtl, function () use ($fallback) {
+                // Sales chart data
+                $salesData = $fallback['sales'];
+                try {
+                    $salesData = $this->buildSalesChartData();
+                } catch (\Throwable $e) {
+                    $this->recordDashboardError('sales_chart', $e);
+                }
 
-            // Inventory chart data - optimized single query
-            $inventoryData = $this->buildInventoryChartData();
+                // Payment methods data
+                $paymentData = $fallback['payment'];
+                try {
+                    $paymentData = $this->buildPaymentMethodsData();
+                } catch (\Throwable $e) {
+                    $this->recordDashboardError('payment_mix', $e);
+                }
 
-            return [
-                'sales' => $salesData,
-                'payment' => $paymentData,
-                'inventory' => $inventoryData,
-            ];
-        });
+                // Inventory chart data
+                $inventoryData = $fallback['inventory'];
+                try {
+                    $inventoryData = $this->buildInventoryChartData();
+                } catch (\Throwable $e) {
+                    $this->recordDashboardError('inventory_chart', $e);
+                }
 
-        $this->salesChartData = $chartData['sales'];
-        $this->paymentMethodsData = $chartData['payment'];
-        $this->inventoryChartData = $chartData['inventory'];
+                return [
+                    'sales' => $salesData,
+                    'payment' => $paymentData,
+                    'inventory' => $inventoryData,
+                ];
+            });
+        } catch (\Throwable $e) {
+            $this->recordDashboardError('chart_data', $e);
+            $chartData = $fallback;
+        }
+
+        $this->salesChartData = $chartData['sales'] ?? $fallback['sales'];
+        $this->paymentMethodsData = $chartData['payment'] ?? $fallback['payment'];
+        $this->inventoryChartData = $chartData['inventory'] ?? $fallback['inventory'];
     }
 
     /**
@@ -324,35 +420,40 @@ trait LoadsDashboardData
     {
         $cacheKey = "{$this->getCachePrefix()}:low_stock";
 
-        $this->lowStockProducts = Cache::remember($cacheKey, $this->cacheTtl, function () {
-            // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch context is available
-            // SECURITY: StockService validates column names with regex before interpolation
-            // @security-reviewed V43 - $stockExpr is generated by StockService which validates
-            // all inputs via regex pattern /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/
-            $stockExpr = $this->branchId
-                ? StockService::getBranchStockCalculationExpression('products.id', $this->branchId)
-                : StockService::getStockCalculationExpression();
+        try {
+            $this->lowStockProducts = Cache::remember($cacheKey, $this->cacheTtl, function () {
+                // V27-CRIT-01 FIX: Use branch-scoped stock calculation when branch context is available
+                // SECURITY: StockService validates column names with regex before interpolation
+                // @security-reviewed V43 - $stockExpr is generated by StockService which validates
+                // all inputs via regex pattern /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/
+                $stockExpr = $this->branchId
+                    ? StockService::getBranchStockCalculationExpression('products.id', $this->branchId)
+                    : StockService::getStockCalculationExpression();
 
-            // @phpstan-ignore-next-line - $stockExpr is regex-validated by StockService
-            return $this->scopeQueryToBranch(Product::query())
-                ->select('products.*')
-                ->selectRaw("{$stockExpr} as current_quantity")
-                ->with('category')
-                ->whereRaw("{$stockExpr} <= products.min_stock")
-                ->where('products.min_stock', '>', 0)
-                ->where('products.track_stock_alerts', true)
-                ->orderByRaw($stockExpr)
-                ->limit(5)
-                ->get()
-                ->map(fn ($p) => [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'quantity' => $p->current_quantity ?? 0,
-                    'min_stock' => $p->min_stock,
-                    'category' => $p->category?->name ?? '-',
-                ])
-                ->toArray();
-        });
+                // @phpstan-ignore-next-line - $stockExpr is regex-validated by StockService
+                return $this->scopeQueryToBranch(Product::query())
+                    ->select('products.*')
+                    ->selectRaw("{$stockExpr} as current_quantity")
+                    ->with('category')
+                    ->whereRaw("{$stockExpr} <= products.min_stock")
+                    ->where('products.min_stock', '>', 0)
+                    ->where('products.track_stock_alerts', true)
+                    ->orderByRaw($stockExpr)
+                    ->limit(5)
+                    ->get()
+                    ->map(fn ($p) => [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'quantity' => $p->current_quantity ?? 0,
+                        'min_stock' => $p->min_stock,
+                        'category' => $p->category?->name ?? '-',
+                    ])
+                    ->toArray();
+            });
+        } catch (\Throwable $e) {
+            $this->recordDashboardError('low_stock', $e);
+            $this->lowStockProducts = [];
+        }
     }
 
     /**
@@ -362,22 +463,32 @@ trait LoadsDashboardData
     {
         $cacheKey = "{$this->getCachePrefix()}:recent_sales";
 
-        $this->recentSales = Cache::remember($cacheKey, 60, function () {
-            return $this->scopeQueryToBranch(Sale::query())
-                ->with(['user', 'customer'])
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(fn ($s) => [
-                    'id' => $s->id,
-                    'reference' => $s->reference_no ?? "#{$s->id}",
-                    'customer' => $s->customer?->name ?? __('Walk-in'),
-                    'total' => number_format($s->total_amount ?? 0, 2),
-                    'status' => $s->status,
-                    'date' => $s->created_at->format('Y-m-d H:i'),
-                ])
-                ->toArray();
-        });
+        try {
+            $this->recentSales = Cache::remember($cacheKey, 60, function () {
+                return $this->scopeQueryToBranch(Sale::query())
+                    // Sale model uses `customer` + `createdBy` (not `user`)
+                    ->with(['customer', 'createdBy'])
+                    // V30-CRIT-01 FIX: Order by business date (sale_date) first
+                    ->orderByDesc('sale_date')
+                    ->orderByDesc('id')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn ($s) => [
+                        'id' => $s->id,
+                        'reference' => $s->reference_number ?? "#{$s->id}",
+                        'customer' => $s->customer?->name ?? __('Walk-in'),
+                        'total' => number_format((float) ($s->total_amount ?? 0), 2),
+                        'status' => $s->status,
+                        // Prefer business date; fall back to created_at for legacy records
+                        'date' => ($s->sale_date?->format('Y-m-d') ?? $s->created_at?->format('Y-m-d H:i')) ?: '-',
+                        'created_by' => $s->createdBy?->name ?? __('System'),
+                    ])
+                    ->toArray();
+            });
+        } catch (\Throwable $e) {
+            $this->recordDashboardError('recent_sales', $e);
+            $this->recentSales = [];
+        }
     }
 
     /**
@@ -388,32 +499,46 @@ trait LoadsDashboardData
     {
         $cacheKey = "{$this->getCachePrefix()}:trends";
 
-        $this->trendIndicators = Cache::remember($cacheKey, $this->cacheTtl, function () {
-            $salesQuery = $this->scopeQueryToBranch(Sale::query());
+        try {
+            $this->trendIndicators = Cache::remember($cacheKey, $this->cacheTtl, function () {
+                $salesQuery = $this->scopeQueryToBranch(Sale::query());
 
-            $currentWeekSales = (clone $salesQuery)
-                ->whereBetween('sale_date', [now()->startOfWeek(), now()->endOfWeek()])
-                ->sum('total_amount') ?? 0;
+                $currentWeekSales = (clone $salesQuery)
+                    ->whereBetween('sale_date', [now()->startOfWeek(), now()->endOfWeek()])
+                    ->sum('total_amount') ?? 0;
 
-            $previousWeekSales = (clone $salesQuery)
-                ->whereBetween('sale_date', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
-                ->sum('total_amount') ?? 0;
+                $previousWeekSales = (clone $salesQuery)
+                    ->whereBetween('sale_date', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
+                    ->sum('total_amount') ?? 0;
 
-            $invoiceTotal = (clone $salesQuery)->count();
-            $invoiceCleared = (clone $salesQuery)->where('status', 'completed')->count();
+                $invoiceBase = (clone $salesQuery)
+                    ->whereNotIn('status', SaleStatus::nonRevenueStatuses());
 
-            return [
-                'weekly_sales' => [
-                    'current' => number_format($currentWeekSales, 2),
-                    'previous' => number_format($previousWeekSales, 2),
-                    'change' => $this->calculatePercentChange($currentWeekSales, $previousWeekSales),
-                ],
-                'invoice_clear_rate' => $invoiceTotal > 0 ? round(($invoiceCleared / $invoiceTotal) * 100, 1) : 0,
-                'inventory_health' => ($this->stats['total_products'] ?? 0) > 0
-                    ? round(max(0, min(100, 100 - ((($this->stats['low_stock_count'] ?? 0) / ($this->stats['total_products'] ?? 1)) * 100))), 1)
-                    : 100,
+                $invoiceTotal = (clone $invoiceBase)->count();
+                $invoiceCleared = (clone $invoiceBase)
+                    ->where('payment_status', 'paid')
+                    ->count();
+
+                return [
+                    'weekly_sales' => [
+                        'current' => number_format($currentWeekSales, 2),
+                        'previous' => number_format($previousWeekSales, 2),
+                        'change' => $this->calculatePercentChange((float) $currentWeekSales, (float) $previousWeekSales),
+                    ],
+                    'invoice_clear_rate' => $invoiceTotal > 0 ? round(($invoiceCleared / $invoiceTotal) * 100, 1) : 0,
+                    'inventory_health' => ($this->stats['total_products'] ?? 0) > 0
+                        ? round(max(0, min(100, 100 - ((($this->stats['low_stock_count'] ?? 0) / ($this->stats['total_products'] ?? 1)) * 100))), 1)
+                        : 100,
+                ];
+            });
+        } catch (\Throwable $e) {
+            $this->recordDashboardError('trends', $e);
+            $this->trendIndicators = [
+                'weekly_sales' => ['current' => '0.00', 'previous' => '0.00', 'change' => 0.0],
+                'invoice_clear_rate' => 0,
+                'inventory_health' => 100,
             ];
-        });
+        }
     }
 
     /**

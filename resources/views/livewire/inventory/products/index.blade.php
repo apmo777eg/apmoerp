@@ -64,7 +64,7 @@
                     <select wire:model.live="moduleId" class="erp-input text-xs">
                         <option value="">{{ __('All modules') }}</option>
                         @foreach($dataModules as $module)
-                            <option value="{{ $module->id }}">{{ $module->icon }} {{ app()->getLocale() === 'ar' ? $module->name_ar : $module->name }}</option>
+                            <option value="{{ $module->id }}">{{ $module->display_icon }} {{ app()->getLocale() === 'ar' ? $module->name_ar : $module->name }}</option>
                         @endforeach
                     </select>
                     <div wire:loading.delay wire:target="moduleId" class="absolute right-6 top-1/2 -translate-y-1/2">

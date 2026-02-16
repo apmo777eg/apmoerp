@@ -62,29 +62,71 @@ class AuditViewButtons extends Command
         $content = file_get_contents($filePath);
         $lines = explode("\n", $content);
 
-        foreach ($lines as $lineNum => $line) {
-            // Check for buttons without actions
-            if (preg_match('/<button[^>]*>/', $line)) {
-                // Check if button has wire:click, @click, onclick, or type="submit"
-                if (! preg_match('/(wire:click|@click|onclick|type=["\']submit["\']|form=)/', $line)) {
-                    // Check if it's within a form (rough check)
+        // Track when we're inside a <form> to detect accidental submits.
+        $isInForm = false;
+
+        // Use an indexed loop so we can consume multi-line button tags.
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            $lineNum = $i + 1;
+
+            if (stripos($line, '<form') !== false) {
+                $isInForm = true;
+            }
+            if (stripos($line, '</form') !== false) {
+                $isInForm = false;
+            }
+
+            // Check for buttons (including multi-line attributes)
+            if (stripos($line, '<button') !== false) {
+                $buttonStartLine = $lineNum;
+                $buttonHtml = $line;
+                $safety = 0;
+
+                // If the tag spans multiple lines, concatenate up to 10 lines.
+                while (stripos($buttonHtml, '>') === false && ($i + 1) < count($lines) && $safety < 10) {
+                    $i++;
+                    $safety++;
+                    $buttonHtml .= ' '.trim($lines[$i]);
+                }
+
+                $hasAnyTypeAttr = (bool) preg_match('/\btype\s*=\s*["\'][^"\']+["\']/i', $buttonHtml);
+                $isExplicitSubmit = (bool) preg_match('/\btype\s*=\s*["\']submit["\']/i', $buttonHtml);
+                $hasClickHandler = (bool) preg_match('/(wire:click|@click|x-on:click|onclick)/i', $buttonHtml);
+                $hasAnyAction = (bool) preg_match('/(wire:click|@click|x-on:click|onclick|type\s*=\s*["\']submit["\']|form=)/i', $buttonHtml);
+                $isDisabled = (bool) preg_match('/\bdisabled\b/i', $buttonHtml);
+
+                // Forms bug detector: a <button> inside a <form> defaults to submit.
+                // We only warn when the dev clearly intended a click handler, but forgot type="button".
+                if ($isInForm && $hasClickHandler && ! $hasAnyTypeAttr) {
                     $this->issues[] = [
                         'file' => str_replace(resource_path().DIRECTORY_SEPARATOR, '', $filePath),
-                        'line' => $lineNum + 1,
+                        'line' => $buttonStartLine,
+                        'issue' => 'Button inside <form> has a click handler but is missing type="button" (may submit the form)',
+                        'code' => $buttonHtml,
+                    ];
+                }
+
+                // Generic: a button that is not a submit button and has no action is suspicious.
+                // Avoid flagging disabled buttons.
+                if (! $hasAnyAction && ! $isDisabled && ! $isExplicitSubmit) {
+                    $this->issues[] = [
+                        'file' => str_replace(resource_path().DIRECTORY_SEPARATOR, '', $filePath),
+                        'line' => $buttonStartLine,
                         'issue' => 'Button without action',
-                        'code' => $line,
+                        'code' => $buttonHtml,
                     ];
                 }
 
                 // Check for wire:click without method
-                if (preg_match('/wire:click=["\']([^"\']*)["\']/', $line, $matches)) {
+                if (preg_match('/wire:click\s*=\s*["\']([^"\']*)["\']/', $buttonHtml, $matches)) {
                     $method = trim($matches[1]);
                     if (empty($method) || $method === '$refresh') {
                         $this->issues[] = [
                             'file' => str_replace(resource_path().DIRECTORY_SEPARATOR, '', $filePath),
-                            'line' => $lineNum + 1,
+                            'line' => $buttonStartLine,
                             'issue' => 'wire:click with empty or $refresh method',
-                            'code' => $line,
+                            'code' => $buttonHtml,
                         ];
                     }
                 }
@@ -95,7 +137,7 @@ class AuditViewButtons extends Command
                 if (! preg_match('/(href=|wire:click|@click|onclick)/', $line)) {
                     $this->issues[] = [
                         'file' => str_replace(resource_path().DIRECTORY_SEPARATOR, '', $filePath),
-                        'line' => $lineNum + 1,
+                        'line' => $lineNum,
                         'issue' => 'Button-styled anchor without action',
                         'code' => $line,
                     ];
@@ -107,7 +149,7 @@ class AuditViewButtons extends Command
                 if (! preg_match('/(wire:loading|x-bind:disabled|\$wire)/', $line)) {
                     $this->issues[] = [
                         'file' => str_replace(resource_path().DIRECTORY_SEPARATOR, '', $filePath),
-                        'line' => $lineNum + 1,
+                        'line' => $lineNum,
                         'issue' => 'Button permanently disabled (not conditionally)',
                         'code' => $line,
                     ];

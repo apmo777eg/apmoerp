@@ -75,13 +75,21 @@ class BranchScope implements Scope
             return;
         }
 
-        // Skip if the model doesn't have a branch_id column
-        if (! $this->hasBranchIdColumn($model)) {
+        // Skip for models that should never be scoped by branch
+        if ($this->shouldExcludeModel($model)) {
             return;
         }
 
-        // Skip for models that should never be scoped by branch
-        if ($this->shouldExcludeModel($model)) {
+        // If the table is missing branch_id, don't crash the whole request.
+        //
+        // - For truly global tables (no branch_id column by design), we simply don't scope.
+        // - For branch-owned tables that *expect* branch_id (branch_id is in $fillable) but the column is missing
+        //   (e.g., migration not yet applied), FAIL CLOSED to an empty result set to avoid data leaks.
+        if (! $this->hasBranchIdColumn($model)) {
+            if (in_array('branch_id', $model->getFillable(), true) && ! app()->runningUnitTests()) {
+                $builder->whereRaw('0 = 1');
+            }
+
             return;
         }
 
@@ -242,27 +250,23 @@ class BranchScope implements Scope
             return self::$schemaColumnCache[$table];
         }
 
-        // First check if branch_id is in fillable (fast path, most common case)
-        $fillable = $model->getFillable();
-        if (in_array('branch_id', $fillable, true)) {
-            self::$schemaColumnCache[$table] = true;
-            return true;
-        }
-
-        // V10-HIGH-03 FIX: Also check schema if not in fillable
-        // This handles cases where branch_id exists but is guarded for security
         try {
+            // Prefer schema inspection (single DB query per table per request, cached)
             $hasColumn = \Illuminate\Support\Facades\Schema::hasColumn($table, 'branch_id');
             self::$schemaColumnCache[$table] = $hasColumn;
+
             return $hasColumn;
-        } catch (\Exception $e) {
-            // If schema check fails (e.g., during migrations), fall back to fillable check
-            self::$schemaColumnCache[$table] = false;
-            return false;
+        } catch (\Throwable $e) {
+            // If schema check fails (e.g., during migrations), fall back to fillable check.
+            // This is a best-effort fallback; apply() will still fail-closed when branch_id is expected but missing.
+            $fallback = in_array('branch_id', $model->getFillable(), true);
+            self::$schemaColumnCache[$table] = $fallback;
+
+            return $fallback;
         }
     }
 
-    /**
+/**
      * Clear the schema column cache.
      * Useful for testing or after migrations.
      */

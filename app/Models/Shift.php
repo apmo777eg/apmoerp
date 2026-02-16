@@ -18,6 +18,7 @@ class Shift extends BaseModel
     protected $fillable = [
         'branch_id',
         'name',
+        'code',
         'name_ar',
         'start_time',
         'end_time',

@@ -4,7 +4,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ __('Loyalty Program') }}</h1>
             <p class="text-gray-600 dark:text-gray-400">{{ __('Manage customer loyalty points and tiers') }}</p>
         </div>
-        <button wire:click="$set('showSettingsModal', true)" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+        <button type="button" wire:click="$set('showSettingsModal', true)" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
             {{ __('Settings') }}
         </button>
     </div>
@@ -73,7 +73,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <button wire:click="openAdjustModal({{ $customer->id }})" class="text-emerald-600 hover:text-emerald-800">
+                            <button type="button" wire:click="openAdjustModal({{ $customer->id }})" class="text-emerald-600 hover:text-emerald-800">
                                 {{ __('Adjust Points') }}
                             </button>
                         </td>
@@ -127,10 +127,10 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button wire:click="$set('showSettingsModal', false)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <button type="button" wire:click="$set('showSettingsModal', false)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                         {{ __('Cancel') }}
                     </button>
-                    <button wire:click="saveSettings" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                    <button type="button" wire:click="saveSettings" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
                         {{ __('Save') }}
                     </button>
                 </div>
@@ -158,10 +158,10 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button wire:click="$set('showAdjustModal', false)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
+                    <button type="button" wire:click="$set('showAdjustModal', false)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
                         {{ __('Cancel') }}
                     </button>
-                    <button wire:click="adjustPoints" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                    <button type="button" wire:click="adjustPoints" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
                         {{ __('Adjust') }}
                     </button>
                 </div>

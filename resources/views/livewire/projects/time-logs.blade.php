@@ -2,7 +2,7 @@
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-slate-800">{{ __('Time Logs') }}</h3>
-        <button wire:click="createLog" class="erp-btn erp-btn-sm erp-btn-primary">
+        <button type="button" wire:click="createLog" class="erp-btn erp-btn-sm erp-btn-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -30,7 +30,7 @@
                     <td class="px-4 py-3 text-sm font-medium">{{ number_format($log->hours, 2) }}h</td>
                     <td class="px-4 py-3 text-sm text-slate-600">{{ $log->description }}</td>
                     <td class="px-4 py-3 text-sm text-end">
-                        <button wire:click="deleteLog({{ $log->id }})" wire:confirm="{{ __('Are you sure?') }}" 
+                        <button type="button" wire:click="deleteLog({{ $log->id }})" wire:confirm="{{ __('Are you sure?') }}" 
                                 class="text-red-600 hover:text-red-800">
                             {{ __('Delete') }}
                         </button>
@@ -75,8 +75,8 @@
                     <textarea wire:model="description" rows="3" class="erp-input"></textarea>
                 </div>
                 <div class="flex gap-3">
-                    <button wire:click="closeModal" class="erp-btn erp-btn-secondary flex-1">{{ __('Cancel') }}</button>
-                    <button wire:click="save" class="erp-btn erp-btn-primary flex-1">{{ __('Save') }}</button>
+                    <button type="button" wire:click="closeModal" class="erp-btn erp-btn-secondary flex-1">{{ __('Cancel') }}</button>
+                    <button type="button" wire:click="save" class="erp-btn erp-btn-primary flex-1">{{ __('Save') }}</button>
                 </div>
             </div>
         </div>

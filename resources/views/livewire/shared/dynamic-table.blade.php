@@ -47,7 +47,7 @@
 
                 {{-- Clear Filters Button --}}
                 @if ($search || array_filter($filterValues ?? []))
-                    <button wire:click="clearFilters" class="erp-btn-secondary text-xs px-3 py-2">
+                    <button type="button" wire:click="clearFilters" class="erp-btn-secondary text-xs px-3 py-2">
                         <svg class="w-4 h-4 {{ $dir === 'rtl' ? 'ml-1' : 'mr-1' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -78,7 +78,7 @@
             </span>
             @foreach ($actions ?? [] as $action)
                 @if (($action['bulk'] ?? false))
-                    <button wire:click="executeBulkAction('{{ $action['name'] }}')" 
+                    <button type="button" wire:click="executeBulkAction('{{ $action['name'] }}')" 
                             class="text-sm font-medium {{ $action['class'] ?? 'text-emerald-600 hover:text-emerald-800' }}">
                         {{ __($action['label'] ?? $action['name']) }}
                     </button>
@@ -115,7 +115,7 @@
                             <th class="px-4 py-3 {{ $dir === 'rtl' ? 'text-right' : 'text-left' }} text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider"
                                 style="{{ $width ? 'width: ' . $width : '' }}">
                                 @if ($sortable && $colName)
-                                    <button wire:click="sortBy('{{ $colName }}')" 
+                                    <button type="button" wire:click="sortBy('{{ $colName }}')" 
                                             class="flex items-center gap-1.5 hover:text-emerald-600 transition-colors {{ $dir === 'rtl' ? 'flex-row-reverse' : '' }}">
                                         <span>{{ __($colLabel) }}</span>
                                         <span class="flex flex-col">
@@ -251,7 +251,7 @@
                                                     $actionClass = $action['class'] ?? 'erp-btn-icon';
                                                     $actionConfirm = $action['confirm'] ?? false;
                                                 @endphp
-                                                <button wire:click="executeAction('{{ $actionName }}', '{{ $row['id'] ?? '' }}')"
+                                                <button type="button" wire:click="executeAction('{{ $actionName }}', '{{ $row['id'] ?? '' }}')"
                                                         @if ($actionConfirm) wire:confirm="{{ __($actionConfirm) }}" @endif
                                                         class="{{ $actionClass }}"
                                                         title="{{ __($actionLabel) }}">
@@ -304,30 +304,34 @@
             </div>
 
             {{-- Pagination Buttons --}}
-            <div class="flex items-center gap-1">
+            @php
+                $prevIconPath = $dir === 'rtl' ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7';
+                $nextIconPath = $dir === 'rtl' ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7';
+            @endphp
+            <div class="flex items-center gap-1 {{ $dir === 'rtl' ? 'flex-row-reverse' : '' }}">
                 {{-- Previous --}}
-                <button wire:click="previousPage" 
+                <button type="button" wire:click="previousPage" 
                         class="erp-btn-icon {{ ($currentPage ?? 1) <= 1 ? 'opacity-50 cursor-not-allowed' : '' }}"
                         @if (($currentPage ?? 1) <= 1) disabled @endif>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $prevIconPath }}"/>
                     </svg>
                 </button>
 
                 {{-- Page Numbers --}}
                 @for ($i = max(1, ($currentPage ?? 1) - 2); $i <= min($totalPages ?? 1, ($currentPage ?? 1) + 2); $i++)
-                    <button wire:click="gotoPage({{ $i }})"
+                    <button type="button" wire:click="gotoPage({{ $i }})"
                             class="w-9 h-9 rounded-lg text-sm font-medium transition-all {{ $i === ($currentPage ?? 1) ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' }}">
                         {{ $i }}
                     </button>
                 @endfor
 
                 {{-- Next --}}
-                <button wire:click="nextPage"
+                <button type="button" wire:click="nextPage"
                         class="erp-btn-icon {{ ($currentPage ?? 1) >= ($totalPages ?? 1) ? 'opacity-50 cursor-not-allowed' : '' }}"
                         @if (($currentPage ?? 1) >= ($totalPages ?? 1)) disabled @endif>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $nextIconPath }}"/>
                     </svg>
                 </button>
             </div>

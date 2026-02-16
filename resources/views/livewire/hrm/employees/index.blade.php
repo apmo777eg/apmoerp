@@ -245,7 +245,7 @@
                                     </svg>
                                     <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No employees found.') }}</p>
                                     @if($search || $status || $department)
-                                        <button wire:click="clearFilters" 
+                                        <button type="button" wire:click="clearFilters" 
                                                 class="text-emerald-600 hover:text-emerald-700 text-sm">
                                             {{ __('Clear filters') }}
                                         </button>

@@ -45,7 +45,7 @@ class InventoryService implements InventoryServiceInterface
                 if ($warehouseId !== null) {
                     $perWarehouse = $this->movements->currentStockPerWarehouse($branchId, $productId);
 
-                    return decimal_float($perWarehouse->get($warehouseId, 0.0));
+                    return decimal_float($perWarehouse->get($warehouseId, 0.0), 4);
                 }
 
                 return $this->stockLevels->getForProduct($branchId, $productId);

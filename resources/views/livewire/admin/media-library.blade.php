@@ -133,7 +133,7 @@
                             </svg>
                         </button>
                         @if(auth()->user()->can('media.manage') || (auth()->user()->can('media.delete') && $item->user_id === auth()->id()))
-                        <button wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Are you sure?') }}" class="p-2 bg-white rounded-full hover:bg-red-100" title="{{ __('Delete') }}">
+                        <button type="button" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Are you sure?') }}" class="p-2 bg-white rounded-full hover:bg-red-100" title="{{ __('Delete') }}">
                             <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>

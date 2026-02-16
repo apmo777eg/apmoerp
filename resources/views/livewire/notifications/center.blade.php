@@ -25,7 +25,7 @@
     <div class="erp-card p-4 rounded-2xl">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center space-x-2 text-xs">
-                <button wire:click="$set('type','all')"
+                <button type="button" wire:click="$set('type','all')"
                         class="px-3 py-1 rounded-full border text-xs
                             @if($type === 'all')
                                 bg-emerald-600 text-white border-emerald-500
@@ -34,7 +34,7 @@
                             @endif">
                     {{ __('All') }}
                 </button>
-                <button wire:click="$set('type','pos')"
+                <button type="button" wire:click="$set('type','pos')"
                         class="px-3 py-1 rounded-full border text-xs
                             @if(str_starts_with($type, 'pos'))
                                 bg-emerald-600 text-white border-emerald-500
@@ -43,7 +43,7 @@
                             @endif">
                     {{ __('POS') }}
                 </button>
-                <button wire:click="$set('type','rental')"
+                <button type="button" wire:click="$set('type','rental')"
                         class="px-3 py-1 rounded-full border text-xs
                             @if(str_starts_with($type, 'rental'))
                                 bg-emerald-600 text-white border-emerald-500
@@ -52,7 +52,7 @@
                             @endif">
                     {{ __('Rental') }}
                 </button>
-                <button wire:click="$set('type','hr')"
+                <button type="button" wire:click="$set('type','hr')"
                         class="px-3 py-1 rounded-full border text-xs
                             @if(str_starts_with($type, 'hr'))
                                 bg-emerald-600 text-white border-emerald-500
@@ -100,7 +100,7 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         @if($isUnread)
-                            <button wire:click="markAsRead('{{ $notification->id }}')"
+                            <button type="button" wire:click="markAsRead('{{ $notification->id }}')"
                                     type="button"
                                     class="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
                                 {{ __('Mark read') }}

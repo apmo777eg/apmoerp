@@ -205,7 +205,54 @@ class CheckDatabaseIntegrity extends Command
         // Check for inconsistent totals
         $this->checkSaleTotals();
 
+        // Check core seeded data (roles, branches, warehouses, currencies)
+        $this->checkSeedData();
+
+        // Branch isolation correctness: warn if branch_id is missing on branch-aware tables.
+        // This can happen after adding branch_id columns to existing installs.
+        $this->checkBranchIdBackfill();
+
         $this->info('✓ Data integrity check completed');
+    }
+
+    /**
+     * Warn when branch-aware tables have NULL branch_id values.
+     *
+     * This is a common post-migration issue: once branch_id is introduced, old records
+     * may remain NULL which then makes them invisible under BranchScope.
+     */
+    private function checkBranchIdBackfill(): void
+    {
+        $this->info('🔍 Checking branch_id backfill...');
+
+        $tables = [
+            // Frequently used as "source of truth" for inventory reports/history
+            'stock_movements',
+            // Sales/purchase items may get branch_id added later in the lifecycle
+            'sale_items',
+            'purchase_items',
+        ];
+
+        foreach ($tables as $table) {
+            if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'branch_id')) {
+                continue;
+            }
+
+            $query = DB::table($table)->whereNull('branch_id');
+
+            // If the table is soft-deletable, ignore deleted rows.
+            if (Schema::hasColumn($table, 'deleted_at')) {
+                $query->whereNull('deleted_at');
+            }
+
+            $nullCount = (int) $query->count();
+
+            if ($nullCount > 0) {
+                $this->warnings[] = "{$table} has {$nullCount} record(s) with NULL branch_id. Run: php artisan db:check-integrity --fix (will backfill where possible).";
+            }
+        }
+
+        $this->info('✓ branch_id backfill check completed');
     }
 
     /**
@@ -405,6 +452,88 @@ class CheckDatabaseIntegrity extends Command
         $this->line('═══════════════════════════════════════════════════════');
     }
 
+
+    /**
+     * Check essential seeded data so environments don't boot into "empty system" state.
+     *
+     * This doesn't try to mutate data. It only provides actionable warnings
+     * (e.g., if permissions/roles/branches were not seeded).
+     */
+    private function checkSeedData(): void
+    {
+        $this->info('🔍 Checking core seeded data...');
+
+        try {
+            // Branches
+            if (Schema::hasTable('branches')) {
+                $branchesCount = DB::table('branches')->count();
+                if ($branchesCount === 0) {
+                    $this->warnings[] = 'No branches found. Run: php artisan db:seed (or BranchSeeder).';
+                }
+
+                // Warehouses should exist per branch in most ERP setups
+                if ($branchesCount > 0 && Schema::hasTable('warehouses')) {
+                    $branchesWithoutWh = DB::table('branches')
+                        ->leftJoin('warehouses', 'branches.id', '=', 'warehouses.branch_id')
+                        ->whereNull('warehouses.id')
+                        ->count();
+
+                    if ($branchesWithoutWh > 0) {
+                        $this->warnings[] = "{$branchesWithoutWh} branch(es) have no warehouse. Run WarehouseSeeder or create warehouses.";
+                    }
+                }
+            }
+
+            // Currencies: ensure there is a base currency
+            if (Schema::hasTable('currencies')) {
+                $baseCount = DB::table('currencies')->where('is_base', true)->count();
+                if ($baseCount === 0) {
+                    $this->warnings[] = 'No base currency is set. Run CurrencySeeder and ensure one currency has is_base=1.';
+                }
+            }
+
+            // Roles & permissions (Spatie)
+            if (Schema::hasTable('roles') && Schema::hasTable('permissions')) {
+                $rolesCount = DB::table('roles')->count();
+                $permCount = DB::table('permissions')->count();
+
+                if ($rolesCount === 0) {
+                    $this->warnings[] = 'No roles found. Run RolesSeeder.';
+                } else {
+                    $hasSuperAdmin = DB::table('roles')->whereIn('name', ['Super Admin', 'super-admin'])->exists();
+                    if (! $hasSuperAdmin) {
+                        $this->warnings[] = 'Super Admin role is missing. Run RolesSeeder (expects "Super Admin").';
+                    }
+                }
+
+                if ($permCount === 0) {
+                    $this->warnings[] = 'No permissions found. Run PermissionsSeeder.';
+                }
+            }
+
+            // Users: ensure at least one active user exists
+            if (Schema::hasTable('users')) {
+                $activeUsers = DB::table('users')->where('is_active', true)->count();
+                if ($activeUsers === 0) {
+                    $this->warnings[] = 'No active users found. Run UserSeeder or create an admin user.';
+                }
+            }
+
+            // Modules (if present)
+            if (Schema::hasTable('modules')) {
+                $modulesCount = DB::table('modules')->count();
+                if ($modulesCount === 0) {
+                    $this->warnings[] = 'No modules found. Run ModuleSeeder.';
+                }
+            }
+        } catch (\Throwable $e) {
+            // Never crash the integrity check because of a seed-data check failure
+            $this->warnings[] = 'Seed data check failed: '.$e->getMessage();
+        }
+
+        $this->info('✓ Core seeded data check completed');
+    }
+
     /**
      * Apply auto-generated fixes for missing indexes.
      *
@@ -439,6 +568,150 @@ class CheckDatabaseIntegrity extends Command
         }
 
         $this->newLine();
-        $this->info("Fixed {$fixed} out of ".count($this->fixes).' issues');
+
+        $this->info("Fixed {$fixed} out of ".count($this->fixes).' index issue(s)');
+
+        // Apply safe, DB-agnostic data fixes (no raw SQL) when possible.
+        $dataFixed = $this->applyBranchIdBackfills();
+        if ($dataFixed > 0) {
+            $this->info("✓ Backfilled branch_id for {$dataFixed} record(s)");
+        } else {
+            $this->info('✓ No branch_id backfill changes were needed');
+        }
+    }
+
+    /**
+     * Attempt to backfill branch_id values for common branch-aware tables.
+     *
+     * This intentionally uses query builder + chunking (no UPDATE JOIN raw SQL)
+     * to remain compatible across database drivers.
+     */
+    private function applyBranchIdBackfills(): int
+    {
+        $updated = 0;
+
+        try {
+            // stock_movements.branch_id from warehouses.branch_id
+            if (
+                Schema::hasTable('stock_movements') &&
+                Schema::hasTable('warehouses') &&
+                Schema::hasColumn('stock_movements', 'branch_id')
+            ) {
+                $warehouseBranch = DB::table('warehouses')->pluck('branch_id', 'id')->toArray();
+
+                if (! empty($warehouseBranch)) {
+                    $q = DB::table('stock_movements')
+                        ->select('id', 'warehouse_id')
+                        ->whereNull('branch_id');
+
+                    if (Schema::hasColumn('stock_movements', 'deleted_at')) {
+                        $q->whereNull('deleted_at');
+                    }
+
+                    $q->orderBy('id')->chunkById(1000, function ($rows) use (&$updated, $warehouseBranch) {
+                        $idsByBranch = [];
+                        foreach ($rows as $row) {
+                            $branchId = $warehouseBranch[$row->warehouse_id] ?? null;
+                            if ($branchId) {
+                                $idsByBranch[$branchId][] = $row->id;
+                            }
+                        }
+
+                        foreach ($idsByBranch as $branchId => $ids) {
+                            $affected = DB::table('stock_movements')
+                                ->whereIn('id', $ids)
+                                ->whereNull('branch_id')
+                                ->update(['branch_id' => (int) $branchId]);
+                            $updated += (int) $affected;
+                        }
+                    });
+                }
+            }
+
+            // sale_items.branch_id from sales.branch_id
+            if (
+                Schema::hasTable('sale_items') &&
+                Schema::hasTable('sales') &&
+                Schema::hasColumn('sale_items', 'branch_id')
+            ) {
+                $q = DB::table('sale_items')
+                    ->select('id', 'sale_id')
+                    ->whereNull('branch_id');
+
+                if (Schema::hasColumn('sale_items', 'deleted_at')) {
+                    $q->whereNull('deleted_at');
+                }
+
+                $q->orderBy('id')->chunkById(1000, function ($rows) use (&$updated) {
+                    $saleIds = collect($rows)->pluck('sale_id')->filter()->unique()->values()->all();
+                    if (empty($saleIds)) {
+                        return;
+                    }
+
+                    $saleBranch = DB::table('sales')->whereIn('id', $saleIds)->pluck('branch_id', 'id')->toArray();
+
+                    $idsByBranch = [];
+                    foreach ($rows as $row) {
+                        $branchId = $saleBranch[$row->sale_id] ?? null;
+                        if ($branchId) {
+                            $idsByBranch[$branchId][] = $row->id;
+                        }
+                    }
+
+                    foreach ($idsByBranch as $branchId => $ids) {
+                        $affected = DB::table('sale_items')
+                            ->whereIn('id', $ids)
+                            ->whereNull('branch_id')
+                            ->update(['branch_id' => (int) $branchId]);
+                        $updated += (int) $affected;
+                    }
+                });
+            }
+
+            // purchase_items.branch_id from purchases.branch_id
+            if (
+                Schema::hasTable('purchase_items') &&
+                Schema::hasTable('purchases') &&
+                Schema::hasColumn('purchase_items', 'branch_id')
+            ) {
+                $q = DB::table('purchase_items')
+                    ->select('id', 'purchase_id')
+                    ->whereNull('branch_id');
+
+                if (Schema::hasColumn('purchase_items', 'deleted_at')) {
+                    $q->whereNull('deleted_at');
+                }
+
+                $q->orderBy('id')->chunkById(1000, function ($rows) use (&$updated) {
+                    $purchaseIds = collect($rows)->pluck('purchase_id')->filter()->unique()->values()->all();
+                    if (empty($purchaseIds)) {
+                        return;
+                    }
+
+                    $purchaseBranch = DB::table('purchases')->whereIn('id', $purchaseIds)->pluck('branch_id', 'id')->toArray();
+
+                    $idsByBranch = [];
+                    foreach ($rows as $row) {
+                        $branchId = $purchaseBranch[$row->purchase_id] ?? null;
+                        if ($branchId) {
+                            $idsByBranch[$branchId][] = $row->id;
+                        }
+                    }
+
+                    foreach ($idsByBranch as $branchId => $ids) {
+                        $affected = DB::table('purchase_items')
+                            ->whereIn('id', $ids)
+                            ->whereNull('branch_id')
+                            ->update(['branch_id' => (int) $branchId]);
+                        $updated += (int) $affected;
+                    }
+                });
+            }
+        } catch (\Throwable $e) {
+            // Never crash a maintenance command; report as warning.
+            $this->warnings[] = 'Branch backfill failed: '.$e->getMessage();
+        }
+
+        return $updated;
     }
 }

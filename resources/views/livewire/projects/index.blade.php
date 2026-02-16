@@ -163,7 +163,7 @@
                             </a>
                             @endcan
                             @can('projects.delete')
-                            <button wire:click="delete({{ $project->id }})" wire:confirm="{{ __('Are you sure?') }}" 
+                            <button type="button" wire:click="delete({{ $project->id }})" wire:confirm="{{ __('Are you sure?') }}" 
                                     class="text-red-600 hover:text-red-900 ms-3">
                                 {{ __('Delete') }}
                             </button>

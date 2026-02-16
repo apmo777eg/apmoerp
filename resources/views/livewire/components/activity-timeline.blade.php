@@ -1,7 +1,7 @@
 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-slate-800">{{ __('Recent Activity') }}</h3>
-        <button 
+        <button type="button" 
             wire:click="refresh" 
             class="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
         >

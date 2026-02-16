@@ -53,15 +53,35 @@ class UIHelperService
 
     /**
      * Format status badge HTML
-     */
-    public function getStatusBadgeClass(string $status): string
+     */    public function getStatusBadgeClass(string $status): string
     {
         return match (strtolower($status)) {
-            'active', 'completed', 'paid', 'approved', 'confirmed' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
-            'inactive', 'cancelled', 'rejected', 'void' => 'bg-gray-100 text-gray-700 border-gray-200',
-            'pending', 'processing', 'in_progress' => 'bg-amber-100 text-amber-700 border-amber-200',
-            'draft', 'unpaid', 'partial' => 'bg-blue-100 text-blue-700 border-blue-200',
-            'overdue', 'expired', 'failed', 'blocked' => 'bg-red-100 text-red-700 border-red-200',
+            // Positive / completed
+            'active', 'completed', 'paid', 'approved', 'confirmed', 'posted', 'received', 'delivered' =>
+                'bg-emerald-100 text-emerald-700 border-emerald-200',
+
+            // Neutral / inactive
+            'inactive', 'cancelled', 'rejected', 'void', 'voided', 'closed' =>
+                'bg-gray-100 text-gray-700 border-gray-200',
+
+            // In progress / attention
+            'pending', 'processing', 'in_progress', 'in_transit', 'partially_paid', 'partially_received' =>
+                'bg-amber-100 text-amber-700 border-amber-200',
+
+            // Draft / financial pending
+            'draft', 'unpaid', 'partial' =>
+                'bg-blue-100 text-blue-700 border-blue-200',
+
+            // Errors / overdue
+            'overdue', 'expired', 'failed', 'blocked' =>
+                'bg-red-100 text-red-700 border-red-200',
+
+            // Returns / refunds
+            'returned', 'partially_returned' =>
+                'bg-orange-100 text-orange-700 border-orange-200',
+            'refunded' =>
+                'bg-purple-100 text-purple-700 border-purple-200',
+
             default => 'bg-slate-100 text-slate-700 border-slate-200',
         };
     }

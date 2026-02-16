@@ -44,7 +44,7 @@
 }" 
 x-init="$watch('open', value => localStorage.setItem('{{ $storageKey }}', value))"
 class="space-y-1">
-    <button 
+    <button type="button" 
         @click="open = !open"
         class="sidebar-link bg-gradient-to-r {{ $gradient }} w-full {{ $hasActiveChild ? 'ring-2 ring-white/30' : '' }}"
     >

@@ -134,7 +134,7 @@ trait HasExport
             $this->dispatch('trigger-download', url: route('download.export'));
 
             session()->flash('success', __('Export prepared. Download starting...'));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             logger()->error('Export failed', [
                 'entity_type' => $entityType,
                 'error' => $e->getMessage(),

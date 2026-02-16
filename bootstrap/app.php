@@ -48,6 +48,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
+            \App\Http\Middleware\RequestId::class,
+            \App\Http\Middleware\CorrelationId::class,
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\AutoLogout::class,
             \App\Http\Middleware\ModuleContext::class,

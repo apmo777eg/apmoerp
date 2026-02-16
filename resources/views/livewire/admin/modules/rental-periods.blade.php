@@ -73,13 +73,13 @@
                                 @if($period->is_default)
                                     <span class="px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-800">{{ __('Default') }}</span>
                                 @else
-                                    <button wire:click="setDefault({{ $period->id }})" class="text-sm text-gray-500 hover:text-emerald-600">
+                                    <button type="button" wire:click="setDefault({{ $period->id }})" class="text-sm text-gray-500 hover:text-emerald-600">
                                         {{ __('Set Default') }}
                                     </button>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <button wire:click="toggleActive({{ $period->id }})" class="text-sm">
+                                <button type="button" wire:click="toggleActive({{ $period->id }})" class="text-sm">
                                     @if($period->is_active)
                                         <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">{{ __('Active') }}</span>
                                     @else
@@ -91,7 +91,7 @@
                                 <a href="{{ route('admin.modules.rental-periods.edit', ['module' => $module->id, 'period' => $period->id]) }}" class="text-blue-600 hover:text-blue-900 me-3">
                                     {{ __('Edit') }}
                                 </a>
-                                <button wire:click="delete({{ $period->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">
+                                <button type="button" wire:click="delete({{ $period->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">
                                     {{ __('Delete') }}
                                 </button>
                             </td>

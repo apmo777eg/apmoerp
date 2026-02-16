@@ -10,7 +10,7 @@
                     {{ __('Manage system modules and their navigation') }}
                 </p>
             </div>
-            <button 
+            <button type="button" 
                 wire:click="openRegistrationModal"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -80,7 +80,7 @@
                 <div class="p-6" style="background: linear-gradient(135deg, {{ $module->color }}22 0%, {{ $module->color }}11 100%);">
                     <div class="flex items-start justify-between">
                         <div class="flex items-center space-x-3 rtl:space-x-reverse">
-                            <span class="text-4xl">{{ $module->icon }}</span>
+                            <span class="text-4xl">{{ $module->display_icon }}</span>
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">
                                     {{ $module->localized_name }}
@@ -162,7 +162,7 @@
                 <!-- Actions -->
                 <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
-                        <button 
+                        <button type="button" 
                             wire:click="toggleModuleStatus({{ $module->id }})"
                             class="text-sm font-medium {{ $module->is_active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700' }}"
                         >
@@ -177,7 +177,7 @@
                                 {{ __('Edit') }}
                             </a>
                             @if(!$module->is_core)
-                            <button 
+                            <button type="button" 
                                 wire:click="deleteModule({{ $module->id }})"
                                 wire:confirm="{{ __('Are you sure you want to unregister this module?') }}"
                                 class="text-sm font-medium text-red-600 hover:text-red-700"
@@ -207,7 +207,7 @@
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white">
                         {{ __('Register New Module') }}
                     </h2>
-                    <button 
+                    <button type="button" 
                         wire:click="closeRegistrationModal"
                         class="text-gray-400 hover:text-gray-600"
                     >

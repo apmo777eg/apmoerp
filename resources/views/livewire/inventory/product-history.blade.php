@@ -59,7 +59,7 @@
                     <input type="date" wire:model.live="dateTo" class="erp-input mt-1">
                 </div>
                 <div class="flex items-end">
-                    <button wire:click="clearFilters" class="erp-btn-secondary mt-1">
+                    <button type="button" wire:click="clearFilters" class="erp-btn-secondary mt-1">
                         {{ __('Clear Filters') }}
                     </button>
                 </div>

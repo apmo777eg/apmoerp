@@ -8,12 +8,74 @@ use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 /**
  * UsersSeeder - Seeds default users for the ERP system
  */
 class UsersSeeder extends Seeder
 {
+    /**
+     * Create/update a user in an idempotent and *safe* way.
+     *
+     * Key improvement: we do NOT silently reset passwords on re-seed.
+     * You can force reset via SEED_FORCE_PASSWORD_RESET=true.
+     */
+    protected function seedUser(array $data, ?string $role = null, array $branchIds = []): User
+    {
+        $email = $data['email'] ?? null;
+        if (! $email) {
+            throw new \InvalidArgumentException('UsersSeeder: email is required');
+        }
+
+        $plainPassword = $data['password'] ?? env('SEED_DEFAULT_PASSWORD', 'password');
+        unset($data['password']);
+
+        $user = User::firstOrNew(['email' => $email]);
+
+        // Only set password on create (unless explicitly forced)
+        if (! $user->exists) {
+            $user->password = Hash::make($plainPassword);
+            // Default to verified in demo setups
+            $user->email_verified_at = $data['email_verified_at'] ?? now();
+        } elseif (filter_var(env('SEED_FORCE_PASSWORD_RESET', false), FILTER_VALIDATE_BOOL)) {
+            $user->password = Hash::make($plainPassword);
+        }
+
+        // Avoid accidentally changing immutable keys
+        unset($data['email']);
+
+        $user->fill($data);
+        $user->save();
+
+        if ($role) {
+            try {
+                // Prefer syncRoles to avoid accumulating roles across re-seeds.
+                $user->syncRoles([$role]);
+            } catch (\Throwable $e) {
+                // In case permissions package isn't ready yet in the seeding order.
+                Log::warning('UsersSeeder role assignment failed', ['email' => $email, 'role' => $role, 'error' => $e->getMessage()]);
+            }
+        }
+
+        // Ensure the user can access their branches in the UI (branch switcher uses branch_user pivot)
+        $pivot = [];
+        foreach ($branchIds as $branchId) {
+            if ($branchId) {
+                $pivot[(int) $branchId] = ['is_active' => true, 'activated_at' => now()];
+            }
+        }
+        if (! empty($pivot)) {
+            try {
+                $user->branches()->syncWithoutDetaching($pivot);
+            } catch (\Throwable $e) {
+                Log::warning('UsersSeeder branch pivot attach failed', ['email' => $email, 'branches' => array_keys($pivot), 'error' => $e->getMessage()]);
+            }
+        }
+
+        return $user;
+    }
+
     /**
      * Run the database seeds.
      */
@@ -22,223 +84,188 @@ class UsersSeeder extends Seeder
         $mainBranch = Branch::where('code', 'HQ')->first();
         $downtownBranch = Branch::where('code', 'BR1')->first();
 
+        $defaultPassword = env('SEED_DEFAULT_PASSWORD', 'password');
+        $superAdminEmail = env('SEED_SUPER_ADMIN_EMAIL', 'admin@ghanem-lvju-egypt.com');
+        $superAdminPassword = env('SEED_SUPER_ADMIN_PASSWORD', '0150386787');
+
         // Super Admin - Full system access
-        $superAdmin = User::updateOrCreate(
-            ['email' => 'admin@ghanem-lvju-egypt.com'],
+        $superAdmin = $this->seedUser(
             [
-                'name' => 'System Administrator',
-                'email' => 'admin@ghanem-lvju-egypt.com',
-                'password' => Hash::make('0150386787'),
-                'phone' => '+20 100 000 0001',
+                'name' => env('SEED_SUPER_ADMIN_NAME', 'System Administrator'),
+                'email' => $superAdminEmail,
+                'password' => $superAdminPassword,
+                'phone' => env('SEED_SUPER_ADMIN_PHONE', '+20 100 000 0001'),
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
-                'locale' => 'en',
-            ]
+                'locale' => env('SEED_SUPER_ADMIN_LOCALE', 'en'),
+            ],
+            'Super Admin',
+            array_values(array_filter([$mainBranch?->id, $downtownBranch?->id]))
         );
-        $superAdmin->assignRole('Super Admin');
-        if ($mainBranch) {
-            $superAdmin->branches()->syncWithoutDetaching([$mainBranch->id]);
-            if ($downtownBranch) {
-                $superAdmin->branches()->syncWithoutDetaching([$downtownBranch->id]);
-            }
-        }
 
         // Branch Admin
-        $branchAdmin = User::updateOrCreate(
-            ['email' => 'branch.admin@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Branch Administrator',
                 'email' => 'branch.admin@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0002',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Admin',
+            [$mainBranch?->id]
         );
-        $branchAdmin->assignRole('Admin');
-        if ($mainBranch) {
-            $branchAdmin->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Manager
-        $manager = User::updateOrCreate(
-            ['email' => 'manager@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Ahmed Hassan',
                 'email' => 'manager@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0003',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Manager',
+            [$mainBranch?->id]
         );
-        $manager->assignRole('Manager');
-        if ($mainBranch) {
-            $manager->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Accountant
-        $accountant = User::updateOrCreate(
-            ['email' => 'accountant@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Sarah Mohamed',
                 'email' => 'accountant@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0004',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Accountant',
+            [$mainBranch?->id]
         );
-        $accountant->assignRole('Accountant');
-        if ($mainBranch) {
-            $accountant->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // HR Manager
-        $hrManager = User::updateOrCreate(
-            ['email' => 'hr@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Fatima Ali',
                 'email' => 'hr@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0005',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'HR Manager',
+            [$mainBranch?->id]
         );
-        $hrManager->assignRole('HR Manager');
-        if ($mainBranch) {
-            $hrManager->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Sales Manager
-        $salesManager = User::updateOrCreate(
-            ['email' => 'sales.manager@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Omar Khaled',
                 'email' => 'sales.manager@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0006',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Sales Manager',
+            [$mainBranch?->id]
         );
-        $salesManager->assignRole('Sales Manager');
-        if ($mainBranch) {
-            $salesManager->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Salesperson
-        $salesperson = User::updateOrCreate(
-            ['email' => 'salesperson@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Mohamed Ibrahim',
                 'email' => 'salesperson@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0007',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Salesperson',
+            [$mainBranch?->id]
         );
-        $salesperson->assignRole('Salesperson');
-        if ($mainBranch) {
-            $salesperson->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Warehouse Manager
-        $warehouseManager = User::updateOrCreate(
-            ['email' => 'warehouse.manager@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Khaled Mahmoud',
                 'email' => 'warehouse.manager@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0008',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Warehouse Manager',
+            [$mainBranch?->id]
         );
-        $warehouseManager->assignRole('Warehouse Manager');
-        if ($mainBranch) {
-            $warehouseManager->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Warehouse Staff
-        $warehouseStaff = User::updateOrCreate(
-            ['email' => 'warehouse.staff@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Ali Saeed',
                 'email' => 'warehouse.staff@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0009',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Warehouse Staff',
+            [$mainBranch?->id]
         );
-        $warehouseStaff->assignRole('Warehouse Staff');
-        if ($mainBranch) {
-            $warehouseStaff->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Cashier
-        $cashier = User::updateOrCreate(
-            ['email' => 'cashier@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Nour Ahmed',
                 'email' => 'cashier@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0010',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Cashier',
+            [$mainBranch?->id]
         );
-        $cashier->assignRole('Cashier');
-        if ($mainBranch) {
-            $cashier->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Employee
-        $employee = User::updateOrCreate(
-            ['email' => 'employee@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Hassan Youssef',
                 'email' => 'employee@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0011',
                 'branch_id' => $mainBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Employee',
+            [$mainBranch?->id]
         );
-        $employee->assignRole('Employee');
-        if ($mainBranch) {
-            $employee->branches()->syncWithoutDetaching([$mainBranch->id]);
-        }
 
         // Downtown Branch Staff
-        $downtownCashier = User::updateOrCreate(
-            ['email' => 'downtown.cashier@ghanem-erp.com'],
+        $this->seedUser(
             [
                 'name' => 'Mona Fathy',
                 'email' => 'downtown.cashier@ghanem-erp.com',
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
                 'phone' => '+20 100 000 0012',
                 'branch_id' => $downtownBranch?->id,
                 'is_active' => true,
                 'locale' => 'ar',
-            ]
+            ],
+            'Cashier',
+            [$downtownBranch?->id]
         );
-        $downtownCashier->assignRole('Cashier');
-        if ($downtownBranch) {
-            $downtownCashier->branches()->syncWithoutDetaching([$downtownBranch->id]);
-        }
     }
 }

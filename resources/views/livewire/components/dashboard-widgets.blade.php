@@ -1,7 +1,7 @@
 <div class="lw-component">
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold text-slate-800">{{ __('Quick Stats') }}</h2>
-        <button 
+        <button type="button" 
             wire:click="refreshData" 
             class="text-sm text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1"
         >

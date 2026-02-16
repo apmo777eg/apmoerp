@@ -56,7 +56,7 @@
                     HugousERP
                 </h2>
             </div>
-            <button 
+            <button type="button" 
                 @click="toggleSidebar"
                 class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 title="{{ __('Toggle Sidebar') }}"
@@ -144,7 +144,7 @@
         <div class="text-xs text-gray-500 dark:text-gray-400">
             <div class="flex items-center justify-between mb-1">
                 <span>{{ __('Keyboard Shortcuts') }}</span>
-                <button 
+                <button type="button" 
                     @click="$dispatch('show-shortcuts')"
                     class="text-blue-600 hover:text-blue-700"
                 >

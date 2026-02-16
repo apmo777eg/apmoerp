@@ -6,7 +6,7 @@
         </div>
         <div class="flex items-center gap-2">
             @can('documents.download')
-                <button wire:click="download" class="erp-btn erp-btn-primary">
+                <button type="button" wire:click="download" class="erp-btn erp-btn-primary">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     {{ __('Download') }}
                 </button>
@@ -149,7 +149,7 @@
                                 <option value="manage">{{ __('Full Access') }}</option>
                             </select>
                             <input type="datetime-local" wire:model="shareExpiresAt" class="erp-input w-full" placeholder="{{ __('Expires At (Optional)') }}">
-                            <button wire:click="shareDocument" class="erp-btn erp-btn-primary w-full">{{ __('Share') }}</button>
+                            <button type="button" wire:click="shareDocument" class="erp-btn erp-btn-primary w-full">{{ __('Share') }}</button>
                         </div>
 
                         @if($document->shares->count() > 0)
@@ -162,7 +162,7 @@
                                                 <p class="text-sm text-slate-900">{{ $share->user?->name ?? __('Unknown') }}</p>
                                                 <p class="text-xs text-slate-500">{{ ucfirst($share->permission) }}</p>
                                             </div>
-                                            <button wire:click="unshare({{ $share->shared_with_user_id }})" class="text-xs text-red-600 hover:text-red-900">{{ __('Revoke') }}</button>
+                                            <button type="button" wire:click="unshare({{ $share->shared_with_user_id }})" class="text-xs text-red-600 hover:text-red-900">{{ __('Revoke') }}</button>
                                         </div>
                                     @endforeach
                                 </div>

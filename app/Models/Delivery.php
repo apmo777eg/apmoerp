@@ -11,6 +11,11 @@ class Delivery extends BaseModel
 {
     use SoftDeletes;
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_IN_TRANSIT = 'in_transit';
+    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_FAILED = 'failed';
+
     protected ?string $moduleKey = 'sales';
 
     protected $table = 'deliveries';
@@ -62,16 +67,23 @@ class Delivery extends BaseModel
     // Scopes
     public function scopePending(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', self::STATUS_PENDING);
     }
 
     public function scopeDispatched(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'dispatched');
+        // Backward compatible alias.
+        // The DB enum uses `in_transit` (not `dispatched`).
+        return $this->scopeInTransit($query);
+    }
+
+    public function scopeInTransit(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('status', self::STATUS_IN_TRANSIT);
     }
 
     public function scopeDelivered(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'delivered');
+        return $query->where('status', self::STATUS_DELIVERED);
     }
 }

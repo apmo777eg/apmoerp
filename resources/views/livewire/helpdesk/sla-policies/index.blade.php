@@ -44,7 +44,7 @@
                         <td class="px-6 py-4 text-sm">{{ $policy->getResolutionTimeFormatted() }}</td>
                         <td class="px-6 py-4 text-sm">{{ $policy->business_hours_only ? __('Yes') : __('No') }}</td>
                         <td class="px-6 py-4">
-                            <button wire:click="toggleActive({{ $policy->id }})" class="px-2 py-1 text-xs font-semibold rounded 
+                            <button type="button" wire:click="toggleActive({{ $policy->id }})" class="px-2 py-1 text-xs font-semibold rounded 
                                 {{ $policy->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800' }}">
                                 {{ $policy->is_active ? __('Active') : __('Inactive') }}
                             </button>
@@ -52,7 +52,7 @@
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('app.helpdesk.sla-policies.edit', $policy->id) }}" class="text-blue-600 hover:text-blue-900">{{ __('Edit') }}</a>
-                                <button wire:click="delete({{ $policy->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
+                                <button type="button" wire:click="delete({{ $policy->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
                             </div>
                         </td>
                     </tr>

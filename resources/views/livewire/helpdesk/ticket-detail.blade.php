@@ -13,21 +13,21 @@
             @endcan
             @if($ticket->status !== 'resolved' && $ticket->status !== 'closed')
                 @can('helpdesk.edit')
-                    <button wire:click="resolveTicket" class="erp-btn erp-btn-success">
+                    <button type="button" wire:click="resolveTicket" class="erp-btn erp-btn-success">
                         {{ __('Mark as Resolved') }}
                     </button>
                 @endcan
             @endif
             @if($ticket->canBeClosed())
                 @can('helpdesk.close')
-                    <button wire:click="closeTicket" wire:confirm="{{ __('Are you sure?') }}" class="erp-btn erp-btn-secondary">
+                    <button type="button" wire:click="closeTicket" wire:confirm="{{ __('Are you sure?') }}" class="erp-btn erp-btn-secondary">
                         {{ __('Close Ticket') }}
                     </button>
                 @endcan
             @endif
             @if($ticket->canBeReopened())
                 @can('helpdesk.edit')
-                    <button wire:click="reopenTicket" class="erp-btn erp-btn-primary">
+                    <button type="button" wire:click="reopenTicket" class="erp-btn erp-btn-primary">
                         {{ __('Reopen') }}
                     </button>
                 @endcan
@@ -86,7 +86,7 @@
                                 <input type="checkbox" wire:model="isInternal" class="rounded border-slate-300">
                                 <span class="text-sm text-slate-700">{{ __('Internal Note') }}</span>
                             </label>
-                            <button wire:click="addReply" class="erp-btn erp-btn-primary">
+                            <button type="button" wire:click="addReply" class="erp-btn erp-btn-primary">
                                 {{ __('Send Reply') }}
                             </button>
                         </div>
@@ -163,7 +163,7 @@
                             <option value="{{ $agent->id }}">{{ $agent->name }}</option>
                         @endforeach
                     </select>
-                    <button wire:click="assignTicket" class="erp-btn erp-btn-primary w-full">
+                    <button type="button" wire:click="assignTicket" class="erp-btn erp-btn-primary w-full">
                         {{ __('Assign') }}
                     </button>
                 </div>

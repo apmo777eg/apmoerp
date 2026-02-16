@@ -66,10 +66,10 @@
 
             {{-- Actions --}}
             <div class="flex gap-2 mt-4">
-                <button wire:click="print" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg">
+                <button type="button" wire:click="print" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg">
                     {{ __('Print') }}
                 </button>
-                <button wire:click="close" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-sm font-medium rounded-lg">
+                <button type="button" wire:click="close" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-sm font-medium rounded-lg">
                     {{ __('Close') }}
                 </button>
             </div>

@@ -32,7 +32,7 @@
                     </a>
                 @endif
                 
-                <button onclick="window.location.reload()" 
+                <button type="button" onclick="window.location.reload()" 
                         class="inline-flex items-center justify-center w-full px-6 py-3 text-base font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -40,6 +40,21 @@
                     {{ __('Try Again') }}
                 </button>
             </div>
+
+            @php
+                $requestId = app()->bound('req.id') ? app('req.id') : request()->headers->get('X-Request-Id');
+                $correlationId = app()->bound('req.correlation_id') ? app('req.correlation_id') : request()->headers->get('X-Correlation-Id');
+            @endphp
+            @if($requestId || $correlationId)
+                <p class="mt-6 text-xs text-slate-500">
+                    @if($requestId)
+                        <span>{{ __('Request ID') }}: <span class="font-mono">{{ $requestId }}</span></span>
+                    @endif
+                    @if($correlationId)
+                        <span class="ms-2">{{ __('Correlation ID') }}: <span class="font-mono">{{ $correlationId }}</span></span>
+                    @endif
+                </p>
+            @endif
         </div>
     </div>
 </body>

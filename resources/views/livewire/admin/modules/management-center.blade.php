@@ -10,7 +10,7 @@
                 {{ __('Comprehensive module administration, settings, and branch configuration') }}
             </p>
         </div>
-        <button wire:click="syncNavigation" class="erp-btn-secondary">
+        <button type="button" wire:click="syncNavigation" class="erp-btn-secondary">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
@@ -49,7 +49,7 @@
                 
                 <div class="space-y-2 max-h-[600px] overflow-y-auto">
                     @forelse($modules as $module)
-                        <button 
+                        <button type="button" 
                             wire:click="selectModule({{ $module['id'] }})"
                             class="w-full flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 {{ $selectedModuleId === $module['id'] ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 hover:bg-slate-50 dark:hover:bg-slate-700' }}"
                         >
@@ -108,7 +108,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button wire:click="toggleModuleActive" class="erp-btn-secondary">
+                        <button type="button" wire:click="toggleModuleActive" class="erp-btn-secondary">
                             {{ $selectedModule['is_active'] ? __('Deactivate') : __('Activate') }}
                         </button>
                     </div>
@@ -195,7 +195,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                <button 
+                                <button type="button" 
                                     wire:click="toggleModuleForBranch"
                                     class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {{ $branchSettings['enabled'] ? 'bg-emerald-500' : 'bg-slate-300' }}"
                                 >

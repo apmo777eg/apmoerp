@@ -51,7 +51,7 @@
                         <td class="px-6 py-4 text-sm">{{ $category->defaultAssignee?->name ?? '-' }}</td>
                         <td class="px-6 py-4 text-sm">{{ $category->tickets_count }}</td>
                         <td class="px-6 py-4">
-                            <button wire:click="toggleActive({{ $category->id }})" class="px-2 py-1 text-xs font-semibold rounded 
+                            <button type="button" wire:click="toggleActive({{ $category->id }})" class="px-2 py-1 text-xs font-semibold rounded 
                                 {{ $category->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800' }}">
                                 {{ $category->is_active ? __('Active') : __('Inactive') }}
                             </button>
@@ -59,7 +59,7 @@
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('app.helpdesk.categories.edit', $category->id) }}" class="text-blue-600 hover:text-blue-900">{{ __('Edit') }}</a>
-                                <button wire:click="delete({{ $category->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
+                                <button type="button" wire:click="delete({{ $category->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
                             </div>
                         </td>
                     </tr>

@@ -87,7 +87,7 @@
                             </span>
                         </td>
                         <td class="text-center">
-                            <button wire:click="toggleActive({{ $unit->id }})" 
+                            <button type="button" wire:click="toggleActive({{ $unit->id }})" 
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $unit->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' }}">
                                 {{ $unit->is_active ? __('Active') : __('Inactive') }}
                             </button>
@@ -101,7 +101,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
-                                <button wire:click="delete({{ $unit->id }})" 
+                                <button type="button" wire:click="delete({{ $unit->id }})" 
                                         wire:confirm="{{ __('Are you sure you want to delete this unit?') }}"
                                         class="erp-btn-icon text-red-500 hover:text-red-700 hover:bg-red-50"
                                         title="{{ __('Delete') }}">

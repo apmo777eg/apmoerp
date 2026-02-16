@@ -30,30 +30,19 @@ class DashboardWidgets extends Component
 
     public function loadUserWidgets(): void
     {
-        $user = Auth::user();
+        // NOTE:
+        // The project has a newer, database-backed customizable dashboard (Dashboard\CustomizableDashboard).
+        // This component is kept for backward compatibility and stores preferences in the session to avoid
+        // schema mismatches causing 500s.
+        $stored = session()->get('dashboard_widgets');
 
-        if (! $user) {
+        if (is_array($stored) && !empty($stored)) {
+            $this->widgets = $stored;
             return;
         }
 
-        // Get user's widget preferences or use defaults
-        $userWidgets = UserDashboardWidget::where('user_id', $user->id)
-            ->orderBy('position')
-            ->get();
-
-        if ($userWidgets->isEmpty()) {
-            // Default widgets
-            $this->widgets = $this->getDefaultWidgets();
-        } else {
-            $this->widgets = $userWidgets->map(fn ($w) => [
-                'id' => $w->widget_key,
-                'title' => __($w->widget_title),
-                'visible' => $w->is_visible,
-                'position' => $w->position,
-            ])->toArray();
-        }
+        $this->widgets = $this->defaultWidgets;
     }
-
     public function loadWidgetData(): void
     {
         $user = Auth::user();
@@ -142,36 +131,19 @@ class DashboardWidgets extends Component
 
     public function toggleWidget(string $widgetId): void
     {
-        $user = Auth::user();
-
-        if (! $user) {
-            return;
-        }
-
-        $widget = UserDashboardWidget::where('user_id', $user->id)
-            ->where('widget_key', $widgetId)
-            ->first();
-
-        if ($widget) {
-            $widget->update(['is_visible' => ! $widget->is_visible]);
-        } else {
-            // Create widget preference
-            $defaultWidget = collect($this->getDefaultWidgets())->firstWhere('id', $widgetId);
-            if ($defaultWidget) {
-                UserDashboardWidget::create([
-                    'user_id' => $user->id,
-                    'widget_key' => $widgetId,
-                    'widget_title' => $defaultWidget['title'],
-                    'is_visible' => true,
-                    'position' => count($this->widgets) + 1,
-                ]);
+        $widgets = collect($this->widgets)->map(function ($widget) use ($widgetId) {
+            if ($widget['id'] === $widgetId) {
+                $widget['visible'] = !($widget['visible'] ?? true);
             }
-        }
+            return $widget;
+        })->toArray();
 
-        $this->loadUserWidgets();
-        Cache::forget("dashboard_widgets:user_{$user->id}:branch_".branch_context_cache_key());
-        $this->loadWidgetData();
+        $this->widgets = $widgets;
+        session()->put('dashboard_widgets', $this->widgets);
     }
+
+
+
 
     public function refreshData(): void
     {

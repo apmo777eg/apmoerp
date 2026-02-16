@@ -44,14 +44,16 @@ class ProductFactory extends Factory
     public function outOfStock(): static
     {
         return $this->state(fn (array $attributes) => [
-            'quantity' => 0,
+            // products table uses stock_quantity (not quantity)
+            'stock_quantity' => 0,
         ]);
     }
 
     public function lowStock(): static
     {
         return $this->state(fn (array $attributes) => [
-            'quantity' => fake()->numberBetween(1, 4),
+            // products table uses stock_quantity (not quantity)
+            'stock_quantity' => fake()->numberBetween(1, 4),
             'min_stock' => 5,
         ]);
     }
@@ -59,8 +61,13 @@ class ProductFactory extends Factory
     public function service(): static
     {
         return $this->state(fn (array $attributes) => [
+            // Services are not stock-tracked in the traditional sense.
+            // Keep stock_quantity at 0 but mark product_type as service.
+            'product_type' => 'service',
             'type' => 'service',
-            'quantity' => null,
+            'stock_quantity' => 0,
+            'min_stock' => 0,
+            'track_stock_alerts' => false,
         ]);
     }
 }

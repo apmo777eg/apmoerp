@@ -1,6 +1,6 @@
 <div class="relative" x-data="{ open: @entangle('showDropdown') }">
     {{-- Notification Bell Button --}}
-    <button 
+    <button type="button" 
         @click="open = !open" 
         class="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
         aria-label="{{ __('Notifications') }}"
@@ -34,7 +34,7 @@
             <div class="px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white flex items-center justify-between">
                 <h3 class="font-semibold text-lg">{{ __('Notifications') }}</h3>
                 @if($unreadCount > 0)
-                    <button 
+                    <button type="button" 
                         wire:click="markAllAsRead" 
                         class="text-xs text-white/90 hover:text-white underline"
                     >
@@ -100,7 +100,7 @@
                                         </a>
                                     @endif
                                     @if(!$notification['read'])
-                                        <button 
+                                        <button type="button" 
                                             wire:click="markAsRead('{{ $notification['id'] }}')"
                                             class="text-xs text-slate-500 hover:text-slate-700"
                                         >
@@ -123,7 +123,7 @@
 
             {{-- Footer --}}
             <div class="px-4 py-3 bg-slate-50 border-t border-slate-100">
-                <button 
+                <button type="button" 
                     wire:click="loadNotifications" 
                     class="text-sm text-emerald-600 hover:text-emerald-700 font-medium w-full text-center"
                 >

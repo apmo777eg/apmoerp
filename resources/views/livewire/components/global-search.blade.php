@@ -16,7 +16,7 @@
                 @keydown.escape="open = false"
             />
             @if($query)
-                <button 
+                <button type="button" 
                     wire:click="$set('query', '')"
                     class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}-0 flex items-center {{ app()->getLocale() === 'ar' ? 'pl' : 'pr' }}-3"
                 >
@@ -30,14 +30,14 @@
         {{-- Module Filter --}}
         @if(count($this->availableModules) > 0)
             <div class="mt-2 flex flex-wrap gap-2">
-                <button 
+                <button type="button" 
                     wire:click="$set('selectedModule', null)"
                     class="px-3 py-1 text-sm rounded-full {{ is_null($selectedModule) ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
                 >
                     {{ __('All') }}
                 </button>
                 @foreach($this->availableModules as $module)
-                    <button 
+                    <button type="button" 
                         wire:click="$set('selectedModule', '{{ $module }}')"
                         class="px-3 py-1 text-sm rounded-full {{ $selectedModule === $module ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
                     >
@@ -112,7 +112,7 @@
                     <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">
                         {{ __('Recent Searches') }}
                     </div>
-                    <button 
+                    <button type="button" 
                         wire:click="clearHistory"
                         class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
@@ -120,7 +120,7 @@
                     </button>
                 </div>
                 @foreach($recentSearches as $recentQuery)
-                    <button 
+                    <button type="button" 
                         wire:click="useRecentSearch(@js($recentQuery))"
                         class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     >

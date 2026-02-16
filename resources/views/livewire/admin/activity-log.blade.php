@@ -53,7 +53,7 @@
                        class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm">
             </div>
             <div class="flex items-end sm:col-span-2 lg:col-span-3 xl:col-span-1">
-                <button wire:click="clearFilters" class="w-full px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <button type="button" wire:click="clearFilters" class="w-full px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                     {{ __('Clear Filters') }}
                 </button>
             </div>

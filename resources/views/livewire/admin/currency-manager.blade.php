@@ -49,7 +49,7 @@
                                         {{ __('Base') }}
                                     </span>
                                 @else
-                                    <button wire:click="setAsBase({{ $currency->id }})" 
+                                    <button type="button" wire:click="setAsBase({{ $currency->id }})" 
                                             wire:confirm="{{ __('Set :currency as base currency?', ['currency' => $currency->code]) }}"
                                             class="text-gray-400 hover:text-amber-500 text-xs">
                                         {{ __('Set as Base') }}
@@ -57,7 +57,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <button wire:click="toggleActive({{ $currency->id }})" class="focus:outline-none" @if($currency->is_base) disabled @endif>
+                                <button type="button" wire:click="toggleActive({{ $currency->id }})" class="focus:outline-none" @if($currency->is_base) disabled @endif>
                                     @if($currency->is_active)
                                         <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
                                             {{ __('Active') }}
@@ -75,7 +75,7 @@
                                         <x-icon name="pencil" class="w-4 h-4" />
                                     </a>
                                     @if(!$currency->is_base)
-                                        <button wire:click="delete({{ $currency->id }})" 
+                                        <button type="button" wire:click="delete({{ $currency->id }})" 
                                                 wire:confirm="{{ __('Delete this currency?') }}"
                                                 class="text-gray-400 hover:text-red-500">
                                             <x-icon name="trash" class="w-4 h-4" />

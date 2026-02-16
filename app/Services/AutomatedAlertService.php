@@ -293,11 +293,14 @@ class AutomatedAlertService
      */
     public function checkOverduePurchaseAlerts(?int $branchId = null): array
     {
+        // Purchases table uses `expected_date` (not expected_delivery_date) and does not store an
+        // `actual_delivery_date`. We consider a PO overdue if:
+        // - expected_date is set and already passed
+        // - status is not in terminal "received/completed/cancelled"
         $overduePurchases = Purchase::query()
-            ->whereNotNull('expected_delivery_date')
-            ->whereNull('actual_delivery_date')
-            ->where('expected_delivery_date', '<', now())
-            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotNull('expected_date')
+            ->where('expected_date', '<', now())
+            ->whereNotIn('status', ['cancelled', 'received', 'completed'])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with(['supplier', 'branch'])
             ->get();
@@ -305,21 +308,21 @@ class AutomatedAlertService
         $alerts = [];
 
         foreach ($overduePurchases as $purchase) {
-            $daysOverdue = now()->diffInDays($purchase->expected_delivery_date);
+            $daysOverdue = now()->diffInDays($purchase->expected_date);
             $supplierName = $purchase->supplier ? $purchase->supplier->name : 'Unknown';
 
             $alerts[] = [
                 'type' => 'overdue_delivery',
                 'severity' => $daysOverdue > 14 ? 'high' : 'medium',
                 'purchase_id' => $purchase->id,
-                'purchase_code' => $purchase->code,
+                'purchase_reference' => $purchase->reference_number,
                 'supplier_id' => $purchase->supplier_id,
                 'supplier_name' => $supplierName,
-                'expected_delivery_date' => $purchase->expected_delivery_date,
+                'expected_date' => $purchase->expected_date,
                 'days_overdue' => $daysOverdue,
-                'order_value' => $purchase->grand_total,
+                'order_value' => $purchase->total_amount,
                 'branch_id' => $purchase->branch_id,
-                'message' => "Delivery overdue: Purchase {$purchase->code} from {$supplierName} is {$daysOverdue} days overdue",
+                'message' => "Delivery overdue: Purchase {$purchase->reference_number} from {$supplierName} is {$daysOverdue} days overdue",
                 'action_required' => 'contact_supplier',
             ];
         }

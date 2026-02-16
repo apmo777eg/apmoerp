@@ -42,7 +42,7 @@
                     </div>
                 </div>
                 
-                <button wire:click="convert" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                <button type="button" wire:click="convert" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
                     {{ __('Convert') }}
                 </button>
                 
@@ -109,13 +109,13 @@
                                             <x-icon name="pencil" class="w-4 h-4" />
                                         </a>
                                         @if($rate->is_active)
-                                            <button wire:click="deactivate({{ $rate->id }})" 
+                                            <button type="button" wire:click="deactivate({{ $rate->id }})" 
                                                     wire:confirm="{{ __('Deactivate this rate?') }}"
                                                     class="text-gray-400 hover:text-red-500">
                                                 <x-icon name="x-circle" class="w-4 h-4" />
                                             </button>
                                         @else
-                                            <button wire:click="activate({{ $rate->id }})" class="text-gray-400 hover:text-green-500">
+                                            <button type="button" wire:click="activate({{ $rate->id }})" class="text-gray-400 hover:text-green-500">
                                                 <x-icon name="check-circle" class="w-4 h-4" />
                                             </button>
                                         @endif

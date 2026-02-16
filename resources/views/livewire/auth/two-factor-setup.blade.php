@@ -37,10 +37,10 @@
             @endif
 
             <div class="flex flex-wrap gap-3">
-                <button wire:click="regenerateRecoveryCodes" class="erp-btn-secondary">
+                <button type="button" wire:click="regenerateRecoveryCodes" class="erp-btn-secondary">
                     {{ __('Regenerate Recovery Codes') }}
                 </button>
-                <button wire:click="disable" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
+                <button type="button" wire:click="disable" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
                     onclick="return confirm('{{ __('Are you sure you want to disable 2FA?') }}')">
                     {{ __('Disable 2FA') }}
                 </button>

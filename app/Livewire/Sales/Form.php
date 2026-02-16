@@ -6,6 +6,7 @@ namespace App\Livewire\Sales;
 
 use App\Events\SaleCompleted;
 use App\Livewire\Concerns\HandlesErrors;
+use App\Enums\SaleStatus;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
@@ -14,6 +15,7 @@ use App\Models\SalePayment;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
@@ -123,7 +125,7 @@ class Form extends Component
                 },
             ],
             'reference_no' => 'nullable|string|max:100',
-            'status' => 'required|in:draft,pending,completed,cancelled,refunded',
+            'status' => ['required', Rule::in(SaleStatus::values())],
             'currency' => 'nullable|string|max:3',
             'notes' => 'nullable|string',
             'internal_notes' => 'nullable|string|max:1000',

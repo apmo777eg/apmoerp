@@ -72,7 +72,7 @@
             <!-- Actions -->
             <div class="flex items-center space-x-2 rtl:space-x-reverse">
                 @if($exportable)
-                <button 
+                <button type="button" 
                     @click="$dispatch('export-data')"
                     class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -98,13 +98,13 @@
                     <span x-text="selectedRows.length"></span> {{ __('item(s) selected') }}
                 </span>
                 <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                    <button 
+                    <button type="button" 
                         @click="$dispatch('bulk-action', {action: 'delete', ids: selectedRows})"
                         class="px-3 py-1 text-sm text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                     >
                         {{ __('Delete') }}
                     </button>
-                    <button 
+                    <button type="button" 
                         @click="selectedRows = []"
                         class="px-3 py-1 text-sm text-gray-700 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-200"
                     >

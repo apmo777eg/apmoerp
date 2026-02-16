@@ -94,7 +94,7 @@
                 </div>
                 
                 <div class="flex gap-2">
-                    <button wire:click="clearCache" 
+                    <button type="button" wire:click="clearCache" 
                             wire:loading.attr="disabled"
                             class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition inline-flex items-center gap-2 disabled:opacity-50">
                         <svg wire:loading.class="animate-spin" wire:target="clearCache" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </a>
-                                    <button wire:click="deleteTranslation('{{ e($translation['key']) }}', '{{ e($translation['group']) }}')"
+                                    <button type="button" wire:click="deleteTranslation('{{ e($translation['key']) }}', '{{ e($translation['group']) }}')"
                                             wire:confirm="{{ __('Are you sure you want to delete this translation?') }}"
                                             class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                                             title="{{ __('Delete') }}">

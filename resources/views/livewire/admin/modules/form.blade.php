@@ -76,7 +76,7 @@
                         <div x-show="showIconPicker" 
                              x-transition
                              @click.away="showIconPicker = false"
-                             class="absolute z-50 mt-2 w-full max-w-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-4">
+                             class="absolute z-[9999] mt-2 w-full max-w-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-4">
                             
                             {{-- Search --}}
                             <input type="text" x-model="searchIcon" 

@@ -59,7 +59,7 @@
         <div class="mb-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ __('Recent') }}</span>
-                <button wire:click="clearRecentSearches" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">{{ __('Clear') }}</button>
+                <button type="button" wire:click="clearRecentSearches" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">{{ __('Clear') }}</button>
             </div>
             <div class="space-y-1">
                 @foreach($recentSearches as $recent)

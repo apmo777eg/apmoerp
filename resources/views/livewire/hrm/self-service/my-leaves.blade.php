@@ -5,7 +5,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ __('My Leaves') }}</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('View and request leaves') }}</p>
         </div>
-        <button wire:click="openRequestModal" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <button type="button" wire:click="openRequestModal" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             {{ __('Request Leave') }}
         </button>
     </div>
@@ -105,7 +105,7 @@
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm">
                             @if($record->status === 'pending')
-                                <button wire:click="cancelRequest({{ $record->id }})" 
+                                <button type="button" wire:click="cancelRequest({{ $record->id }})" 
                                     wire:confirm="{{ __('Are you sure you want to cancel this request?') }}"
                                     class="text-red-600 hover:text-red-900 dark:text-red-400">
                                     {{ __('Cancel') }}

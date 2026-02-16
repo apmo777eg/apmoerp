@@ -82,7 +82,7 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <button wire:click="downloadPayslip({{ $payroll->id }})" 
+                    <button type="button" wire:click="downloadPayslip({{ $payroll->id }})" 
                         class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
                         <span class="flex items-center justify-center gap-2">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -114,7 +114,7 @@
                     </svg>
                 </div>
             </div>
-            <button wire:click="openExportModal" class="erp-btn erp-btn-secondary">
+            <button type="button" wire:click="openExportModal" class="erp-btn erp-btn-secondary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 {{ __('Export') }}
             </button>
@@ -190,7 +190,7 @@
                                     </a>
                                     @endcan
                                     @can('income.delete')
-                                    <button wire:click="delete({{ $income->id }})" wire:loading.attr="disabled" wire:loading.class="opacity-50" wire:target="delete({{ $income->id }})" wire:confirm="{{ __('Are you sure you want to delete this income record?') }}" class="text-red-600 hover:text-red-800" title="{{ __('Delete') }}">
+                                    <button type="button" wire:click="delete({{ $income->id }})" wire:loading.attr="disabled" wire:loading.class="opacity-50" wire:target="delete({{ $income->id }})" wire:confirm="{{ __('Are you sure you want to delete this income record?') }}" class="text-red-600 hover:text-red-800" title="{{ __('Delete') }}">
                                         <svg wire:loading.remove wire:target="delete({{ $income->id }})" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         <svg wire:loading wire:target="delete({{ $income->id }})" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

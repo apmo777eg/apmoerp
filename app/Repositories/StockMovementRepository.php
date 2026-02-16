@@ -26,7 +26,8 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
 
     public function paginateForBranch(int $branchId, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        // Note: stock_movements table doesn't have branch_id - filter via warehouse
+        // Note: stock_movements now has branch_id, but we still filter via warehouse
+        // for backward compatibility (legacy rows may have NULL branch_id) and to guarantee correctness.
         $query = $this->baseQuery();
 
         if (! empty($filters['product_id'])) {
@@ -160,6 +161,16 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             if ($warehouse === null) {
                 throw new DomainException("Invalid warehouse_id: {$data['warehouse_id']}");
             }
+
+            // Always attach movement to the warehouse branch.
+            // This makes branch scoping reliable even if the caller did not set an explicit branch context.
+            if (isset($data['branch_id']) && (int) $data['branch_id'] !== (int) $warehouse->branch_id) {
+                throw new DomainException(
+                    "Branch mismatch: Stock movement branch_id ({$data['branch_id']}) does not match warehouse branch_id ({$warehouse->branch_id})"
+                );
+            }
+
+            $mappedData['branch_id'] = (int) $warehouse->branch_id;
 
             // V32-CRIT-02 FIX: Validate warehouse belongs to the same branch as the product
             // In a multi-branch ERP, allowing stock movements across branches corrupts

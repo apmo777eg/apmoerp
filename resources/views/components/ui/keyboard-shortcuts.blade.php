@@ -44,7 +44,7 @@
     @keydown.ctrl.slash.window.prevent="open = !open"
 >
     <!-- Keyboard Shortcut Hint (Bottom Right) -->
-    <button 
+    <button type="button" 
         @click="open = true"
         class="fixed bottom-4 right-4 z-40 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-all"
         title="{{ __('Keyboard Shortcuts') }} (Ctrl + /)"
@@ -80,7 +80,7 @@
                                 {{ __('Use these shortcuts to navigate and work faster') }}
                             </p>
                         </div>
-                        <button 
+                        <button type="button" 
                             @click="open = false"
                             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         >
@@ -139,7 +139,7 @@
                             <kbd class="mx-1 px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">/</kbd>
                             <span>{{ __('to toggle this dialog') }}</span>
                         </div>
-                        <button 
+                        <button type="button" 
                             @click="open = false"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >

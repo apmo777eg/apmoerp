@@ -33,7 +33,7 @@
                 @endif
                 
                 @auth
-                    <button onclick="history.back()" 
+                    <button type="button" onclick="history.back()" 
                             class="inline-flex items-center justify-center w-full px-6 py-3 text-base font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors border border-slate-200">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -42,6 +42,21 @@
                     </button>
                 @endauth
             </div>
+
+            @php
+                $requestId = app()->bound('req.id') ? app('req.id') : request()->headers->get('X-Request-Id');
+                $correlationId = app()->bound('req.correlation_id') ? app('req.correlation_id') : request()->headers->get('X-Correlation-Id');
+            @endphp
+            @if($requestId || $correlationId)
+                <p class="mt-6 text-xs text-slate-500">
+                    @if($requestId)
+                        <span>{{ __('Request ID') }}: <span class="font-mono">{{ $requestId }}</span></span>
+                    @endif
+                    @if($correlationId)
+                        <span class="ms-2">{{ __('Correlation ID') }}: <span class="font-mono">{{ $correlationId }}</span></span>
+                    @endif
+                </p>
+            @endif
         </div>
     </div>
 </body>

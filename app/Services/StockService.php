@@ -373,6 +373,7 @@ class StockService
             $movement = StockMovement::create([
                 'product_id' => $productId,
                 'warehouse_id' => $warehouseId,
+                'branch_id' => $warehouse->branch_id,
                 'movement_type' => $type,
                 'quantity' => $quantity,
                 'unit_cost' => $unitCost,
@@ -415,8 +416,9 @@ class StockService
         // The quantity column already accounts for direction:
         // - Positive values = stock added (in)
         // - Negative values = stock removed (out)
+        // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
         $totalStock = decimal_float(StockMovement::where('product_id', $productId)
-            ->sum('quantity'));
+            ->sum('quantity'), 4);
 
         // Update the product's stock_quantity field (cached/denormalized value)
         DB::table('products')

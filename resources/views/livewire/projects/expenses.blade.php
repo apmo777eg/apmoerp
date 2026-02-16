@@ -2,7 +2,7 @@
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-slate-800">{{ __('Project Expenses') }}</h3>
-        <button wire:click="openModal" class="erp-btn erp-btn-sm erp-btn-primary">
+        <button type="button" wire:click="openModal" class="erp-btn erp-btn-sm erp-btn-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -34,10 +34,10 @@
                     </td>
                     <td class="px-4 py-3 text-sm text-end font-medium">{{ number_format($expense->amount, 2) }}</td>
                     <td class="px-4 py-3 text-sm text-end">
-                        <button wire:click="edit({{ $expense->id }})" class="text-blue-600 hover:text-blue-800 me-2">
+                        <button type="button" wire:click="edit({{ $expense->id }})" class="text-blue-600 hover:text-blue-800 me-2">
                             {{ __('Edit') }}
                         </button>
-                        <button wire:click="delete({{ $expense->id }})" wire:confirm="{{ __('Are you sure?') }}" 
+                        <button type="button" wire:click="delete({{ $expense->id }})" wire:confirm="{{ __('Are you sure?') }}" 
                                 class="text-red-600 hover:text-red-800">
                             {{ __('Delete') }}
                         </button>
@@ -97,8 +97,8 @@
                     @error('form.amount') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex gap-3">
-                    <button wire:click="closeModal" class="erp-btn erp-btn-secondary flex-1">{{ __('Cancel') }}</button>
-                    <button wire:click="save" class="erp-btn erp-btn-primary flex-1">{{ __('Save') }}</button>
+                    <button type="button" wire:click="closeModal" class="erp-btn erp-btn-secondary flex-1">{{ __('Cancel') }}</button>
+                    <button type="button" wire:click="save" class="erp-btn erp-btn-primary flex-1">{{ __('Save') }}</button>
                 </div>
             </div>
         </div>

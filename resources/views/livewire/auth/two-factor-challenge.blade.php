@@ -48,7 +48,7 @@
     </form>
 
     <div class="mt-4">
-        <button wire:click="toggleRecovery" class="text-sm text-emerald-600 hover:text-emerald-700">
+        <button type="button" wire:click="toggleRecovery" class="text-sm text-emerald-600 hover:text-emerald-700">
             @if ($useRecovery)
                 {{ __('Use authentication code instead') }}
             @else

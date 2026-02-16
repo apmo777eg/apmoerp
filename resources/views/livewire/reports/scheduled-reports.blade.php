@@ -53,7 +53,7 @@
                                 {{ $schedule->format }}
                             </td>
                             <td class="px-4 py-3">
-                                <button wire:click="toggleActive({{ $schedule->id }})" class="focus:outline-none">
+                                <button type="button" wire:click="toggleActive({{ $schedule->id }})" class="focus:outline-none">
                                     @if($schedule->is_active)
                                         <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
                                             {{ __('Active') }}
@@ -74,14 +74,14 @@
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <button wire:click="runNow({{ $schedule->id }})" 
+                                    <button type="button" wire:click="runNow({{ $schedule->id }})" 
                                             class="text-gray-400 hover:text-emerald-500" title="{{ __('Run Now') }}">
                                         <x-icon name="play" class="w-4 h-4" />
                                     </button>
                                     <a href="{{ route('admin.reports.scheduled.edit', ['schedule' => $schedule->id]) }}" class="text-gray-400 hover:text-blue-500">
                                         <x-icon name="pencil" class="w-4 h-4" />
                                     </a>
-                                    <button wire:click="delete({{ $schedule->id }})" 
+                                    <button type="button" wire:click="delete({{ $schedule->id }})" 
                                             wire:confirm="{{ __('Are you sure you want to delete this schedule?') }}"
                                             class="text-gray-400 hover:text-red-500">
                                         <x-icon name="trash" class="w-4 h-4" />

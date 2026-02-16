@@ -33,7 +33,7 @@
             {{ $message ?? session('success') ?? session('status') }}
         </p>
         @if($dismissible)
-        <button @click="show = false" class="flex-shrink-0 text-emerald-400 hover:text-emerald-600 transition-colors">
+        <button type="button" @click="show = false" class="flex-shrink-0 text-emerald-400 hover:text-emerald-600 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>

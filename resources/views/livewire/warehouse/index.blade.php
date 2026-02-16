@@ -102,7 +102,7 @@
     <div class="erp-card">
         <div class="border-b border-slate-200">
             <nav class="flex gap-4 px-4">
-                <button wire:click="setTab('warehouses')" class="py-3 px-1 border-b-2 font-medium text-sm transition-colors {{ $activeTab === 'warehouses' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                <button type="button" wire:click="setTab('warehouses')" class="py-3 px-1 border-b-2 font-medium text-sm transition-colors {{ $activeTab === 'warehouses' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         {{ __('Warehouses') }}
@@ -114,7 +114,7 @@
                         </div>
                     </div>
                 </button>
-                <button wire:click="setTab('movements')" class="py-3 px-1 border-b-2 font-medium text-sm transition-colors {{ $activeTab === 'movements' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
+                <button type="button" wire:click="setTab('movements')" class="py-3 px-1 border-b-2 font-medium text-sm transition-colors {{ $activeTab === 'movements' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                         {{ __('Stock Movements') }}
@@ -185,7 +185,7 @@
                                     <td>
                                         <div class="flex items-center gap-2">
                                             @can('warehouse.manage')
-                                            <button wire:click="toggleStatus({{ $warehouse->id }})" 
+                                            <button type="button" wire:click="toggleStatus({{ $warehouse->id }})" 
                                                     class="text-xs px-2 py-1 rounded-full {{ $warehouse->status === 'active' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-red-100 text-red-700 hover:bg-red-200' }}" 
                                                     title="{{ $warehouse->status === 'active' ? __('Deactivate') : __('Activate') }}">
                                                 {{ $warehouse->status === 'active' ? __('Active') : __('Inactive') }}
@@ -193,7 +193,7 @@
                                             <a href="{{ route('app.warehouse.warehouses.edit', ['warehouse' => $warehouse->id]) }}" class="text-slate-600 hover:text-slate-800" title="{{ __('Edit') }}">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             </a>
-                                            <button wire:click="delete({{ $warehouse->id }})" 
+                                            <button type="button" wire:click="delete({{ $warehouse->id }})" 
                                                     wire:confirm="{{ __('Are you sure you want to delete this warehouse?') }}"
                                                     class="text-red-600 hover:text-red-800" title="{{ __('Delete') }}">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>

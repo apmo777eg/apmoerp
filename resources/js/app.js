@@ -215,6 +215,61 @@ document.addEventListener('livewire:navigated', () => {
     window.erpApplyTheme && window.erpApplyTheme();
 });
 
+
+// Livewire -> Frontend notifications (used across forms/components)
+document.addEventListener('livewire:init', () => {
+    if (!window.Livewire) return;
+
+    const normalizePayload = (payload, defaultType = 'info') => {
+        // Livewire dispatch can arrive as:
+        // 1) dispatch('notify', type: 'success', message: '...') => payload is object
+        // 2) dispatch('notify', [ 'type' => 'success', 'message' => '...' ]) => payload is array with object at index 0
+        // 3) dispatch('notify', 'message') => payload is string
+        let data = payload;
+
+        if (Array.isArray(payload) && payload.length && typeof payload[0] === 'object') {
+            data = payload[0];
+        }
+
+        if (typeof data === 'string') {
+            return { type: defaultType, message: data };
+        }
+
+        if (typeof data !== 'object' || data === null) {
+            return { type: defaultType, message: '' };
+        }
+
+        return {
+            type: data.type || defaultType,
+            message: data.message || data.text || '',
+            playSound: data.playSound ?? data.sound ?? false,
+        };
+    };
+
+    const show = (payload, defaultType = 'info') => {
+        const { type, message, playSound } = normalizePayload(payload, defaultType);
+        if (!message) return;
+
+        if (typeof window.erpShowNotification === 'function') {
+            window.erpShowNotification(message, type, playSound);
+        } else if (typeof window.erpShowToast === 'function') {
+            window.erpShowToast(message, type);
+        } else {
+            // Ultimate fallback
+            alert(message);
+        }
+    };
+
+    // Unified notification event (recommended)
+    window.Livewire.on('notify', (payload) => show(payload, 'info'));
+
+    // Backwards-compatible common events
+    window.Livewire.on('success', (payload) => show(payload, 'success'));
+    window.Livewire.on('error', (payload) => show(payload, 'error'));
+    window.Livewire.on('warning', (payload) => show(payload, 'warning'));
+    window.Livewire.on('info', (payload) => show(payload, 'info'));
+});
+
 window.addEventListener('swal:success', event => {
     const playSound = event.detail.playSound ?? false;
     window.erpShowNotification(event.detail.message || 'Success!', 'success', playSound);
@@ -573,3 +628,57 @@ const KeyboardShortcuts = {
 
 KeyboardShortcuts.init();
 window.erpKeyboardShortcuts = KeyboardShortcuts;
+
+
+// ------------------------------------------------------------
+// Global JS error boundary (helps catch silent frontend bugs)
+// ------------------------------------------------------------
+(function () {
+    const THROTTLE_MS = 8000;
+    let lastAt = 0;
+
+    const defaultMsg = (() => {
+        const lang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+        // Simple bilingual default (system supports i18n but this runs before translations sometimes)
+        if (lang.startsWith('ar')) {
+            return 'حدث خطأ غير متوقع. حاول تحديث الصفحة.';
+        }
+        return 'An unexpected error occurred. Please refresh the page.';
+    })();
+
+    const notify = (userMessage, debugMessage = null) => {
+        const now = Date.now();
+        if (now - lastAt < THROTTLE_MS) return;
+        lastAt = now;
+
+        // Show user-friendly message
+        if (window.erpShowToast) {
+            window.erpShowToast(userMessage, { type: 'error' });
+        } else if (window.erpShowNotification) {
+            window.erpShowNotification(userMessage, 'error');
+        } else {
+            // Fallback: keep console signal even if toast system isn't ready
+            console.error('[ERP] ' + userMessage);
+        }
+
+        // Always log the technical detail for developers
+        if (debugMessage) {
+            console.error('[ERP] Frontend error detail:', debugMessage);
+        }
+    };
+
+    // Capture synchronous errors
+    window.addEventListener('error', (event) => {
+        // Ignore resource loading errors (<img>, <script>, <link>) to avoid noisy toasts
+        const target = event?.target;
+        const tag = target?.tagName;
+        if (tag && ['IMG', 'SCRIPT', 'LINK'].includes(tag)) return;
+
+        notify(defaultMsg, event?.error || event?.message || event);
+    }, true);
+
+    // Capture unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+        notify(defaultMsg, event?.reason || event);
+    });
+})();

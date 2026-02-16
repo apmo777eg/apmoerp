@@ -62,7 +62,7 @@
             style="display: none;"
         >
             {{-- All Branches Option --}}
-            <button 
+            <button type="button" 
                 wire:click="switchBranch(0)"
                 @click="open = false"
                 class="w-full flex items-center gap-2 px-3 py-2 text-sm text-start hover:bg-slate-700/50 transition-colors
@@ -86,7 +86,7 @@
             {{-- Branch Options --}}
             @if(is_array($branches))
                 @foreach($branches as $branch)
-                    <button 
+                    <button type="button" 
                         wire:click="switchBranch({{ $branch['id'] ?? 0 }})"
                         @click="open = false"
                         class="w-full flex items-center gap-2 px-3 py-2 text-sm text-start hover:bg-slate-700/50 transition-colors border-t border-slate-700/50
@@ -124,7 +124,7 @@
                 <p class="text-[10px] text-emerald-300 flex-1">
                     {{ __('Viewing branch perspective') }}
                 </p>
-                <button 
+                <button type="button" 
                     wire:click="switchBranch(0)"
                     class="text-[10px] font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
                 >

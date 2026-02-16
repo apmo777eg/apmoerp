@@ -5,7 +5,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
                 <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('Vehicle Models') }}</h3>
-                    <button wire:click="openVehicleForm" class="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+                    <button type="button" wire:click="openVehicleForm" class="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
                         <x-icon name="plus" class="w-4 h-4 inline-block" /> {{ __('Add Vehicle') }}
                     </button>
                 </div>
@@ -52,21 +52,21 @@
                                         $isCompatible = $compatibilities->where('vehicle_model_id', $vehicle->id)->first();
                                     @endphp
                                     @if($isCompatible)
-                                        <button wire:click="removeCompatibility({{ $vehicle->id }})" 
+                                        <button type="button" wire:click="removeCompatibility({{ $vehicle->id }})" 
                                                 class="px-2 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200">
                                             <x-icon name="check" class="w-4 h-4 inline-block" /> {{ __('Added') }}
                                         </button>
                                     @else
-                                        <button wire:click="quickAddCompatibility({{ $vehicle->id }})" 
+                                        <button type="button" wire:click="quickAddCompatibility({{ $vehicle->id }})" 
                                                 class="px-2 py-1 bg-emerald-100 text-emerald-600 rounded text-xs hover:bg-emerald-200">
                                             <x-icon name="plus" class="w-4 h-4 inline-block" /> {{ __('Add') }}
                                         </button>
                                     @endif
                                 @endif
-                                <button wire:click="editVehicle({{ $vehicle->id }})" class="text-gray-400 hover:text-blue-500">
+                                <button type="button" wire:click="editVehicle({{ $vehicle->id }})" class="text-gray-400 hover:text-blue-500">
                                     <x-icon name="pencil" class="w-4 h-4" />
                                 </button>
-                                <button wire:click="deleteVehicle({{ $vehicle->id }})" 
+                                <button type="button" wire:click="deleteVehicle({{ $vehicle->id }})" 
                                         wire:confirm="{{ __('Are you sure you want to delete this vehicle model?') }}"
                                         class="text-gray-400 hover:text-red-500">
                                     <x-icon name="trash" class="w-4 h-4" />
@@ -97,7 +97,7 @@
                         @endif
                     </h3>
                     @if($product)
-                        <button wire:click="openCompatibilityForm" class="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+                        <button type="button" wire:click="openCompatibilityForm" class="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
                             <x-icon name="plus" class="w-4 h-4 inline-block" /> {{ __('Add Details') }}
                         </button>
                     @endif
@@ -137,11 +137,11 @@
                                         @endif
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <button wire:click="toggleVerified({{ $compat->id }})" 
+                                        <button type="button" wire:click="toggleVerified({{ $compat->id }})" 
                                                 class="text-gray-400 hover:text-green-500" title="{{ __('Toggle Verified') }}">
                                             <x-icon name="{{ $compat->is_verified ? 'check-badge' : 'shield-check' }}" class="w-4 h-4" />
                                         </button>
-                                        <button wire:click="removeCompatibility({{ $compat->vehicle_model_id }})" 
+                                        <button type="button" wire:click="removeCompatibility({{ $compat->vehicle_model_id }})" 
                                                 class="text-gray-400 hover:text-red-500">
                                             <x-icon name="trash" class="w-4 h-4" />
                                         </button>

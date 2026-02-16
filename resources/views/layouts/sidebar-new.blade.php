@@ -871,11 +871,18 @@
                     const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
                     const finalScrollTop = Math.max(0, Math.min(scrollTop, maxScroll));
                     
-                    // Scroll to the active item (instant to avoid layout jank on initial load)
-                    scrollContainer.scrollTo({ 
-                        top: finalScrollTop, 
-                        behavior: 'instant' 
-                    });
+                    // Scroll to the active item.
+                    // NOTE: ScrollBehavior only supports 'auto' | 'smooth'.
+                    // Using an invalid value (e.g. 'instant') can throw and break sidebar JS.
+                    try {
+                        scrollContainer.scrollTo({
+                            top: finalScrollTop,
+                            behavior: 'auto'
+                        });
+                    } catch (e) {
+                        // Fallback for older browsers / strict enum validation
+                        scrollContainer.scrollTop = finalScrollTop;
+                    }
                 }
             }, this.AUTO_SCROLL_DELAY_MS);
         },
@@ -1038,7 +1045,7 @@
         </a>
 
         {{-- Mobile Close Button --}}
-        <button 
+        <button type="button" 
             @click="sidebarOpen = false" 
             class="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
             aria-label="{{ __('Close sidebar') }}"
@@ -1063,7 +1070,7 @@
                     <div class="px-3 py-2 text-sm text-slate-500">{{ __('No results found') }}</div>
                 </template>
                 <template x-for="(result, index) in searchResults" :key="index">
-                    <button
+                    <button type="button"
                         @click="navigateTo(result.url)"
                         class="w-full flex items-center gap-3 px-3 py-2 text-start hover:bg-slate-800/50 transition-colors border-b border-slate-800/60 last:border-0"
                         :class="result.active ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-100' : ''"

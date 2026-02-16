@@ -13,7 +13,7 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ __('Quick Actions') }}</h2>
             
             <div class="flex flex-wrap gap-4">
-                <button
+                <button type="button"
                     wire:click="createBackup"
                     wire:loading.attr="disabled"
                     wire:target="createBackup"
@@ -83,7 +83,7 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <button
+                                    <button type="button"
                                         wire:click="download('{{ $backup['path'] }}')"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                                         title="{{ __('Download') }}"
@@ -91,7 +91,7 @@
                                         <x-icon name="download" class="w-4 h-4 mr-1" />
                                         {{ __('Download') }}
                                     </button>
-                                    <button
+                                    <button type="button"
                                         wire:click="initiateRestore('{{ $backup['path'] }}')"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
                                         title="{{ __('Restore') }}"
@@ -99,7 +99,7 @@
                                         <x-icon name="arrow-path" class="w-4 h-4 mr-1" />
                                         {{ __('Restore') }}
                                     </button>
-                                    <button
+                                    <button type="button"
                                         wire:click="deleteBackup('{{ $backup['path'] }}')"
                                         wire:confirm="{{ __('Are you sure you want to delete this backup?') }}"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-200 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors"
@@ -119,7 +119,7 @@
                     <p class="text-gray-500 dark:text-gray-400 mb-6">
                         {{ __('Create your first backup to protect your data.') }}
                     </p>
-                    <button
+                    <button type="button"
                         wire:click="createBackup"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                     >

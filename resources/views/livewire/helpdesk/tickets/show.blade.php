@@ -94,22 +94,22 @@
                 <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-3">{{ __('Actions') }}</h3>
                 <div class="space-y-2">
                     @if(!$ticket->assigned_to)
-                        <button wire:click="assignToMe" class="w-full erp-btn-primary text-sm">
+                        <button type="button" wire:click="assignToMe" class="w-full erp-btn-primary text-sm">
                             {{ __('Assign to Me') }}
                         </button>
                     @endif
                     @if(!in_array($ticket->status, ['resolved', 'closed']))
-                        <button wire:click="resolve" class="w-full erp-btn-secondary text-sm">
+                        <button type="button" wire:click="resolve" class="w-full erp-btn-secondary text-sm">
                             {{ __('Mark as Resolved') }}
                         </button>
                     @endif
                     @if($ticket->canBeClosed())
-                        <button wire:click="close" class="w-full erp-btn-secondary text-sm">
+                        <button type="button" wire:click="close" class="w-full erp-btn-secondary text-sm">
                             {{ __('Close Ticket') }}
                         </button>
                     @endif
                     @if($ticket->canBeReopened())
-                        <button wire:click="reopen" class="w-full erp-btn-secondary text-sm">
+                        <button type="button" wire:click="reopen" class="w-full erp-btn-secondary text-sm">
                             {{ __('Reopen Ticket') }}
                         </button>
                     @endif

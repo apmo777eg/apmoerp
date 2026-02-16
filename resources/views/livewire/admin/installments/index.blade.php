@@ -56,7 +56,7 @@
                 </select>
             </div>
             
-            <button wire:click="updateOverdue" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+            <button type="button" wire:click="updateOverdue" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
                 {{ __('Update Overdue') }}
             </button>
         </div>
@@ -108,7 +108,7 @@
                                     <span class="{{ $plan->next_payment->isOverdue() ? 'text-red-600' : 'text-gray-600 dark:text-gray-400' }}">
                                         {{ $plan->next_payment?->due_date?->format('Y-m-d') }}
                                     </span>
-                                    <button wire:click="openPaymentModal({{ $plan->next_payment->id }})" class="ml-2 text-emerald-600 hover:text-emerald-800">
+                                    <button type="button" wire:click="openPaymentModal({{ $plan->next_payment->id }})" class="ml-2 text-emerald-600 hover:text-emerald-800">
                                         {{ __('Pay') }}
                                     </button>
                                 </div>
@@ -161,10 +161,10 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button wire:click="$set('showPaymentModal', false)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
+                    <button type="button" wire:click="$set('showPaymentModal', false)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300">
                         {{ __('Cancel') }}
                     </button>
-                    <button wire:click="recordPayment" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                    <button type="button" wire:click="recordPayment" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
                         {{ __('Record Payment') }}
                     </button>
                 </div>

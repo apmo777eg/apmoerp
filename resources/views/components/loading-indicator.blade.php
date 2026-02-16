@@ -18,11 +18,24 @@ $sizeClasses = match($size) {
     wire:loading{{ $target ? ".delay.flex" : ".flex" }}
     @if($target) wire:target="{{ $target }}" @endif
     class="loading-overlay bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm items-center justify-center"
-    x-data="{ show: false }"
-    x-show="show"
-    x-on:livewire:navigate-start="show = true"
-    x-on:livewire:navigate-end="show = false"
-    x-on:operation-failed.window="show = false"
+    {{--
+        FIX (UI/Livewire):
+        The previous implementation gated the overlay behind Alpine `x-show`, which was never set
+        during normal Livewire requests (e.g. wire:submit="save").
+        Result: fullscreen loaders never appeared on forms.
+
+        We now rely on Livewire's `wire:loading` to toggle visibility for component requests,
+        and we *optionally* force the overlay visible during Livewire navigation events.
+    --}}
+    x-data="{ navigating: false }"
+    x-on:livewire:navigating.window="navigating = true"
+    x-on:livewire:navigated.window="navigating = false"
+    {{-- Backwards-compat: if an older build emits these events --}}
+    x-on:livewire:navigate-start.window="navigating = true"
+    x-on:livewire:navigate-end.window="navigating = false"
+    x-on:operation-failed.window="navigating = false"
+    {{-- Force visibility during navigation even if Livewire sets display:none (class uses !important) --}}
+    x-bind:class="navigating ? '!flex' : ''"
     style="display: none;"
 >
     <div class="flex flex-col items-center gap-3">

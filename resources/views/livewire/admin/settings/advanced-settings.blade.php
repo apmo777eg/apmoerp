@@ -24,7 +24,7 @@
     <div class="flex flex-col lg:flex-row gap-6">
         <div class="lg:w-64 flex-shrink-0">
             <nav class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 space-y-1">
-                <button wire:click="setTab('general')" 
+                <button type="button" wire:click="setTab('general')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'general' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -33,7 +33,7 @@
                     {{ __('General') }}
                 </button>
 
-                <button wire:click="setTab('sms')" 
+                <button type="button" wire:click="setTab('sms')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'sms' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -41,7 +41,7 @@
                     {{ __('SMS / WhatsApp') }}
                 </button>
 
-                <button wire:click="setTab('security')" 
+                <button type="button" wire:click="setTab('security')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'security' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -49,7 +49,7 @@
                     {{ __('Security') }}
                 </button>
 
-                <button wire:click="setTab('notifications')" 
+                <button type="button" wire:click="setTab('notifications')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'notifications' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -57,7 +57,7 @@
                     {{ __('Notifications') }}
                 </button>
 
-                <button wire:click="setTab('firebase')" 
+                <button type="button" wire:click="setTab('firebase')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'firebase' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
@@ -66,7 +66,7 @@
                     {{ __('Firebase Push') }}
                 </button>
 
-                <button wire:click="setTab('backup')" 
+                <button type="button" wire:click="setTab('backup')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'backup' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
@@ -78,7 +78,7 @@
                 <div class="my-2 border-t border-slate-200"></div>
                 <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ __('Advanced') }}</div>
 
-                <button wire:click="setTab('performance')" 
+                <button type="button" wire:click="setTab('performance')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'performance' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -86,7 +86,7 @@
                     {{ __('Performance') }}
                 </button>
 
-                <button wire:click="setTab('ui')" 
+                <button type="button" wire:click="setTab('ui')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'ui' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
@@ -94,7 +94,7 @@
                     {{ __('UI/UX') }}
                 </button>
 
-                <button wire:click="setTab('export')" 
+                <button type="button" wire:click="setTab('export')" 
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-{{ $dir === 'rtl' ? 'right' : 'left' }} transition-all {{ $activeTab === 'export' ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -140,7 +140,7 @@
                             </select>
                         </div>
                         <div class="pt-4">
-                            <button wire:click="saveGeneral" class="erp-btn-primary">
+                            <button type="button" wire:click="saveGeneral" class="erp-btn-primary">
                                 <span wire:loading.remove wire:target="saveGeneral">{{ __('Save') }}</span>
                                 <span wire:loading wire:target="saveGeneral">{{ __('Saving...') }}</span>
                             </button>
@@ -255,11 +255,11 @@
                     </div>
 
                     <div class="flex gap-3">
-                        <button wire:click="saveSms" class="erp-btn-primary">
+                        <button type="button" wire:click="saveSms" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveSms">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveSms">{{ __('Saving...') }}</span>
                         </button>
-                        <button wire:click="testSms" class="erp-btn-secondary">
+                        <button type="button" wire:click="testSms" class="erp-btn-secondary">
                             {{ __('Test Connection') }}
                         </button>
                     </div>
@@ -349,7 +349,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="saveSecurity" class="erp-btn-primary">
+                        <button type="button" wire:click="saveSecurity" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveSecurity">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveSecurity">{{ __('Saving...') }}</span>
                         </button>
@@ -405,7 +405,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="saveNotifications" class="erp-btn-primary">
+                        <button type="button" wire:click="saveNotifications" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveNotifications">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveNotifications">{{ __('Saving...') }}</span>
                         </button>
@@ -481,7 +481,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="saveFirebase" class="erp-btn-primary">
+                        <button type="button" wire:click="saveFirebase" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveFirebase">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveFirebase">{{ __('Saving...') }}</span>
                         </button>
@@ -525,7 +525,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="saveBackup" class="erp-btn-primary">
+                        <button type="button" wire:click="saveBackup" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveBackup">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveBackup">{{ __('Saving...') }}</span>
                         </button>
@@ -607,7 +607,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="savePerformance" class="erp-btn-primary">
+                        <button type="button" wire:click="savePerformance" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="savePerformance">{{ __('Save') }}</span>
                             <span wire:loading wire:target="savePerformance">{{ __('Saving...') }}</span>
                         </button>
@@ -689,7 +689,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="saveUi" class="erp-btn-primary">
+                        <button type="button" wire:click="saveUi" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveUi">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveUi">{{ __('Saving...') }}</span>
                         </button>
@@ -762,7 +762,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <button wire:click="saveExport" class="erp-btn-primary">
+                        <button type="button" wire:click="saveExport" class="erp-btn-primary">
                             <span wire:loading.remove wire:target="saveExport">{{ __('Save') }}</span>
                             <span wire:loading wire:target="saveExport">{{ __('Saving...') }}</span>
                         </button>

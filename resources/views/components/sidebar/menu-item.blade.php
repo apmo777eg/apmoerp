@@ -37,7 +37,7 @@
 >
     <div class="relative group">
         @if($hasChildren)
-            <button
+            <button type="button"
                 @click="expanded = !expanded; toggleCollapse(key)"
                 class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors
                     {{ $isActive 
@@ -88,7 +88,7 @@
         @endif
         
         <!-- Favorite Toggle Button -->
-        <button
+        <button type="button"
             x-show="open"
             @click.stop="toggleFavorite('{{ $navKey }}', '{{ $displayLabel }}', '{{ $route ? route($route) : '#' }}', '{{ $icon }}')"
             class="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity

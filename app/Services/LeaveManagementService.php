@@ -350,7 +350,7 @@ class LeaveManagementService
         $results = [];
         
         // Get all leave types with carry forward enabled
-        $leaveTypes = LeaveType::where('allow_carry_forward', true)->get();
+        $leaveTypes = LeaveType::where('can_carry_forward', true)->get();
         
         foreach ($leaveTypes as $leaveType) {
             // Get all balances for the from year

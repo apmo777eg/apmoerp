@@ -73,7 +73,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <button wire:click="toggleActive({{ $field->id }})" class="text-sm">
+                                <button type="button" wire:click="toggleActive({{ $field->id }})" class="text-sm">
                                     @if($field->is_active)
                                         <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">{{ __('Active') }}</span>
                                     @else
@@ -85,7 +85,7 @@
                                 <a href="{{ route('admin.modules.fields.edit', ['module' => $module->id, 'field' => $field->id]) }}" class="text-blue-600 hover:text-blue-900 me-3">
                                     {{ __('Edit') }}
                                 </a>
-                                <button wire:click="delete({{ $field->id }})" wire:confirm="{{ __('Are you sure you want to delete this field?') }}" class="text-red-600 hover:text-red-900">
+                                <button type="button" wire:click="delete({{ $field->id }})" wire:confirm="{{ __('Are you sure you want to delete this field?') }}" class="text-red-600 hover:text-red-900">
                                     {{ __('Delete') }}
                                 </button>
                             </td>

@@ -411,11 +411,12 @@ class UnifiedSettings extends Component
     {
         $tab ??= $this->activeTab;
 
-        $this->redirectRoute('admin.settings', ['tab' => $tab], navigate: true);
+        return $this->redirectRoute('admin.settings', ['tab' => $tab], navigate: true);
     }
 
     public function saveGeneral(): mixed
     {
+        try {
         $this->validate([
             'company_name' => 'required|string|max:255',
             'company_email' => 'nullable|email|max:255',
@@ -437,6 +438,12 @@ class UnifiedSettings extends Component
         session()->flash('success', __('General settings saved successfully'));
 
         return $this->redirectToTab('general');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     #[On('media-selected')]
@@ -465,6 +472,7 @@ class UnifiedSettings extends Component
 
     public function saveBranding(): mixed
     {
+        try {
         $this->validate([
             'branding_primary_color' => 'required|string|max:7',
             'branding_secondary_color' => 'required|string|max:7',
@@ -499,10 +507,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Branding settings saved successfully'));
 
         return $this->redirectToTab('branding');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveBranch(): mixed
     {
+        try {
         $this->setSetting('system.multi_branch', $this->multi_branch, 'branch', 'boolean');
         $this->setSetting('system.require_branch_selection', $this->require_branch_selection, 'branch', 'boolean');
 
@@ -510,10 +525,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Branch settings saved successfully'));
 
         return $this->redirectToTab('branch');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveSecurity(): mixed
     {
+        try {
         $this->validate([
             'session_timeout' => 'required|integer|min:5|max:1440',
         ]);
@@ -528,10 +550,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Security settings saved successfully'));
 
         return $this->redirectToTab('security');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveAdvanced(): mixed
     {
+        try {
         $this->validate([
             'cache_ttl' => 'required|integer|min:60|max:86400',
         ]);
@@ -545,10 +574,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Advanced settings saved successfully'));
 
         return $this->redirectToTab('advanced');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveBackup(): mixed
     {
+        try {
         $this->validate([
             'backup_retention_days' => 'required|integer|min:1|max:365',
             'backup_frequency' => 'required|in:daily,weekly,monthly',
@@ -564,10 +600,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Backup settings saved successfully'));
 
         return $this->redirectToTab('backup');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveInventory(): mixed
     {
+        try {
         $this->validate([
             'inventory_costing_method' => 'required|in:FIFO,LIFO,AVG',
             'stock_alert_threshold' => 'required|integer|min:0',
@@ -582,10 +625,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Inventory settings saved successfully'));
 
         return $this->redirectToTab('inventory');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function savePos(): mixed
     {
+        try {
         $this->validate([
             'pos_max_discount_percent' => 'required|integer|min:0|max:100',
             'pos_rounding_rule' => 'required|in:none,0.05,0.10,0.25,0.50,1.00',
@@ -603,10 +653,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('POS settings saved successfully'));
 
         return $this->redirectToTab('pos');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveAccounting(): mixed
     {
+        try {
         $this->validate([
             'accounting_coa_template' => 'required|in:standard,retail,service',
         ]);
@@ -618,10 +675,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Accounting settings saved successfully'));
 
         return $this->redirectToTab('accounting');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveHrm(): mixed
     {
+        try {
         $this->validate([
             'hrm_working_days_per_week' => 'required|integer|min:1|max:7',
             'hrm_working_hours_per_day' => 'required|numeric|min:1|max:24',
@@ -648,10 +712,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('HRM settings saved successfully'));
 
         return $this->redirectToTab('hrm');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveRental(): mixed
     {
+        try {
         $this->validate([
             'rental_grace_period_days' => 'required|integer|min:0',
             'rental_penalty_type' => 'required|in:percentage,fixed',
@@ -666,10 +737,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Rental settings saved successfully'));
 
         return $this->redirectToTab('rental');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveSales(): mixed
     {
+        try {
         $this->validate([
             'sales_payment_terms_days' => 'required|integer|min:0',
             'sales_invoice_prefix' => 'required|string|max:10',
@@ -685,10 +763,17 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Sales settings saved successfully'));
 
         return $this->redirectToTab('sales');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function saveNotifications(): mixed
     {
+        try {
         // Use canonical key names with _enabled suffix as per config/settings.php
         $this->setSetting('notifications.low_stock_enabled', $this->notifications_low_stock, 'notifications', 'boolean');
         $this->setSetting('notifications.payment_due_enabled', $this->notifications_payment_due, 'notifications', 'boolean');
@@ -698,6 +783,12 @@ class UnifiedSettings extends Component
         session()->flash('success', __('Notification settings saved successfully'));
 
         return $this->redirectToTab('notifications');
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', __('Failed to save settings. Please try again.'));
+            return null;
+        }
+
     }
 
     public function restoreDefaults(string $group): mixed

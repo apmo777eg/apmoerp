@@ -105,7 +105,7 @@
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm">
                             @if($employee->id !== auth()->id())
-                                <button wire:click="toggleStatus({{ $employee->id }})" 
+                                <button type="button" wire:click="toggleStatus({{ $employee->id }})" 
                                     wire:confirm="{{ $employee->is_active ? __('Are you sure you want to deactivate this employee?') : __('Are you sure you want to activate this employee?') }}"
                                     class="{{ $employee->is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900' }}">
                                     {{ $employee->is_active ? __('Deactivate') : __('Activate') }}

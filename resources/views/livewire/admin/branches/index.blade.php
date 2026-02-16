@@ -236,7 +236,7 @@
                                     </svg>
                                     <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No branches found.') }}</p>
                                     @if($search || $statusFilter)
-                                        <button wire:click="clearSearch" class="text-emerald-600 hover:text-emerald-700 text-sm">
+                                        <button type="button" wire:click="clearSearch" class="text-emerald-600 hover:text-emerald-700 text-sm">
                                             {{ __('Clear search') }}
                                         </button>
                                     @else

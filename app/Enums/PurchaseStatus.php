@@ -7,14 +7,28 @@ namespace App\Enums;
 /**
  * Purchase Status Enum
  *
- * Represents all possible states of a purchase order
+ * Represents all possible states of a purchase order.
+ *
+ * Notes:
+ * - Workflow statuses in this codebase appear as: draft, pending, posted, received, completed, cancelled
+ * - Some legacy/integration flows may also use: approved, confirmed, partially_received
+ *
+ * We keep the enum inclusive to avoid breaking existing data/reporting.
  */
 enum PurchaseStatus: string
 {
     case DRAFT = 'draft';
+    case PENDING = 'pending';
+
+    // Legacy / integration
     case APPROVED = 'approved';
-    case RECEIVED = 'received';
+    case CONFIRMED = 'confirmed';
+    case POSTED = 'posted';
+
     case PARTIALLY_RECEIVED = 'partially_received';
+    case RECEIVED = 'received';
+    case COMPLETED = 'completed';
+
     case CANCELLED = 'cancelled';
     case VOID = 'void';
     case VOIDED = 'voided';
@@ -28,9 +42,13 @@ enum PurchaseStatus: string
     {
         return match ($this) {
             self::DRAFT => __('Draft'),
+            self::PENDING => __('Pending'),
             self::APPROVED => __('Approved'),
-            self::RECEIVED => __('Received'),
+            self::CONFIRMED => __('Confirmed'),
+            self::POSTED => __('Posted'),
             self::PARTIALLY_RECEIVED => __('Partially Received'),
+            self::RECEIVED => __('Received'),
+            self::COMPLETED => __('Completed'),
             self::CANCELLED => __('Cancelled'),
             self::VOID => __('Void'),
             self::VOIDED => __('Voided'),
@@ -46,12 +64,12 @@ enum PurchaseStatus: string
     {
         return match ($this) {
             self::DRAFT => 'slate',
-            self::APPROVED => 'blue',
-            self::RECEIVED => 'green',
+            self::PENDING => 'amber',
+            self::APPROVED, self::CONFIRMED, self::POSTED => 'blue',
             self::PARTIALLY_RECEIVED => 'amber',
+            self::RECEIVED, self::COMPLETED => 'green',
             self::CANCELLED => 'red',
-            self::VOID => 'gray',
-            self::VOIDED => 'gray',
+            self::VOID, self::VOIDED => 'gray',
             self::RETURNED => 'orange',
             self::REFUNDED => 'purple',
         };
@@ -62,24 +80,33 @@ enum PurchaseStatus: string
      */
     public function isFinal(): bool
     {
-        return in_array($this, [self::RECEIVED, self::CANCELLED, self::VOID, self::VOIDED, self::RETURNED, self::REFUNDED]);
+        return in_array($this, [
+            self::COMPLETED,
+            self::CANCELLED,
+            self::VOID,
+            self::VOIDED,
+            self::RETURNED,
+            self::REFUNDED,
+        ], true);
     }
 
     /**
-     * Get allowed next statuses.
+     * Allowed next statuses (guideline).
+     *
+     * @return array<self>
      */
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::DRAFT => [self::APPROVED, self::CANCELLED, self::VOID],
-            self::APPROVED => [self::RECEIVED, self::PARTIALLY_RECEIVED, self::CANCELLED, self::VOID],
-            self::PARTIALLY_RECEIVED => [self::RECEIVED, self::CANCELLED, self::VOID],
-            self::RECEIVED => [self::RETURNED, self::REFUNDED],
-            self::CANCELLED => [],
-            self::VOID => [],
-            self::VOIDED => [],
-            self::RETURNED => [],
-            self::REFUNDED => [],
+            self::DRAFT => [self::PENDING, self::APPROVED, self::CONFIRMED, self::POSTED, self::CANCELLED, self::VOID],
+            self::PENDING => [self::APPROVED, self::CONFIRMED, self::POSTED, self::CANCELLED, self::VOID],
+            self::APPROVED => [self::CONFIRMED, self::POSTED, self::PARTIALLY_RECEIVED, self::RECEIVED, self::CANCELLED, self::VOID],
+            self::CONFIRMED => [self::POSTED, self::PARTIALLY_RECEIVED, self::RECEIVED, self::CANCELLED, self::VOID],
+            self::POSTED => [self::PARTIALLY_RECEIVED, self::RECEIVED, self::COMPLETED, self::CANCELLED, self::VOID],
+            self::PARTIALLY_RECEIVED => [self::RECEIVED, self::COMPLETED, self::CANCELLED, self::VOID],
+            self::RECEIVED => [self::COMPLETED, self::RETURNED, self::REFUNDED],
+            self::COMPLETED => [self::RETURNED, self::REFUNDED],
+            self::CANCELLED, self::VOID, self::VOIDED, self::RETURNED, self::REFUNDED => [],
         };
     }
 
@@ -88,25 +115,29 @@ enum PurchaseStatus: string
      */
     public function canTransitionTo(self $newStatus): bool
     {
-        return in_array($newStatus, $this->allowedTransitions());
+        return in_array($newStatus, $this->allowedTransitions(), true);
+    }
+
+    /**
+     * All enum values.
+     *
+     * @return array<string>
+     */
+    public static function values(): array
+    {
+        return array_map(static fn (self $s) => $s->value, self::cases());
     }
 
     /**
      * Get statuses that should be excluded from financial/reporting calculations.
      *
-     * These statuses represent purchases that should not be included in reports:
-     * - Draft: Not finalized
-     * - Cancelled: Never completed
-     * - Void/Voided: Invalidated
-     * - Returned: Goods returned to supplier
-     * - Refunded: Money returned from supplier
-     *
-     * @return array<string> Array of status values for use in whereNotIn queries
+     * @return array<string>
      */
     public static function nonRelevantStatuses(): array
     {
         return [
             self::DRAFT->value,
+            self::PENDING->value,
             self::CANCELLED->value,
             self::VOID->value,
             self::VOIDED->value,
@@ -120,20 +151,23 @@ enum PurchaseStatus: string
      */
     public function isNonRelevant(): bool
     {
-        return in_array($this->value, self::nonRelevantStatuses());
+        return in_array($this->value, self::nonRelevantStatuses(), true);
     }
 
     /**
-     * Get statuses that represent completed/relevant purchases.
+     * Statuses that represent relevant purchases.
      *
-     * @return array<string> Array of status values for use in whereIn queries
+     * @return array<string>
      */
     public static function relevantStatuses(): array
     {
         return [
             self::APPROVED->value,
-            self::RECEIVED->value,
+            self::CONFIRMED->value,
+            self::POSTED->value,
             self::PARTIALLY_RECEIVED->value,
+            self::RECEIVED->value,
+            self::COMPLETED->value,
         ];
     }
 }

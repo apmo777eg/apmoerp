@@ -29,7 +29,7 @@
                 <div class="flex items-center justify-between">
                     @for($i = 1; $i <= $totalSteps; $i++)
                         <div class="flex-1 flex items-center">
-                            <button wire:click="goToStep({{ $i }})"
+                            <button type="button" wire:click="goToStep({{ $i }})"
                                     @if($i > $step + 1) disabled @endif
                                     class="flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all
                                         {{ $i < $step ? 'bg-emerald-500 text-white' : '' }}
@@ -222,7 +222,7 @@
                                            class="sr-only"
                                            @if($module->is_core) disabled checked @endif>
                                     <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background-color: {{ $module->color ?? '#10b981' }}20">
-                                        {{ $module->icon ?? '📦' }}
+                                        {{ $module->display_icon }}
                                     </div>
                                     <div class="ml-3 flex-1">
                                         <p class="font-medium text-slate-800 dark:text-white">{{ $module->localizedName }}</p>
@@ -318,7 +318,7 @@
                                     @foreach($modules as $module)
                                         @if(in_array((string)$module->id, $selectedModules))
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                                                {{ $module->icon ?? '📦' }} {{ $module->localizedName }}
+                                                {{ $module->display_icon }} {{ $module->localizedName }}
                                             </span>
                                         @endif
                                     @endforeach
@@ -332,28 +332,28 @@
                 <div class="bg-slate-50 dark:bg-slate-700/50 px-8 py-4 flex items-center justify-between">
                     <div>
                         @if($step > 1)
-                            <button wire:click="previousStep" class="erp-btn erp-btn-secondary">
+                            <button type="button" wire:click="previousStep" class="erp-btn erp-btn-secondary">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                                 </svg>
                                 {{ __('Previous') }}
                             </button>
                         @else
-                            <button wire:click="skipSetup" class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
+                            <button type="button" wire:click="skipSetup" class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
                                 {{ __('Skip Setup') }}
                             </button>
                         @endif
                     </div>
                     <div>
                         @if($step < $totalSteps)
-                            <button wire:click="nextStep" class="erp-btn erp-btn-primary">
+                            <button type="button" wire:click="nextStep" class="erp-btn erp-btn-primary">
                                 {{ __('Next') }}
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                 </svg>
                             </button>
                         @else
-                            <button wire:click="completeSetup" class="erp-btn erp-btn-primary">
+                            <button type="button" wire:click="completeSetup" class="erp-btn erp-btn-primary">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>

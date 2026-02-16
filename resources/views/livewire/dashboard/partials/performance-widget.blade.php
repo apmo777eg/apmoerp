@@ -40,7 +40,7 @@
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('Based on low stock alerts vs total items.') }}</p>
             </div>
             <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-semibold">
-                {{ max(0, min(99, $inventoryHealth)) }}%
+                {{ max(0, min(100, $inventoryHealth)) }}%
             </div>
         </div>
         <div class="mt-3 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">

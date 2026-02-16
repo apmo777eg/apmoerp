@@ -205,7 +205,7 @@
                                         </a>
                                     @endcan
                                     @can('helpdesk.delete')
-                                        <button wire:click="delete({{ $ticket->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">
+                                        <button type="button" wire:click="delete({{ $ticket->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">
                                             {{ __('Delete') }}
                                         </button>
                                     @endcan

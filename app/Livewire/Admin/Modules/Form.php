@@ -77,7 +77,7 @@ class Form extends Component
             $this->name_ar = $module->name_ar ?? '';
             $this->description = $module->description ?? '';
             $this->description_ar = $module->description_ar ?? '';
-            $this->icon = $module->icon ?? '📦';
+            $this->icon = Module::resolveIcon($module->icon ?? null);
             $this->color = $module->color ?? 'emerald';
             $this->is_active = $module->is_active;
             $this->sort_order = $module->sort_order ?? 0;

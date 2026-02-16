@@ -7,6 +7,49 @@
         </div>
     </div>
 
+
+    {{-- Dashboard errors (non-fatal) --}}
+    @if(!empty($dashboardErrors))
+        <div class="dashboard-alert rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-700 dark:text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-amber-900 dark:text-amber-100">
+                        {{ __('Some dashboard widgets could not be loaded') }}
+                    </p>
+                    <p class="text-sm text-amber-800 dark:text-amber-200 mt-1">
+                        {{ __('Try refreshing the dashboard. If the problem continues, contact the administrator.') }}
+                    </p>
+
+                    @if(config('app.debug'))
+                        <ul class="mt-2 space-y-1 text-xs text-amber-900/80 dark:text-amber-100/80">
+                            @foreach($dashboardErrors as $err)
+                                <li class="break-words">
+                                    <span class="font-medium">{{ $err['context'] ?? 'unknown' }}</span>:
+                                    {{ $err['message'] ?? '' }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+
+                <button type="button"
+                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                        onclick="this.closest('.dashboard-alert')?.remove()"
+                        aria-label="{{ __('Dismiss') }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    @endif
+
     {{-- Header with Customization Controls --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex flex-col gap-1">
@@ -21,7 +64,7 @@
         <div class="flex items-center gap-2">
             {{-- Layout Mode Selector --}}
             <div class="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
-                <button 
+                <button type="button" 
                     wire:click="setLayoutMode('default')"
                     class="p-2 rounded {{ $layoutMode === 'default' ? 'bg-white dark:bg-slate-600 shadow' : '' }} text-slate-600 dark:text-slate-300 hover:text-slate-900"
                     title="{{ __('Default Layout') }}"
@@ -30,7 +73,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                     </svg>
                 </button>
-                <button 
+                <button type="button" 
                     wire:click="setLayoutMode('compact')"
                     class="p-2 rounded {{ $layoutMode === 'compact' ? 'bg-white dark:bg-slate-600 shadow' : '' }} text-slate-600 dark:text-slate-300 hover:text-slate-900"
                     title="{{ __('Compact Layout') }}"
@@ -39,7 +82,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
                     </svg>
                 </button>
-                <button 
+                <button type="button" 
                     wire:click="setLayoutMode('expanded')"
                     class="p-2 rounded {{ $layoutMode === 'expanded' ? 'bg-white dark:bg-slate-600 shadow' : '' }} text-slate-600 dark:text-slate-300 hover:text-slate-900"
                     title="{{ __('Expanded Layout') }}"
@@ -51,7 +94,7 @@
             </div>
 
             {{-- Customize Button --}}
-            <button 
+            <button type="button" 
                 wire:click="toggleEditMode"
                 class="inline-flex items-center gap-2 px-3 py-2 {{ $isEditing ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300' }} rounded-xl hover:bg-amber-500 hover:text-white transition-colors"
             >
@@ -63,7 +106,7 @@
             </button>
 
             {{-- Refresh Button --}}
-            <button 
+            <button type="button" 
                 wire:click="refreshData" 
                 wire:loading.attr="disabled"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50"
@@ -86,7 +129,7 @@
                 </svg>
                 <span class="font-medium text-amber-800 dark:text-amber-200">{{ __('Customization Mode') }}</span>
             </div>
-            <button 
+            <button type="button" 
                 wire:click="resetDashboard"
                 class="text-sm text-amber-700 dark:text-amber-300 hover:underline"
             >
@@ -100,7 +143,7 @@
         
         <div class="flex flex-wrap gap-2">
             @foreach($widgets as $widget)
-            <button 
+            <button type="button" 
                 wire:click="toggleWidget('{{ $widget['key'] }}')"
                 class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors {{ $widget['visible'] ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}"
             >

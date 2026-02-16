@@ -222,7 +222,7 @@
                         @endcan
                         @can('documents.delete')
                             @if($doc->uploaded_by === auth()->id())
-                                <button 
+                                <button type="button" 
                                     wire:click="delete({{ $doc->id }})" 
                                     wire:confirm="{{ __('Are you sure?') }}" 
                                     class="flex-1 text-center text-xs py-2 px-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition font-medium"

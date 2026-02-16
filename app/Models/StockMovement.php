@@ -49,7 +49,8 @@ class StockMovement extends BaseModel
         'stock_after' => 'decimal:4',
     ];
 
-    // Disable timestamps since migration only has created_at
+    // Stock movements are treated as immutable audit records.
+    // We only set created_at on creation; updated_at is not used.
     public $timestamps = false;
 
     protected static function booted(): void
@@ -122,7 +123,11 @@ class StockMovement extends BaseModel
 
     public function scopeTransfer(Builder $query): Builder
     {
-        return $query->where('movement_type', 'transfer');
+        return $query->whereIn('movement_type', [
+            self::TYPE_TRANSFER,
+            self::TYPE_TRANSFER_IN,
+            self::TYPE_TRANSFER_OUT,
+        ]);
     }
 
     public function scopeAdjustment(Builder $query): Builder

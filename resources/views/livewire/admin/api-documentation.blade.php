@@ -10,7 +10,7 @@
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
                 <nav class="space-y-1">
                     @foreach($sections as $key => $label)
-                        <button
+                        <button type="button"
                             wire:click="switchSection('{{ $key }}')"
                             class="w-full text-left px-4 py-2 rounded-md text-sm font-medium transition-colors
                                 {{ $activeSection === $key

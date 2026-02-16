@@ -16,7 +16,7 @@
             <p class="text-sm text-slate-500">{{ __('Manage purchase orders from suppliers') }}</p>
         </div>
         <div class="flex items-center gap-2">
-            <button wire:click="openExportModal" class="erp-btn erp-btn-secondary">
+            <button type="button" wire:click="openExportModal" class="erp-btn erp-btn-secondary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 {{ __('Export') }}
             </button>

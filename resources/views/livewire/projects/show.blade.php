@@ -64,15 +64,15 @@
     <div class="bg-white rounded-xl shadow-sm">
         <div class="border-b border-slate-200">
             <nav class="flex -mb-px">
-                <button wire:click="$set('activeTab', 'tasks')" 
+                <button type="button" wire:click="$set('activeTab', 'tasks')" 
                         class="px-6 py-3 text-sm font-medium {{ $activeTab === 'tasks' ? 'border-b-2 border-emerald-500 text-emerald-600' : 'text-slate-500 hover:text-slate-700' }}">
                     {{ __('Tasks') }}
                 </button>
-                <button wire:click="$set('activeTab', 'time-logs')" 
+                <button type="button" wire:click="$set('activeTab', 'time-logs')" 
                         class="px-6 py-3 text-sm font-medium {{ $activeTab === 'time-logs' ? 'border-b-2 border-emerald-500 text-emerald-600' : 'text-slate-500 hover:text-slate-700' }}">
                     {{ __('Time Logs') }}
                 </button>
-                <button wire:click="$set('activeTab', 'expenses')" 
+                <button type="button" wire:click="$set('activeTab', 'expenses')" 
                         class="px-6 py-3 text-sm font-medium {{ $activeTab === 'expenses' ? 'border-b-2 border-emerald-500 text-emerald-600' : 'text-slate-500 hover:text-slate-700' }}">
                     {{ __('Expenses') }}
                 </button>

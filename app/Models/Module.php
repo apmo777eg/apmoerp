@@ -153,6 +153,69 @@ class Module extends Model
         return app()->getLocale() === 'ar' && $this->description_ar ? $this->description_ar : $this->description;
     }
 
+    /**
+     * Resolve the module icon for display.
+     *
+     * Legacy installs may store icon *names* (e.g. "calculator", "user-group", "truck")
+     * while newer installs store emojis. This accessor provides a safe, user-friendly
+     * fallback so the UI always shows an icon.
+     */
+    public static function resolveIcon(?string $icon): string
+    {
+        $icon = trim((string) ($icon ?? ''));
+
+        if ($icon === '') {
+            return '📦';
+        }
+
+        // If it already looks like an emoji / non-ascii symbol, return as-is.
+        // (This covers emojis such as "🏍️", "🧮", etc.)
+        if (preg_match('/[^\x00-\x7F]/u', $icon)) {
+            return $icon;
+        }
+
+        $key = strtolower($icon);
+
+        $map = [
+            // Common legacy icon names (Heroicons / FontAwesome-like)
+            'calculator' => '🧮',
+            'cash' => '💰',
+            'money' => '💰',
+            'currency' => '💰',
+            'user-group' => '👥',
+            'users' => '👥',
+            'user' => '👤',
+            'home' => '🏠',
+            'folder' => '📁',
+            'truck' => '🚚',
+            'car' => '🚗',
+            'motorcycle' => '🏍️',
+            'cog' => '⚙️',
+            'settings' => '⚙️',
+            'ticket' => '🎫',
+            'chart' => '📊',
+            'report' => '📊',
+            'box' => '📦',
+            'inventory' => '📦',
+            'warehouse' => '🏬',
+            'building' => '🏢',
+            'shop' => '🏪',
+            'store' => '🏪',
+            'cart' => '🛒',
+            'bag' => '🛍️',
+            'document' => '📄',
+            'file' => '📄',
+        ];
+
+        return $map[$key] ?? '📦';
+    }
+
+    public function getDisplayIconAttribute(): string
+    {
+        return self::resolveIcon($this->icon);
+    }
+
+
     public function hasBuyPrice(): bool
     {
         return in_array($this->pricing_type, ['buy_sell', 'cost_only']);

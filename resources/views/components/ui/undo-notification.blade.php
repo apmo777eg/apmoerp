@@ -33,7 +33,7 @@
         </p>
         
         @if($onUndo)
-        <button 
+        <button type="button" 
             wire:click="{{ $onUndo }}"
             @click="show = false"
             class="text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition">
@@ -41,7 +41,7 @@
         </button>
         @endif
         
-        <button @click="show = false" class="text-slate-400 hover:text-slate-300 transition">
+        <button type="button" @click="show = false" class="text-slate-400 hover:text-slate-300 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>

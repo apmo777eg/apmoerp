@@ -482,10 +482,10 @@
     
     {{-- Print Button --}}
     <div class="no-print" style="text-align: center; margin-top: 30px;">
-        <button onclick="window.print()" style="padding: 12px 40px; font-size: 14px; cursor: pointer; background: #10b981; color: white; border: none; border-radius: 8px; margin-right: 10px;">
+        <button type="button" onclick="window.print()" style="padding: 12px 40px; font-size: 14px; cursor: pointer; background: #10b981; color: white; border: none; border-radius: 8px; margin-right: 10px;">
             {{ __('Print Invoice') }}
         </button>
-        <button onclick="window.close()" style="padding: 12px 40px; font-size: 14px; cursor: pointer; background: #6b7280; color: white; border: none; border-radius: 8px;">
+        <button type="button" onclick="window.close()" style="padding: 12px 40px; font-size: 14px; cursor: pointer; background: #6b7280; color: white; border: none; border-radius: 8px;">
             {{ __('Close') }}
         </button>
     </div>

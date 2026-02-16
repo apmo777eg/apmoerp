@@ -72,7 +72,28 @@ class ProductHistory extends Component
             $movementQuery = StockMovement::where('product_id', $this->product->id)
                 ->where('branch_id', $this->branchId)
                 ->with(['user', 'warehouse'])
-                ->when($this->filterType !== 'all' && $this->filterType !== 'audit', fn ($q) => $q->where('type', $this->filterType))
+                ->when(
+                    $this->filterType !== 'all' && $this->filterType !== 'audit',
+                    function ($q) {
+                        $type = $this->filterType;
+
+                        // Match movement_type values stored in DB (not the legacy "type" accessor).
+                        // Also group related types under a single filter option for better UX.
+                        $typeMap = [
+                            'sale' => ['sale', 'sale_void'],
+                            'purchase' => ['purchase'],
+                            'transfer' => ['transfer', 'transfer_in', 'transfer_out'],
+                            'adjustment' => ['adjustment', 'initial_stock', 'api_sync'],
+                            'return' => ['return', 'purchase_return', 'production_return'],
+                        ];
+
+                        if (isset($typeMap[$type])) {
+                            $q->whereIn('movement_type', $typeMap[$type]);
+                        } else {
+                            $q->where('movement_type', $type);
+                        }
+                    }
+                )
                 ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
                 ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
                 ->orderByDesc('created_at');

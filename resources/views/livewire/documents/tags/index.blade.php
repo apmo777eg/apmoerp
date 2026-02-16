@@ -54,7 +54,7 @@
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('app.documents.tags.edit', $tag->id) }}" class="text-blue-600 hover:text-blue-900">{{ __('Edit') }}</a>
-                                <button wire:click="delete({{ $tag->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
+                                <button type="button" wire:click="delete({{ $tag->id }})" wire:confirm="{{ __('Are you sure?') }}" class="text-red-600 hover:text-red-900">{{ __('Delete') }}</button>
                             </div>
                         </td>
                     </tr>
