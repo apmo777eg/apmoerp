@@ -12,6 +12,10 @@ class ModuleProductField extends Model
 {
     use HasFactory;
 
+    /**
+     * Canonical schema (DB-first):
+     * - field_label / field_type / field_options
+     */
     protected $fillable = [
         'module_id',
         'field_key',

@@ -51,6 +51,11 @@ return new class extends Migration
         // Workflow rules
         Schema::create('workflow_rules', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete()
+                ->name('fk_wfrul_branch__brnch');
             $table->foreignId('workflow_definition_id')
                 ->constrained('workflow_definitions')
                 ->cascadeOnDelete()
@@ -61,6 +66,7 @@ return new class extends Migration
             $table->json('actions')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('workflow_definition_id', 'idx_wfrule_def_id');
             $table->index('is_active', 'idx_wfrule_is_active');
@@ -102,6 +108,11 @@ return new class extends Migration
         // Workflow approvals
         Schema::create('workflow_approvals', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete()
+                ->name('fk_wfappr_branch__brnch');
             $table->foreignId('workflow_instance_id')
                 ->constrained('workflow_instances')
                 ->cascadeOnDelete()
@@ -120,6 +131,7 @@ return new class extends Migration
             $table->timestamp('responded_at')->nullable();
             $table->json('additional_data')->nullable();
             $table->timestamps();
+            $table->index('branch_id', 'idx_wfappr_branch_id');
 
             $table->index('workflow_instance_id', 'idx_wfappr_inst_id');
             $table->index('approver_id', 'idx_wfappr_approver_id');
@@ -129,6 +141,11 @@ return new class extends Migration
         // Workflow audit logs
         Schema::create('workflow_audit_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete()
+                ->name('fk_wfaudit_branch__brnch');
             $table->foreignId('workflow_instance_id')
                 ->constrained('workflow_instances')
                 ->cascadeOnDelete()
@@ -145,6 +162,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamp('performed_at');
             $table->timestamps();
+            $table->index('branch_id', 'idx_wfaudit_branch_id');
 
             $table->index('workflow_instance_id', 'idx_wfaudit_inst_id');
             $table->index('user_id', 'idx_wfaudit_user_id');
@@ -153,6 +171,11 @@ return new class extends Migration
         // Workflow notifications
         Schema::create('workflow_notifications', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete()
+                ->name('fk_wfnotif_branch__brnch');
             $table->foreignId('workflow_instance_id')
                 ->constrained('workflow_instances')
                 ->cascadeOnDelete()
@@ -177,6 +200,7 @@ return new class extends Migration
             $table->timestamp('read_at')->nullable();
             $table->timestamp('sent_at')->nullable();
             $table->timestamps();
+            $table->index('branch_id', 'idx_wfnotif_branch_id');
 
             $table->index('workflow_instance_id', 'idx_wfnotif_inst_id');
             $table->index('user_id', 'idx_wfnotif_user_id');

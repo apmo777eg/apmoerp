@@ -35,7 +35,7 @@ class Index extends Component
      */
     protected array $allowedSortFields = [
         'created_at',
-        'requisition_code',
+        'code',
         'subject',
         'priority',
         'status',
@@ -67,21 +67,21 @@ class Index extends Component
 
     public function getStatistics(): array
     {
-        // PurchaseRequisition is branch-scoped. Do not manually force the user's branch.
+        // PurchaseRequisition is branch-scoped.
         $stats = PurchaseRequisition::query()
             ->selectRaw('
                 COUNT(*) as total_requisitions,
-                COUNT(CASE WHEN status = ? THEN 1 END) as pending_approval,
+                COUNT(CASE WHEN status = ? THEN 1 END) as pending,
                 COUNT(CASE WHEN status = ? THEN 1 END) as approved,
-                COUNT(CASE WHEN status = ? THEN 1 END) as converted_to_po
-            ', ['pending_approval', 'approved', 'converted'])
+                COUNT(CASE WHEN status = ? THEN 1 END) as converted
+            ', ['pending', 'approved', 'converted'])
             ->first();
 
         return [
             'total_requisitions' => $stats->total_requisitions ?? 0,
-            'pending_approval' => $stats->pending_approval ?? 0,
+            'pending' => $stats->pending ?? 0,
             'approved' => $stats->approved ?? 0,
-            'converted_to_po' => $stats->converted_to_po ?? 0,
+            'converted' => $stats->converted ?? 0,
         ];
     }
 
@@ -90,7 +90,7 @@ class Index extends Component
         $this->authorize('purchases.requisitions.approve');
 
         $requisition = PurchaseRequisition::findOrFail($id);
-        $requisition->approve();
+        $requisition->approve(function_exists('actual_user_id') ? actual_user_id() : auth()->id());
 
         $this->dispatch('notify', [
             'type' => 'success',
@@ -103,7 +103,7 @@ class Index extends Component
         $this->authorize('purchases.requisitions.approve');
 
         $requisition = PurchaseRequisition::findOrFail($id);
-        $requisition->reject($reason);
+        $requisition->reject($reason ?: __('Rejected'), function_exists('actual_user_id') ? actual_user_id() : auth()->id());
 
         $this->dispatch('notify', [
             'type' => 'success',
@@ -113,7 +113,6 @@ class Index extends Component
 
     public function delete(int $id): void
     {
-        // FIX: Use correct permission for delete operation
         $this->authorize('purchases.requisitions.manage');
 
         $requisition = PurchaseRequisition::findOrFail($id);
@@ -128,14 +127,15 @@ class Index extends Component
     public function render()
     {
         $query = PurchaseRequisition::query()
-            ->with(['employee', 'department', 'items']);
+            ->with(['requestedBy', 'department', 'items']);
 
         if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('requisition_code', 'like', "%{$this->search}%")
-                    ->orWhere('subject', 'like', "%{$this->search}%")
-                    ->orWhereHas('employee', function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%");
+            $search = $this->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhere('subject', 'like', "%{$search}%")
+                    ->orWhereHas('requestedBy', function ($u) use ($search) {
+                        $u->where('name', 'like', "%{$search}%");
                     });
             });
         }
@@ -151,14 +151,13 @@ class Index extends Component
         if (! in_array($this->sortField, $this->allowedSortFields, true)) {
             $this->sortField = 'created_at';
         }
-        $query->orderBy($this->sortField, $this->sortDirection);
 
-        $requisitions = $query->paginate(15);
-        $statistics = $this->getStatistics();
+        $requisitions = $query->orderBy($this->sortField, $this->sortDirection)
+            ->paginate(15);
 
         return view('livewire.purchases.requisitions.index', [
             'requisitions' => $requisitions,
-            'statistics' => $statistics,
+            'statistics' => $this->getStatistics(),
         ]);
     }
 }

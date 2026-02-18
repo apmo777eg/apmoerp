@@ -167,6 +167,10 @@ return new class extends Migration
         // Journal entry lines
         Schema::create('journal_entry_lines', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_jel_branch__brnch');
             $table->foreignId('journal_entry_id')
                 ->constrained('journal_entries')
                 ->cascadeOnDelete()
@@ -181,6 +185,7 @@ return new class extends Migration
             $table->string('reference', 191)->nullable();
             $table->timestamps();
 
+            $table->index('branch_id', 'idx_jel_branch_id');
             $table->index('journal_entry_id', 'idx_jel_journal_id');
             $table->index('account_id', 'idx_jel_account_id');
         });

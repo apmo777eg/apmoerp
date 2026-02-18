@@ -36,7 +36,7 @@ class PurchaseReturnRequest extends FormRequest
                 Rule::exists('purchase_items', 'id')->where('purchase_id', $purchaseId),
             ],
             'items.*.qty_returned' => ['required', 'numeric', 'min:0.001'],
-            'items.*.condition' => ['nullable', 'in:defective,damaged,wrong_item,excess,expired'],
+            'items.*.item_condition' => ['nullable', 'in:defective,damaged,wrong_item,excess,expired'],
             'items.*.unit_cost' => ['nullable', 'numeric', 'min:0'],
             'items.*.notes' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:1000'],

@@ -141,7 +141,8 @@ class ModuleNavigation extends Model
                     if ($value && $branchId) {
                         // Inject service for better testability
                         $service = $moduleService ?? app(\App\Services\ModuleService::class);
-                        if (! $service->isEnabled($this->module->key, $branchId)) {
+                        // DB-first: canonical column in `modules` is `module_key`.
+                        if (! $service->isEnabled($this->module->module_key, $branchId)) {
                             return false;
                         }
                     }

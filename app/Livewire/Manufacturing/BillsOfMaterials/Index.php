@@ -45,7 +45,7 @@ class Index extends Component
     {
         return [
             'created_at',
-            'bom_number',
+            'reference_number',
             'status',
             'name',
         ];
@@ -88,7 +88,7 @@ class Index extends Component
             ->withCount(['items', 'operations', 'productionOrders'])
             ->when($user && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('bom_number', 'like', "%{$this->search}%")
+                $query->where('reference_number', 'like', "%{$this->search}%")
                     ->orWhere('name', 'like', "%{$this->search}%")
                     ->orWhere('name_ar', 'like', "%{$this->search}%")
                     ->orWhereHas('product', fn ($p) => $p->where('name', 'like', "%{$this->search}%"));

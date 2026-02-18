@@ -68,8 +68,8 @@
                                     'premium' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
                                 ];
                             @endphp
-                            <span class="px-2 py-1 text-xs rounded-full {{ $tierColors[$customer->customer_tier] ?? $tierColors['new'] }}">
-                                {{ __(ucfirst($customer->customer_tier)) }}
+                            <span class="px-2 py-1 text-xs rounded-full {{ $tierColors[$customer->loyalty_tier] ?? $tierColors['new'] }}">
+                                {{ __(ucfirst($customer->loyalty_tier ?? 'new')) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

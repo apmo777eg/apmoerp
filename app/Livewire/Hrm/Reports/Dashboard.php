@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Hrm\Reports;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -143,22 +144,30 @@ class Dashboard extends Component
         $this->applyBranchScope($builder);
 
         if (! empty($this->filters['payroll_period'])) {
-            $builder->where('period', $this->filters['payroll_period']);
+            try {
+                $dt = Carbon::createFromFormat('Y-m', (string) $this->filters['payroll_period']);
+                $builder->where('year', (int) $dt->year)->where('month', (int) $dt->month);
+            } catch (\Throwable) {
+                // Ignore invalid input; UI should provide Y-m.
+            }
         }
 
         $summary = [
             'total_records' => (clone $builder)->count(),
-            'total_net' => (clone $builder)->sum('net'),
+            'total_net' => (clone $builder)->sum('net_salary'),
         ];
 
-        $payrollRecords = (clone $builder)->get(['period', 'net']);
+        $payrollRecords = (clone $builder)->get(['year', 'month', 'net_salary']);
 
-        $series = $payrollRecords->groupBy('period')
+        $series = $payrollRecords
+            ->groupBy(function ($row) {
+                return sprintf('%04d-%02d', (int) $row->year, (int) $row->month);
+            })
             ->sortKeys()
             ->map(function ($group, $period) {
                 return [
                     'period' => $period,
-                    'total_net' => decimal_float($group->sum('net')),
+                    'total_net' => decimal_float($group->sum('net_salary')),
                 ];
             })
             ->values()

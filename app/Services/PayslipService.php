@@ -428,16 +428,19 @@ class PayslipService
                 $payrollData = $this->calculatePayroll($employee->id, $period);
 
                 // Only store the fields that match the Payroll model
+                $gross = decimal_float($payrollData['basic'] ?? 0) + decimal_float($payrollData['allowances'] ?? 0);
+
                 $payroll = Payroll::create([
+                    'branch_id' => $branchId,
                     'employee_id' => $payrollData['employee_id'],
-                    'period' => $payrollData['period'],
                     'year' => $year,
                     'month' => $month,
-                    'basic' => $payrollData['basic'],
-                    'allowances' => $payrollData['allowances'],
-                    'deductions' => $payrollData['deductions'],
-                    'net' => $payrollData['net'],
-                    'status' => $payrollData['status'],
+                    'salary' => decimal_float($payrollData['basic'] ?? 0),
+                    'other_allowances' => decimal_float($payrollData['allowances'] ?? 0),
+                    'gross_salary' => $gross,
+                    'total_deductions' => decimal_float($payrollData['deductions'] ?? 0),
+                    'net_salary' => decimal_float($payrollData['net'] ?? 0),
+                    'status' => $payrollData['status'] ?? 'draft',
                 ]);
                 $processed[] = $payroll;
             } catch (\Exception $e) {

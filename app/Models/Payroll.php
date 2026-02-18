@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payroll extends BaseModel
@@ -70,7 +72,138 @@ class Payroll extends BaseModel
         'net_salary' => 'decimal:4',
         'payment_date' => 'date',
         'breakdown' => 'array',
+        'extra_attributes' => 'array',
     ];
+
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::creating(function (self $model): void {
+            // If the legacy 'period' attribute was set, ensure year/month are populated.
+            // This is safe for fresh DBs because payrolls table is canonical on (year, month).
+            if ((! $model->year || ! $model->month) && ! empty($model->attributes['period'] ?? null)) {
+                $model->setPeriodAttribute($model->attributes['period']);
+            }
+
+            // Ensure a reference_number exists (required by schema).
+            if (empty($model->reference_number)) {
+                $year = (int) ($model->year ?: now()->year);
+                $month = (int) ($model->month ?: now()->month);
+                $emp = $model->employee_id ?: null;
+
+                $suffix = $emp ? (string) $emp : Str::upper(Str::random(6));
+                $model->reference_number = sprintf('PAY-%04d%02d-%s', $year, $month, $suffix);
+            }
+        });
+    }
+
+    /**
+     * Backward-compat: legacy "period" (Y-m) used across controllers/views.
+     */
+    public function getPeriodAttribute(): ?string
+    {
+        if ($this->year && $this->month) {
+            return sprintf('%04d-%02d', (int) $this->year, (int) $this->month);
+        }
+
+        return null;
+    }
+
+    public function setPeriodAttribute($value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        try {
+            $dt = Carbon::createFromFormat('Y-m', (string) $value);
+            $this->attributes['year'] = (int) $dt->year;
+            $this->attributes['month'] = (int) $dt->month;
+        } catch (\Throwable) {
+            // Ignore invalid legacy input; validation should catch it at the edge.
+        }
+    }
+
+    /**
+     * Backward-compat: legacy payroll fields used in UI (basic/allowances/deductions/net/paid_at).
+     *
+     * Canonical columns:
+     *  - salary (basic)
+     *  - allowance columns (housing/transport/meal/other/overtime/bonus/commission)
+     *  - total_deductions (deductions)
+     *  - net_salary (net)
+     *  - payment_date (paid_at)
+     */
+    public function getBasicAttribute(): float
+    {
+        return decimal_float($this->salary ?? 0);
+    }
+
+    public function setBasicAttribute($value): void
+    {
+        $this->attributes['salary'] = $value;
+    }
+
+    public function getAllowancesAttribute(): float
+    {
+        $parts = [
+            $this->housing_allowance ?? 0,
+            $this->transport_allowance ?? 0,
+            $this->meal_allowance ?? 0,
+            $this->other_allowances ?? 0,
+            $this->overtime_amount ?? 0,
+            $this->bonus ?? 0,
+            $this->commission ?? 0,
+        ];
+
+        $sum = 0.0;
+        foreach ($parts as $p) {
+            $sum += decimal_float($p);
+        }
+
+        return $sum;
+    }
+
+    public function setAllowancesAttribute($value): void
+    {
+        // Legacy code may set a single total; map it to other_allowances (generic bucket).
+        $this->attributes['other_allowances'] = $value;
+    }
+
+    public function getDeductionsAttribute(): float
+    {
+        return decimal_float($this->total_deductions ?? 0);
+    }
+
+    public function setDeductionsAttribute($value): void
+    {
+        // Legacy code may set a single total; map it to total_deductions + other_deductions.
+        $this->attributes['total_deductions'] = $value;
+        $this->attributes['other_deductions'] = $value;
+    }
+
+    public function getNetAttribute(): float
+    {
+        return decimal_float($this->net_salary ?? 0);
+    }
+
+    public function setNetAttribute($value): void
+    {
+        $this->attributes['net_salary'] = $value;
+    }
+
+    public function getPaidAtAttribute(): ?Carbon
+    {
+        return $this->payment_date ? Carbon::parse($this->payment_date) : null;
+    }
+
+    public function setPaidAtAttribute($value): void
+    {
+        $this->attributes['payment_date'] = $value;
+    }
+
 
     public function employee(): BelongsTo
     {

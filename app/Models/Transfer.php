@@ -222,7 +222,7 @@ class Transfer extends BaseModel
     {
         return decimal_float($this->items()
             ->selectRaw('SUM(quantity * unit_cost) as total')
-            ->value('total') ?? 0.0, 4);
+            ->first()?->total ?? 0.0, 4);
     }
 
     /**

@@ -79,7 +79,7 @@
                     <label class="erp-label">{{ __('Currency') }}</label>
                     <select wire:model="currency" class="erp-input">
                         @foreach($currencies as $curr)
-                            <option value="{{ $curr->code }}">{{ $curr->code }} - {{ $curr->name }} ({{ $curr->symbol }})</option>
+                            <option value="{{ $curr->reference_number }}">{{ $curr->reference_number }} - {{ $curr->name }} ({{ $curr->symbol }})</option>
                         @endforeach
                     </select>
                 </div>

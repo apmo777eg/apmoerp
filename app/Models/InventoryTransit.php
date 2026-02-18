@@ -52,6 +52,39 @@ class InventoryTransit extends Model
         'received_at' => 'datetime', // V29-LOW-08 FIX
     ];
 
+    /**
+     * Ensure branch_id is always set.
+     *
+     * Inventory transit records are branch-owned but may be created in console/jobs
+     * where BranchContextManager is not initialized.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model): void {
+            if ($model->branch_id !== null) {
+                return;
+            }
+
+            // Prefer the parent StockTransfer branch if present
+            if ($model->stock_transfer_id) {
+                $transfer = StockTransfer::withoutGlobalScopes()->find($model->stock_transfer_id);
+                if ($transfer && $transfer->branch_id) {
+                    $model->branch_id = $transfer->branch_id;
+                    return;
+                }
+            }
+
+            // Fallback to the source warehouse branch
+            if ($model->from_warehouse_id) {
+                $wh = Warehouse::withoutGlobalScopes()->find($model->from_warehouse_id);
+                if ($wh && $wh->branch_id) {
+                    $model->branch_id = $wh->branch_id;
+                }
+            }
+        });
+    }
+
+
     // Status constants
     public const STATUS_IN_TRANSIT = 'in_transit';
     public const STATUS_RECEIVED = 'received';

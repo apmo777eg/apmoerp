@@ -211,7 +211,7 @@ class SaleService implements SaleServiceInterface
                                 'movement_type' => 'return',
                                 'reference_type' => 'sale_item_return',
                                 'reference_id' => $itemData['sale_item_id'],
-                                'notes' => "Sale return for Sale #{$sale->code}: {$reason}",
+                                'notes' => "Sale return for Sale #{$sale->reference_number}: {$reason}",
                                 'unit_cost' => $itemData['unit_cost'],
                                 // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution
                                 'created_by' => actual_user_id(),
@@ -390,7 +390,7 @@ class SaleService implements SaleServiceInterface
                             'qty' => abs($movement->quantity), // Repository will handle direction
                             'direction' => 'in', // Void adds stock back
                             'unit_cost' => $movement->unit_cost,
-                            'notes' => "Void reversal for Sale #{$sale->code}",
+                            'notes' => "Void reversal for Sale #{$sale->reference_number}",
                             // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution
                             'created_by' => actual_user_id(),
                         ]);

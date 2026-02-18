@@ -32,6 +32,29 @@ class TicketReply extends Model
         'updated_by',
     ];
 
+    /**
+     * Ensure branch_id is derived from the parent ticket when not explicitly provided.
+     *
+     * Ticket replies are branch-owned and may be created from console/jobs
+     * where BranchContextManager is not initialized.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model): void {
+            if ($model->branch_id !== null) {
+                return;
+            }
+
+            if ($model->ticket_id) {
+                $ticket = Ticket::withoutGlobalScopes()->find($model->ticket_id);
+                if ($ticket && $ticket->branch_id) {
+                    $model->branch_id = $ticket->branch_id;
+                }
+            }
+        });
+    }
+
+
     protected $casts = [
         'is_internal' => 'boolean',
         'read_at' => 'datetime',

@@ -49,7 +49,8 @@ class Index extends Component
      */
     protected function allowedSortColumns(): array
     {
-        return ['id', 'name', 'email', 'phone', 'customer_tier', 'created_at', 'updated_at'];
+        // FIX: customers table uses `type` (individual/company)
+        return ['id', 'name', 'email', 'phone', 'type', 'created_at', 'updated_at'];
     }
 
     public function mount(): void
@@ -122,7 +123,8 @@ class Index extends Component
                         ->orWhere('phone', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->customerType, fn ($q) => $q->where('customer_tier', $this->customerType))
+            // FIX: filter by customers.type (individual/company)
+            ->when($this->customerType, fn ($q) => $q->where('type', $this->customerType))
             ->orderBy($this->getSortField(), $this->getSortDirection());
 
         if ($this->paginationMode === 'load-more') {
@@ -154,7 +156,8 @@ class Index extends Component
                         ->orWhere('phone', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->customerType, fn ($q) => $q->where('customer_tier', $this->customerType))
+            // FIX: filter by customers.type (individual/company)
+            ->when($this->customerType, fn ($q) => $q->where('type', $this->customerType))
             ->orderBy($this->getSortField(), $this->getSortDirection())
             ->select([
                 'id',
@@ -163,7 +166,7 @@ class Index extends Component
                 'phone',
                 'address',
                 'balance',
-                'customer_tier',
+                'type',
                 'created_at',
             ])
             ->get();

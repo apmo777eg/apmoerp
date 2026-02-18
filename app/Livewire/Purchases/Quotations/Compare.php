@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Purchases\Quotations;
 
 use App\Models\PurchaseRequisition;
@@ -13,124 +15,132 @@ class Compare extends Component
 {
     use AuthorizesRequests;
 
-    public $requisition_id = '';
+    public ?int $requisition_id = null;
 
-    public $quotations = [];
+    public array $comparisonData = [];
 
-    public $comparisonData = [];
+    public bool $showComparison = false;
 
-    public function mount()
+    public function mount(?int $requisition = null): void
     {
         $this->authorize('purchases.view');
+
+        if ($requisition) {
+            $this->requisition_id = $requisition;
+            $this->loadComparison();
+        }
     }
 
-    public function updatedRequisitionId()
+    public function updatedRequisitionId(): void
     {
-        $this->loadQuotations();
+        $this->loadComparison();
     }
 
-    public function loadQuotations()
+    public function loadComparison(): void
     {
+        $this->showComparison = false;
+        $this->comparisonData = [];
+
         if (! $this->requisition_id) {
-            $this->quotations = [];
-            $this->comparisonData = [];
-
             return;
         }
 
-        $this->quotations = SupplierQuotation::with(['supplier', 'items.product'])
+        $quotations = SupplierQuotation::with(['supplier', 'items.product'])
             ->where('requisition_id', $this->requisition_id)
             ->whereIn('status', ['pending', 'accepted'])
-            ->where('valid_until', '>=', now())
             ->get();
 
-        $this->buildComparisonMatrix();
-    }
-
-    protected function buildComparisonMatrix()
-    {
-        if ($this->quotations->isEmpty()) {
-            $this->comparisonData = [];
-
+        if ($quotations->isEmpty()) {
             return;
         }
 
-        // Build comparison matrix
-        $matrix = [];
+        $this->comparisonData = [
+            'requisition' => PurchaseRequisition::find($this->requisition_id),
+            'quotations' => $quotations,
+            'matrix' => $this->buildComparisonMatrix($quotations),
+            'bestQuotation' => $this->findBestQuotation($quotations),
+        ];
 
-        foreach ($this->quotations as $quotation) {
+        $this->showComparison = true;
+    }
+
+    protected function buildComparisonMatrix($quotations): array
+    {
+        $products = [];
+
+        foreach ($quotations as $quotation) {
             foreach ($quotation->items as $item) {
                 $productId = $item->product_id;
 
-                if (! isset($matrix[$productId])) {
-                    $matrix[$productId] = [
+                if (! isset($products[$productId])) {
+                    $products[$productId] = [
                         'product' => $item->product,
                         'quotations' => [],
                     ];
                 }
 
-                $matrix[$productId]['quotations'][$quotation->id] = [
-                    'quantity' => $item->qty,
-                    'unit_price' => $item->unit_cost,
-                    'tax_percentage' => $item->tax_rate,
-                    // FIX: Use bcmath for financial precision
-                    'total' => decimal_float(bcmul(bcmul((string) $item->qty, (string) $item->unit_cost, 4), bcadd('1', bcdiv((string) $item->tax_rate, '100', 6), 6), 4), 4),
+                $products[$productId]['quotations'][$quotation->id] = [
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'tax_percent' => $item->tax_percent,
+                    'line_total' => $item->line_total,
+                    'notes' => $item->notes,
                 ];
             }
         }
 
-        $this->comparisonData = $matrix;
+        return $products;
     }
 
-    public function acceptBest()
+    protected function findBestQuotation($quotations): ?SupplierQuotation
+    {
+        // Simple scoring based on grand total
+        return $quotations->sortBy(function ($quotation) {
+            return $quotation->total_amount ?? 0;
+        })->first();
+    }
+
+    public function acceptBestQuotation(): void
     {
         $this->authorize('purchases.manage');
 
-        if ($this->quotations->isEmpty()) {
-            session()->flash('error', __('No quotations to compare'));
-
+        if (! $this->comparisonData || ! isset($this->comparisonData['bestQuotation'])) {
             return;
         }
 
-        // Find quotation with lowest total price
-        $bestQuotation = $this->quotations->sortBy(function ($quotation) {
-            return $quotation->items->sum(function ($item) {
-                // FIX: Use bcmath for financial precision
-                return decimal_float(bcmul(bcmul((string) $item->qty, (string) $item->unit_cost, 4), bcadd('1', bcdiv((string) $item->tax_rate, '100', 6), 6), 4), 4);
-            });
-        })->first();
+        /** @var SupplierQuotation $bestQuotation */
+        $bestQuotation = $this->comparisonData['bestQuotation'];
 
-        if ($bestQuotation) {
-            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
-            $bestQuotation->update([
-                'status' => 'accepted',
-                'accepted_at' => now(),
-                'accepted_by' => actual_user_id(),
-            ]);
+        // Accept best quotation
+        $bestQuotation->accept(function_exists('actual_user_id') ? actual_user_id() : auth()->id());
 
-            // Reject other quotations
-            // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
-            $this->quotations->where('id', '!=', $bestQuotation->id)->each(function ($quotation) {
-                $quotation->update([
-                    'status' => 'rejected',
-                    'rejected_at' => now(),
-                    'rejected_by' => actual_user_id(),
-                    'rejection_reason' => 'Better quotation selected',
-                ]);
+        // Reject others
+        SupplierQuotation::where('requisition_id', $this->requisition_id)
+            ->where('id', '!=', $bestQuotation->id)
+            ->where('status', 'pending')
+            ->get()
+            ->each(function (SupplierQuotation $q): void {
+                $q->reject(__('Better offer accepted'), function_exists('actual_user_id') ? actual_user_id() : auth()->id());
             });
 
-            session()->flash('success', __('Best quotation accepted and others rejected'));
-            $this->loadQuotations();
-        }
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => __('Best quotation accepted successfully'),
+        ]);
+
+        $this->loadComparison();
     }
 
     public function render()
     {
+        $requisitions = PurchaseRequisition::query()
+            ->where('status', 'approved')
+            ->whereHas('quotations')
+            ->orderByDesc('id')
+            ->get(['id', 'code', 'subject']);
+
         return view('livewire.purchases.quotations.compare', [
-            'requisitions' => PurchaseRequisition::where('status', 'approved')
-                ->whereHas('quotations')
-                ->orderBy('created_at', 'desc')
-                ->get(),
+            'requisitions' => $requisitions,
         ]);
     }
 }

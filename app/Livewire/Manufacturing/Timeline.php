@@ -116,33 +116,33 @@ class Timeline extends Component
             ->when($user && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->where(function ($query) {
-                $query->whereBetween('start_date', [$this->startDate, $this->endDate])
-                    ->orWhereBetween('due_date', [$this->startDate, $this->endDate])
+                $query->whereBetween('planned_start_date', [$this->startDate, $this->endDate])
+                    ->orWhereBetween('planned_end_date', [$this->startDate, $this->endDate])
                     ->orWhere(function ($q) {
-                        $q->where('start_date', '<=', $this->startDate)
-                            ->where('due_date', '>=', $this->endDate);
+                        $q->where('planned_start_date', '<=', $this->startDate)
+                            ->where('planned_end_date', '>=', $this->endDate);
                     });
             })
-            ->with(['product', 'workCenter'])
-            ->orderBy('start_date')
+            ->with(['product'])
+            ->orderBy('planned_start_date')
             ->get()
             ->map(function ($order) {
                 return [
                     'id' => $order->id,
-                    'order_number' => $order->order_number,
+                    'order_number' => $order->reference_number,
                     'product_name' => $order->product?->name ?? __('N/A'),
-                    'work_center' => $order->workCenter?->name ?? __('N/A'),
+                    'work_center' => __('N/A'),
                     'status' => $order->status,
                     'priority' => $order->priority,
-                    'quantity_planned' => $order->quantity_planned,
-                    'quantity_produced' => $order->quantity_produced,
-                    'progress' => $order->quantity_planned > 0
-                        ? round(($order->quantity_produced / $order->quantity_planned) * 100)
+                    'quantity_planned' => (float) $order->planned_quantity,
+                    'quantity_produced' => (float) $order->produced_quantity,
+                    'progress' => $order->planned_quantity > 0
+                        ? round(($order->produced_quantity / $order->planned_quantity) * 100)
                         : 0,
-                    'start_date' => $order->start_date?->format('Y-m-d'),
-                    'due_date' => $order->due_date?->format('Y-m-d'),
-                    'days_remaining' => $order->due_date ? now()->diffInDays($order->due_date, false) : null,
-                    'is_overdue' => $order->due_date && $order->due_date < now() && $order->status !== 'completed',
+                    'start_date' => $order->planned_start_date?->format('Y-m-d'),
+                    'due_date' => $order->planned_end_date?->format('Y-m-d'),
+                    'days_remaining' => $order->planned_end_date ? now()->diffInDays($order->planned_end_date, false) : null,
+                    'is_overdue' => $order->planned_end_date && $order->planned_end_date < now() && $order->status !== 'completed',
                 ];
             });
     }
@@ -177,7 +177,7 @@ class Timeline extends Component
     {
         return match ($status) {
             'draft' => 'bg-gray-400',
-            'planned' => 'bg-blue-400',
+            'pending' => 'bg-blue-400',
             'in_progress' => 'bg-amber-400',
             'completed' => 'bg-green-400',
             'cancelled' => 'bg-red-400',

@@ -175,7 +175,7 @@
                             @forelse($warehouses as $warehouse)
                                 <tr wire:key="warehouse-{{ $warehouse->id }}" class="hover:bg-slate-50">
                                     <td class="font-medium text-slate-800">{{ $warehouse->name }}</td>
-                                    <td class="font-mono text-slate-600">{{ $warehouse->code ?? '-' }}</td>
+                                    <td class="font-mono text-slate-600">{{ $warehouse->reference_number ?? '-' }}</td>
                                     <td class="text-slate-600">{{ $warehouse->address ?? '-' }}</td>
                                     <td>
                                         <span class="px-2 py-1 text-xs rounded-full {{ ($warehouse->status === 'active') ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">

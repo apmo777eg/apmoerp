@@ -34,6 +34,9 @@ return new class extends Migration
             $table->string('account_type', 30)->default('checking'); // checking, savings, credit
             $table->decimal('opening_balance', 18, 4)->default(0);
             $table->decimal('current_balance', 18, 4)->default(0);
+            // Reconciliation snapshots (used by Banking/Reconciliation UI)
+            $table->timestamp('last_reconciled_at')->nullable();
+            $table->decimal('last_reconciled_balance', 18, 4)->nullable();
             $table->date('opening_date')->nullable();
             $table->string('status', 30)->default('active');
             $table->text('notes')->nullable();
@@ -54,6 +57,7 @@ return new class extends Migration
             $table->unique(['branch_id', 'account_number'], 'uq_bnkacct_branch_number');
             $table->index('branch_id', 'idx_bnkacct_branch_id');
             $table->index('status', 'idx_bnkacct_status');
+            $table->index('last_reconciled_at', 'idx_bnkacct_last_reconciled_at');
             $table->index(['branch_id', 'id'], 'idx_bnkacct_branch_id_id');
         });
 
@@ -135,6 +139,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_bnktxn_created_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('bank_account_id', 'idx_bnktxn_account_id');
             $table->index('branch_id', 'idx_bnktxn_branch_id');

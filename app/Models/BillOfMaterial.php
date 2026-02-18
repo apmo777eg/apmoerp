@@ -1,337 +1,401 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BillOfMaterial extends BaseModel
 {
-    use HasFactory, SoftDeletes;
+    protected ?string $moduleKey = 'manufacturing';
 
     protected $table = 'bills_of_materials';
 
     /**
-     * Fillable fields aligned with migration:
-     * 2026_01_04_000009_create_manufacturing_tables.php
+     * DB-first canonical columns (see create_manufacturing_tables migration).
      */
     protected $fillable = [
+        'reference_number',
         'branch_id',
         'product_id',
-        'reference_number',
+
         'name',
+        'name_ar',
         'version',
+        'status',
+
+        // Defines the base output quantity for this BOM. Components quantities are defined for this base.
         'quantity',
-        'yield_percentage',
+
+        // Scrap/loss factor at BOM level (assembly losses)
+        'scrap_percentage',
+        'is_multi_level',
+
         'estimated_cost',
         'estimated_time_hours',
-        'status',
+
         'notes',
+        'description',
         'custom_fields',
+
         'created_by',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:4',
-        'yield_percentage' => 'decimal:2',
+        'scrap_percentage' => 'decimal:2',
+        'is_multi_level' => 'boolean',
         'estimated_cost' => 'decimal:4',
         'estimated_time_hours' => 'decimal:2',
         'custom_fields' => 'array',
     ];
 
-    /**
-     * Get the branch that owns the BOM.
-     */
+    protected static function booted(): void
+    {
+        static::creating(function (BillOfMaterial $bom) {
+            if (! $bom->reference_number) {
+                $bom->reference_number = $bom->generateReferenceNumber();
+            }
+        });
+    }
+
+    // Relationships
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
     /**
-     * Get the finished product.
+     * Finished product for this BOM.
      */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Get the BOM items (components/materials).
-     */
     public function items(): HasMany
     {
         return $this->hasMany(BomItem::class, 'bom_id');
     }
 
-    /**
-     * Get the BOM operations.
-     */
     public function operations(): HasMany
     {
         return $this->hasMany(BomOperation::class, 'bom_id');
     }
 
-    /**
-     * Get production orders using this BOM.
-     */
     public function productionOrders(): HasMany
     {
         return $this->hasMany(ProductionOrder::class, 'bom_id');
     }
 
-    public function creator(): BelongsTo
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    // Backward compatibility accessors
-    public function getBomNumberAttribute()
-    {
-        return $this->reference_number;
-    }
-
-    public function getScrapPercentageAttribute()
-    {
-        return 100 - $this->yield_percentage;
-    }
-
-    public function getIsMultiLevelAttribute(): bool
-    {
-        return $this->items()->whereHas('product', function ($q) {
-            $q->whereHas('bom');
-        })->exists();
-    }
-
-    public function getMetadataAttribute()
-    {
-        return $this->custom_fields;
-    }
-
-    /**
-     * Calculate total material cost for this BOM.
-     */
-    public function calculateMaterialCost(): float
-    {
-        $cost = 0.0;
-
-        foreach ($this->items as $item) {
-            $productCost = $item->product->cost ?? 0.0;
-            $itemQuantity = decimal_float($item->quantity, 4);
-            $scrapFactor = 1 + (decimal_float($item->scrap_percentage ?? 0) / 100);
-
-            $cost += $productCost * $itemQuantity * $scrapFactor;
-        }
-
-        // Apply BOM-level yield percentage (default to 100% if not set or 0)
-        $yieldFactor = decimal_float($this->yield_percentage ?? 100) / 100;
-        // Prevent division by zero - if yield is 0 or negative, return raw cost
-        if ($yieldFactor > 0) {
-            $cost = $cost / $yieldFactor;
-        }
-
-        return $cost;
-    }
-
-    /**
-     * Calculate total labor cost for this BOM.
-     */
-    public function calculateLaborCost(): float
-    {
-        return $this->operations->sum(function ($operation) {
-            $durationHours = decimal_float($operation->duration_minutes ?? 0) / 60;
-            $costPerHour = decimal_float($operation->workCenter->cost_per_hour ?? 0);
-
-            return $durationHours * $costPerHour + decimal_float($operation->labor_cost ?? 0);
-        });
-    }
-
-    /**
-     * Calculate total production cost.
-     */
-    public function calculateTotalCost(): float
-    {
-        return $this->calculateMaterialCost() + $this->calculateLaborCost();
-    }
-
-    /**
-     * Scope: Active BOMs only.
-     */
-    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    // Scopes
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active');
     }
 
-    /**
-     * Scope: Draft BOMs.
-     */
-    public function scopeDraft(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeDraft(Builder $query): Builder
     {
         return $query->where('status', 'draft');
     }
 
-    /**
-     * Generate next BOM number.
-     *
-     * V55-HIGH-02 FIX: Use database locking to prevent race conditions.
-     * Without locking, concurrent requests could get the same BOM number.
-     */
-    public static function generateBomNumber(int $branchId): string
+    // Accessors
+    public function getDisplayNameAttribute(): string
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
-            $prefix = 'BOM';
-            $date = now()->format('Ym');
+        return $this->reference_number ?: 'BOM-' . $this->id;
+    }
 
-            // V55-HIGH-02 FIX: Use lockForUpdate to prevent race conditions
-            $lastBom = static::where('branch_id', $branchId)
-                ->where('reference_number', 'like', "{$prefix}-{$date}-%")
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->first();
+    // Reference number generation
+    public function generateReferenceNumber(): string
+    {
+        $prefix = 'BOM-' . date('Ym') . '-';
 
-            if ($lastBom) {
-                $lastNumber = (int) substr($lastBom->reference_number, -4);
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
-            }
+        $count = static::query()
+            ->when($this->branch_id, fn ($q) => $q->where('branch_id', $this->branch_id))
+            ->where('reference_number', 'like', $prefix . '%')
+            ->count();
 
-            return sprintf('%s-%s-%04d', $prefix, $date, $newNumber);
-        });
+        return $prefix . str_pad((string) ($count + 1), 4, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Check for circular dependencies in the Bill of Materials.
-     *
-     * BUG FIX: Prevents infinite loops during cost calculation.
-     * A circular dependency occurs when:
-     * - Product A uses Product B as a component
-     * - Product B uses Product A as a component (directly or indirectly)
-     *
-     * This would cause infinite recursion when calculating costs or
-     * material requirements, potentially crashing the server.
-     *
-     * @param int|null $productId Product ID to check (defaults to this BOM's product)
-     * @param array $visited Array of already visited product IDs (for recursion)
-     * @return array ['has_circular' => bool, 'path' => array] Detection result
+     * Cost per ONE finished unit (not per BOM batch).
      */
-    public function checkCircularDependency(?int $productId = null, array $visited = []): array
+    public function calculateMaterialCost(): float
     {
-        $productId = $productId ?? $this->product_id;
+        $baseOutput = max(0.0001, decimal_float($this->quantity ?? 1, 4));
+        $totalCostPerUnit = 0.0;
 
-        // If we've seen this product before, we have a circular dependency
-        if (in_array($productId, $visited, true)) {
-            $visited[] = $productId; // Add for complete path
-            return [
-                'has_circular' => true,
-                'path' => $visited,
-                'message' => __('Circular dependency detected: :path', [
-                    'path' => implode(' → ', array_map(fn($id) => "Product #{$id}", $visited)),
-                ]),
+        foreach ($this->items as $item) {
+            $componentQtyPerBom = decimal_float($item->quantity ?? 0, 4);
+            $componentQtyPerUnit = $componentQtyPerBom / $baseOutput;
+
+            $itemScrapFactor = 1 + (decimal_float($item->scrap_percentage ?? 0, 2) / 100);
+            $unitCost = decimal_float($item->unit_cost ?? 0, 4);
+
+            $totalCostPerUnit += ($componentQtyPerUnit * $itemScrapFactor) * $unitCost;
+        }
+
+        // Apply BOM-level scrap factor (assembly losses)
+        $bomScrap = decimal_float($this->scrap_percentage ?? 0, 2);
+        $bomYieldFactor = max(0.0001, (100 - $bomScrap) / 100);
+
+        return $totalCostPerUnit / $bomYieldFactor;
+    }
+
+    public function calculateLaborCost(): float
+    {
+        // Placeholder: can be derived from routing/operations.
+        return 0.0;
+    }
+
+    public function calculateOverheadCost(): float
+    {
+        // Placeholder: can be derived from overhead rates.
+        return 0.0;
+    }
+
+    public function calculateTotalCost(): float
+    {
+        return $this->calculateMaterialCost() + $this->calculateLaborCost() + $this->calculateOverheadCost();
+    }
+
+    public function updateEstimatedCosts(): void
+    {
+        $this->update([
+            'estimated_cost' => $this->calculateTotalCost(),
+        ]);
+    }
+
+    /**
+     * Required materials for a given production quantity.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function calculateRequiredMaterials(float $productionQuantity = 1): array
+    {
+        $baseOutput = max(0.0001, decimal_float($this->quantity ?? 1, 4));
+        $scale = $productionQuantity / $baseOutput;
+
+        $requiredMaterials = [];
+
+        foreach ($this->items as $item) {
+            $componentQtyPerBom = decimal_float($item->quantity ?? 0, 4);
+            $materialQuantity = $componentQtyPerBom * $scale;
+
+            $scrapFactor = 1 + (decimal_float($item->scrap_percentage ?? 0, 2) / 100);
+            $materialQuantity *= $scrapFactor;
+
+            $unitCost = decimal_float($item->unit_cost ?? 0, 4);
+
+            $requiredMaterials[] = [
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->name,
+                'quantity_required' => $materialQuantity,
+                'unit_id' => $item->unit_id,
+                'unit_name' => $item->unit?->name,
+                'unit_cost' => $unitCost,
+                'total_cost' => $materialQuantity * $unitCost,
             ];
         }
 
-        // Add current product to visited path
-        $visited[] = $productId;
+        return $requiredMaterials;
+    }
 
-        // Get all components (child products) for this product's BOM
-        $components = $this->items()
-            ->with('product.bom')
-            ->get();
+    public function checkMaterialAvailability(float $productionQuantity = 1, ?int $warehouseId = null): array
+    {
+        $requiredMaterials = $this->calculateRequiredMaterials($productionQuantity);
+        $availability = [];
 
-        foreach ($components as $component) {
-            // If the component itself is a manufactured product (has its own BOM)
-            $componentProduct = $component->product;
-            
-            if ($componentProduct && $componentProduct->bom) {
-                // Recursively check the component's BOM
-                $result = $componentProduct->bom->checkCircularDependency(
-                    $componentProduct->id,
-                    $visited
-                );
+        foreach ($requiredMaterials as $material) {
+            $product = Product::find($material['product_id']);
+            if (! $product) {
+                continue;
+            }
 
-                if ($result['has_circular']) {
-                    return $result;
-                }
+            $availableQuantity = $warehouseId
+                ? $product->getStockQuantity($warehouseId)
+                : $product->getTotalStockQuantity();
+
+            $availability[] = [
+                'product_id' => $material['product_id'],
+                'product_name' => $material['product_name'],
+                'required_quantity' => $material['quantity_required'],
+                'available_quantity' => $availableQuantity,
+                'shortage' => max(0, $material['quantity_required'] - $availableQuantity),
+                'is_available' => $availableQuantity >= $material['quantity_required'],
+            ];
+        }
+
+        return $availability;
+    }
+
+    public function validateQuantities(): bool
+    {
+        foreach ($this->items as $item) {
+            if (decimal_float($item->quantity ?? 0, 4) <= 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Guard for UI/service when adding a component.
+     */
+    public function canAddComponent(int $productId): bool
+    {
+        if ($productId === (int) $this->product_id) {
+            return false;
+        }
+
+        return ! $this->detectCircularDependency($productId);
+    }
+
+    /**
+     * Service-facing detailed check (used by ManufacturingService).
+     */
+    public function checkCircularDependency(): array
+    {
+        foreach ($this->items as $item) {
+            if ($this->detectCircularDependency((int) $item->product_id)) {
+                return [
+                    'has_circular' => true,
+                    'message' => 'Circular dependency detected in BOM components.',
+                ];
             }
         }
 
         return [
             'has_circular' => false,
-            'path' => $visited,
             'message' => null,
         ];
     }
 
-    /**
-     * Validate that adding a component won't create a circular dependency.
-     *
-     * @param int $componentProductId The product ID to be added as a component
-     * @return bool True if safe to add, false if it would create a circular dependency
-     */
-    public function canAddComponent(int $componentProductId): bool
+    public function hasCircularDependency(): bool
     {
-        // Check if adding this component would create a circle
-        // The component is circular if:
-        // 1. It's the same as the finished product
-        // 2. The component's BOM contains this BOM's product (at any level)
+        return (bool) ($this->checkCircularDependency()['has_circular'] ?? false);
+    }
 
-        // Direct self-reference check
-        if ($componentProductId === $this->product_id) {
-            return false;
+    private function detectCircularDependency(int $componentProductId, array $visited = []): bool
+    {
+        if (in_array($componentProductId, $visited, true)) {
+            return true;
         }
 
-        // Check if the component has a BOM that contains our product
-        $componentBom = static::where('product_id', $componentProductId)
+        $visited[] = $componentProductId;
+
+        $subBom = static::query()
+            ->where('product_id', $componentProductId)
             ->where('status', 'active')
             ->first();
 
-        if (! $componentBom) {
-            // Component is not a manufactured product, no circular dependency possible
-            return true;
+        if (! $subBom) {
+            return false;
         }
 
-        // Check if the component's BOM chain eventually leads back to this product
-        return ! $this->wouldCreateCircle($componentBom, [$this->product_id]);
-    }
-
-    /**
-     * Check if a BOM's component chain would lead back to any product in the visited set.
-     *
-     * @param BillOfMaterial $bom The BOM to check
-     * @param array $ancestorProductIds Products that are "upstream" in the chain
-     * @return bool True if adding this would create a circle
-     */
-    protected function wouldCreateCircle(BillOfMaterial $bom, array $ancestorProductIds): bool
-    {
-        // If this BOM's product is in our ancestors, it's a circle
-        if (in_array($bom->product_id, $ancestorProductIds, true)) {
-            return true;
-        }
-
-        // Add this BOM's product to ancestors for deeper checks
-        $ancestorProductIds[] = $bom->product_id;
-
-        // Check each component
-        foreach ($bom->items as $item) {
-            // If the component itself is in ancestors, it's a circle
-            if (in_array($item->product_id, $ancestorProductIds, true)) {
-                return true;
-            }
-
-            // If the component has its own BOM, check recursively
-            $componentBom = static::where('product_id', $item->product_id)
-                ->where('status', 'active')
-                ->first();
-
-            if ($componentBom && $this->wouldCreateCircle($componentBom, $ancestorProductIds)) {
+        foreach ($subBom->items as $subItem) {
+            if ($this->detectCircularDependency((int) $subItem->product_id, $visited)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    public function getHierarchyLevel(): int
+    {
+        $level = 0;
+        $currentBom = $this;
+
+        while (true) {
+            $parentBom = static::query()
+                ->whereHas('items', function ($q) use ($currentBom) {
+                    $q->where('product_id', $currentBom->product_id);
+                })
+                ->first();
+
+            if (! $parentBom) {
+                break;
+            }
+
+            $level++;
+            $currentBom = $parentBom;
+
+            if ($level > 10) {
+                break;
+            }
+        }
+
+        return $level;
+    }
+
+    public function getAllComponents(array $components = [], int $level = 0): array
+    {
+        if ($level > 10) {
+            return $components;
+        }
+
+        foreach ($this->items as $item) {
+            $components[] = [
+                'level' => $level,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->name,
+                'quantity' => $item->quantity,
+                'scrap_percentage' => $item->scrap_percentage,
+                'is_optional' => $item->is_optional,
+                'unit_id' => $item->unit_id,
+                'unit_name' => $item->unit?->name,
+                'unit_cost' => $item->unit_cost,
+            ];
+
+            $subBom = static::query()
+                ->where('product_id', $item->product_id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($subBom) {
+                $components = $subBom->getAllComponents($components, $level + 1);
+            }
+        }
+
+        return $components;
+    }
+
+    public function getComponentTree(): array
+    {
+        $tree = [];
+
+        foreach ($this->items as $item) {
+            $node = [
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->name,
+                'quantity' => $item->quantity,
+                'scrap_percentage' => $item->scrap_percentage,
+                'unit_id' => $item->unit_id,
+                'unit_name' => $item->unit?->name,
+                'children' => [],
+            ];
+
+            $subBom = static::query()
+                ->where('product_id', $item->product_id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($subBom) {
+                $node['children'] = $subBom->getComponentTree();
+            }
+
+            $tree[] = $node;
+        }
+
+        return $tree;
     }
 }

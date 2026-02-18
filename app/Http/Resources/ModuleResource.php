@@ -15,7 +15,10 @@ class ModuleResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'code' => $this->code,
+            // DB-first canonical identifier for modules.
+            'module_key' => $this->module_key,
+            // Backward-compat for older consumers that expect `code`.
+            'code' => $this->module_key,
             'description' => $this->description,
             'icon' => $this->icon,
             'color' => $this->color,

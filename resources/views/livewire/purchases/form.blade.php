@@ -79,7 +79,7 @@
                         @if(is_array($currencies) || is_object($currencies))
                             @foreach($currencies as $curr)
                                 @if(is_object($curr))
-                                    <option value="{{ $curr->code ?? '' }}">{{ $curr->code ?? '' }} - {{ $curr->name ?? '' }} ({{ $curr->symbol ?? '' }})</option>
+                                    <option value="{{ $curr->reference_number ?? '' }}">{{ $curr->reference_number ?? '' }} - {{ $curr->name ?? '' }} ({{ $curr->symbol ?? '' }})</option>
                                 @elseif(is_array($curr))
                                     <option value="{{ $curr['code'] ?? '' }}">{{ $curr['code'] ?? '' }} - {{ $curr['name'] ?? '' }} ({{ $curr['symbol'] ?? '' }})</option>
                                 @endif

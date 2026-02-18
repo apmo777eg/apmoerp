@@ -42,7 +42,7 @@ class AccountingService
                 'branch_id' => $sale->branch_id,
                 'reference_number' => $this->generateReferenceNumber('SALE', $sale->id),
                 'entry_date' => $sale->sale_date ?? $sale->created_at,
-                'description' => "Sale #{$sale->code}",
+                'description' => "Sale #{$sale->reference_number}",
                 'status' => 'draft', // Start as draft
                 'source_module' => 'sales',
                 'source_type' => 'Sale',
@@ -215,7 +215,7 @@ class AccountingService
                 'branch_id' => $purchase->branch_id,
                 'reference_number' => $this->generateReferenceNumber('PURCH', $purchase->id),
                 'entry_date' => $purchase->purchase_date ?? $purchase->created_at,
-                'description' => "Purchase Order #{$purchase->code}",
+                'description' => "Purchase Order #{$purchase->reference_number}",
                 'status' => 'draft', // Start as draft
                 'source_module' => 'purchases',
                 'source_type' => 'Purchase',
@@ -625,8 +625,8 @@ class AccountingService
     public function getAccountBalance(int $accountId): float
     {
         $result = JournalEntryLine::where('account_id', $accountId)
-            ->selectRaw('SUM(debit) - SUM(credit) as balance')
-            ->value('balance');
+            ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
+            ->first()?->balance ?? 0;
 
         // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
         return decimal_float($result ?? 0);
@@ -757,7 +757,7 @@ class AccountingService
                 'branch_id' => $sale->branch_id,
                 'reference_number' => $this->generateReferenceNumber('COGS', $sale->id),
                 'entry_date' => $sale->sale_date ?? $sale->created_at,
-                'description' => "COGS for Sale #{$sale->code}",
+                'description' => "COGS for Sale #{$sale->reference_number}",
                 'status' => 'draft', // Start as draft
                 'source_module' => 'sales',
                 'source_type' => 'Sale',

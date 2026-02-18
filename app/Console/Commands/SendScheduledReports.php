@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Events\UserNotificationCreated;
 use App\Mail\ScheduledReportMail;
-use App\Models\Notification;
 use App\Models\ScheduledReport;
+use App\Notifications\InAppMessage;
 use Cron\CronExpression;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -148,24 +147,21 @@ class SendScheduledReports extends Command
         ])->save();
 
         if ($report->user) {
-            $notification = Notification::create([
-                'user_id' => $report->user_id,
-                'title' => __('Scheduled report failed'),
-                'body' => __('Report ":name" failed: :message', [
-                    'name' => $report->template?->name ?? $report->route_name,
-                    'message' => $message,
-                ]),
-                'data' => [
+            $title = __('Scheduled report failed');
+            $body = __('Report ":name" failed: :message', [
+                'name' => $report->template?->name ?? $report->route_name,
+                'message' => $message,
+            ]);
+
+            $report->user->notify(new InAppMessage(
+                $title,
+                $body,
+                [
                     'type' => 'reports',
                     'scheduled_report_id' => $report->id,
                     'template_id' => $report->report_template_id,
                     'route_name' => $report->route_name,
-                ],
-            ]);
-
-            event(new UserNotificationCreated(
-                $notification,
-                $report->user
+                ]
             ));
         }
     }

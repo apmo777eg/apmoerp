@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,12 +14,32 @@ class PurchaseRequisition extends BaseModel
 
     protected $table = 'purchase_requisitions';
 
+    /**
+     * Fillable aligned with migrations:
+     * - 2026_01_04_000002_create_purchases_tables.php
+     * - 2026_02_16_000004_add_subject_and_cost_center_to_purchase_requisitions_table.php
+     */
     protected $fillable = [
-        'code', 'branch_id', 'department_id', 'requested_by',
-        'status', 'priority', 'required_date', 'justification', 'notes',
-        'estimated_total', 'approved_by', 'approved_at', 'rejection_reason',
-        'is_converted', 'converted_to_po_id', 'extra_attributes',
-        'created_by', 'updated_by',
+        'branch_id',
+        'code',
+        'subject',
+        'department_id',
+        'cost_center_id',
+        'requested_by',
+        'status',
+        'priority',
+        'required_date',
+        'justification',
+        'notes',
+        'estimated_total',
+        'approved_by',
+        'approved_at',
+        'rejection_reason',
+        'is_converted',
+        'converted_to_po_id',
+        'extra_attributes',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -32,20 +54,20 @@ class PurchaseRequisition extends BaseModel
     {
         parent::booted();
 
-        static::creating(function ($model) {
-            if (! $model->code) {
-                // V8-HIGH-N02 FIX: Use lockForUpdate to prevent race condition
-                // V43-HIGH-03 FIX: Wrap in transaction to ensure lock is effective
-                // lockForUpdate() only works within an active transaction
+        static::creating(function (self $model): void {
+            // BaseModel may have already set a generic code like REC-xxxx.
+            // Ensure requisitions follow their own sequential pattern.
+            $needsGeneratedCode = ! $model->code || ! preg_match('/^REQ-\d{8}-\d{5}$/', (string) $model->code);
+
+            if ($needsGeneratedCode) {
                 $model->code = DB::transaction(function () {
-                    // Get the last code with a lock to prevent duplicates
                     $lastReq = static::whereDate('created_at', today())
                         ->lockForUpdate()
                         ->orderBy('id', 'desc')
                         ->first();
 
                     $seq = 1;
-                    if ($lastReq && preg_match('/REQ-\d{8}-(\d{5})$/', $lastReq->code, $matches)) {
+                    if ($lastReq && preg_match('/REQ-\d{8}-(\d{5})$/', (string) $lastReq->code, $matches)) {
                         $seq = ((int) $matches[1]) + 1;
                     }
 
@@ -55,20 +77,67 @@ class PurchaseRequisition extends BaseModel
         });
     }
 
+    /**
+     * Backward compatibility: some screens refer to requisition_code.
+     */
+    public function getRequisitionCodeAttribute(): ?string
+    {
+        return $this->code;
+    }
+
+    public function setRequisitionCodeAttribute(?string $value): void
+    {
+        $this->attributes['code'] = $value;
+    }
+
+    /**
+     * Backward compatibility: some screens refer to required_by.
+     */
+    public function getRequiredByAttribute()
+    {
+        return $this->required_date;
+    }
+
+    public function setRequiredByAttribute($value): void
+    {
+        $this->attributes['required_date'] = $value;
+    }
+
     // Relationships
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /**
+     * Canonical relationship name.
+     */
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
 
+    /**
+     * Alias used by some legacy views/components.
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->requestedBy();
+    }
+
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 
     public function items(): HasMany
@@ -99,7 +168,8 @@ class PurchaseRequisition extends BaseModel
     // Scopes
     public function scopePendingApproval(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'pending_approval');
+        // Schema uses status = pending
+        return $query->where('status', 'pending');
     }
 
     public function scopeApproved(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
@@ -118,8 +188,10 @@ class PurchaseRequisition extends BaseModel
     }
 
     // Business Logic
-    public function approve(int $approvedBy): void
+    public function approve(?int $approvedBy = null): void
     {
+        $approvedBy = $approvedBy ?? (function_exists('actual_user_id') ? actual_user_id() : auth()->id());
+
         $this->update([
             'status' => 'approved',
             'approved_by' => $approvedBy,
@@ -127,8 +199,10 @@ class PurchaseRequisition extends BaseModel
         ]);
     }
 
-    public function reject(int $rejectedBy, string $reason): void
+    public function reject(?string $reason = null, ?int $rejectedBy = null): void
     {
+        $rejectedBy = $rejectedBy ?? (function_exists('actual_user_id') ? actual_user_id() : auth()->id());
+
         $this->update([
             'status' => 'rejected',
             'approved_by' => $rejectedBy,
@@ -140,6 +214,7 @@ class PurchaseRequisition extends BaseModel
     public function convertToPO(int $purchaseId): void
     {
         $this->update([
+            'status' => 'converted',
             'is_converted' => true,
             'converted_to_po_id' => $purchaseId,
         ]);
@@ -147,7 +222,7 @@ class PurchaseRequisition extends BaseModel
 
     public function canBeApproved(): bool
     {
-        return in_array($this->status, ['draft', 'pending_approval']);
+        return in_array($this->status, ['draft', 'pending'], true);
     }
 
     public function canBeConverted(): bool

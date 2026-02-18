@@ -78,7 +78,7 @@
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="font-medium text-gray-900 dark:text-white">{{ $plan->customer?->name ?? '-' }}</div>
-                            <div class="text-sm text-gray-500">{{ __('Invoice') }}: {{ $plan->sale?->code ?? 'N/A' }}</div>
+                            <div class="text-sm text-gray-500">{{ __('Invoice') }}: {{ $plan->sale?->reference_number ?? 'N/A' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
                             {{ number_format($plan->total_amount, 2) }}

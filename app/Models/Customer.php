@@ -61,6 +61,9 @@ class Customer extends BaseModel
         'is_active',
         'is_blocked',
         'block_reason',
+        // Portal
+        'portal_enabled',
+        'portal_password',
         // Additional
         'notes',
         'custom_fields',
@@ -81,9 +84,14 @@ class Customer extends BaseModel
         'payment_terms_days' => 'integer',
         'is_active' => 'boolean',
         'is_blocked' => 'boolean',
+        'portal_enabled' => 'boolean',
         'birthday' => 'date',
         'custom_fields' => 'array',
         'extra_attributes' => 'array',
+    ];
+
+    protected $hidden = [
+        'portal_password',
     ];
 
     public function branch(): BelongsTo

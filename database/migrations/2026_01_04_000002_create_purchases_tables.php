@@ -25,7 +25,17 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_prreq_branch__brnch');
             $table->string('code', 50);
-            $table->string('department_id', 50)->nullable();
+            $table->string('subject', 255);
+            $table->foreignId('department_id')
+                ->nullable()
+                ->constrained('departments')
+                ->nullOnDelete()
+                ->name('fk_prreq_department__dept');
+            $table->foreignId('cost_center_id')
+                ->nullable()
+                ->constrained('cost_centers')
+                ->nullOnDelete()
+                ->name('fk_prreq_cost_center__cc');
             $table->foreignId('requested_by')
                 ->nullable()
                 ->constrained('users')
@@ -45,11 +55,7 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->boolean('is_converted')->default(false);
-            $table->foreignId('converted_to_po_id')
-                ->nullable()
-                ->constrained('purchases')
-                ->nullOnDelete()
-                ->name('fk_prreq_converted_to_po__purch');
+            $table->unsignedBigInteger('converted_to_po_id')->nullable();
             $table->json('extra_attributes')->nullable();
             $table->foreignId('created_by')
                 ->nullable()
@@ -138,30 +144,48 @@ return new class extends Migration
                 ->constrained('purchase_requisitions')
                 ->nullOnDelete()
                 ->name('fk_supqt_req__prreq');
-            $table->string('code', 50)->nullable();
+
             $table->string('reference_number', 50);
             $table->date('quotation_date');
             $table->date('valid_until')->nullable();
+
             $table->string('status', 30)->default('pending'); // pending, accepted, rejected, expired
             $table->string('currency', 10)->default('USD');
+            $table->decimal('exchange_rate', 18, 8)->default(1);
+
+            // Amounts
             $table->decimal('subtotal', 18, 4)->default(0);
-            $table->decimal('sub_total', 18, 4)->default(0);
-            $table->decimal('tax_amount', 18, 4)->default(0);
-            $table->decimal('tax_total', 18, 4)->default(0);
             $table->decimal('discount_amount', 18, 4)->default(0);
-            $table->decimal('discount_total', 18, 4)->default(0);
-            $table->decimal('shipping_total', 18, 4)->default(0);
+            $table->decimal('tax_amount', 18, 4)->default(0);
+            $table->decimal('shipping_amount', 18, 4)->default(0);
             $table->decimal('total_amount', 18, 4)->default(0);
-            $table->decimal('grand_total', 18, 4)->default(0);
+
             $table->unsignedSmallInteger('lead_time_days')->nullable();
             $table->string('payment_terms', 191)->nullable();
             $table->string('delivery_terms', 191)->nullable();
             $table->unsignedSmallInteger('delivery_days')->nullable();
+
             $table->text('terms_conditions')->nullable();
-            $table->text('terms_and_conditions')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->text('notes')->nullable();
+            $table->json('custom_fields')->nullable();
             $table->json('extra_attributes')->nullable();
+
+            // Decision/audit (DB-first, no alias columns)
+            $table->foreignId('accepted_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_supqt_accepted_by__usr');
+            $table->timestamp('accepted_at')->nullable();
+
+            $table->foreignId('rejected_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_supqt_rejected_by__usr');
+            $table->timestamp('rejected_at')->nullable();
+
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')
@@ -178,9 +202,11 @@ return new class extends Migration
             $table->unique(['branch_id', 'reference_number'], 'uq_supqt_branch_ref');
             $table->index('branch_id', 'idx_supqt_branch_id');
             $table->index('supplier_id', 'idx_supqt_supplier_id');
+            $table->index('requisition_id', 'idx_supqt_req_id');
             $table->index('status', 'idx_supqt_status');
             $table->index('quotation_date', 'idx_supqt_date');
         });
+
 
         // Supplier quotation items
         // Supplier quotation items - aligned with SupplierQuotationItem model (extends BaseModel with HasBranch + SoftDeletes)
@@ -298,8 +324,10 @@ return new class extends Migration
             $table->index('supplier_id', 'idx_purch_supplier_id');
             $table->index('warehouse_id', 'idx_purch_warehouse_id');
             $table->index('status', 'idx_purch_status');
+            $table->index(['branch_id', 'status'], 'idx_purch_branch_status');
             $table->index('payment_status', 'idx_purch_payment_status');
             $table->index('purchase_date', 'idx_purch_date');
+            $table->index(['branch_id', 'purchase_date'], 'idx_purch_branch_date');
             $table->index('type', 'idx_purch_type');
             $table->index('created_by', 'idx_purch_created_by');
             $table->index(['branch_id', 'id'], 'idx_purch_branch_id_id');
@@ -414,9 +442,11 @@ return new class extends Migration
                 ->name('fk_grn_supplier__supp');
             $table->string('reference_number', 50);
             $table->string('supplier_delivery_note', 100)->nullable();
-            $table->string('status', 30)->default('pending'); // pending, completed, cancelled
+            $table->string('status', 30)->default('draft'); // draft, pending, inspecting, approved, rejected, partial, complete, cancelled
             $table->date('received_date');
             $table->text('notes')->nullable();
+            $table->text('inspection_notes')->nullable();
+            $table->text('rejection_reason')->nullable();
             $table->string('received_by_name', 191)->nullable();
             $table->foreignId('received_by')
                 ->nullable()
@@ -460,6 +490,7 @@ return new class extends Migration
                 ->constrained('purchase_items')
                 ->nullOnDelete()
                 ->name('fk_grni_purchase_item__purchi');
+            $table->decimal('unit_cost', 18, 4)->default(0);
             $table->decimal('expected_quantity', 18, 4);
             $table->decimal('received_quantity', 18, 4);
             $table->decimal('accepted_quantity', 18, 4)->default(0);
@@ -467,8 +498,15 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             $table->string('batch_number', 100)->nullable();
             $table->date('expiry_date')->nullable();
-            $table->string('quality_status', 30)->default('pending'); // pending, passed, failed
+            $table->string('item_condition', 30)->default('good'); // good, damaged, defective
             $table->text('notes')->nullable();
+            // Inspection fields (used by GRN inspection workflow)
+            $table->boolean('inspection_pass')->nullable();
+            $table->string('defect_category', 50)->nullable();
+            $table->text('defect_description')->nullable();
+            $table->text('inspection_notes')->nullable();
+            $table->json('received_photos')->nullable();
+            $table->json('inspection_photos')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

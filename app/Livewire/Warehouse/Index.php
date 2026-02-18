@@ -112,7 +112,7 @@ class Index extends Component
             // quantity is signed: positive = in, negative = out
             // SECURITY: The selectRaw uses hardcoded column names only
             $totalStock = (clone $stockMovementQuery)->sum('quantity');
-            $totalValue = (clone $stockMovementQuery)->selectRaw('SUM(quantity * COALESCE(unit_cost, 0)) as value')->value('value') ?? 0;
+            $totalValue = (clone $stockMovementQuery)->selectRaw('SUM(quantity * COALESCE(unit_cost, 0)) as value')->first()?->value ?? 0;
 
             return [
                 'total_warehouses' => $warehouseQuery->count(),

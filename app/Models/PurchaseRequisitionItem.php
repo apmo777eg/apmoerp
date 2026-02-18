@@ -23,10 +23,15 @@ class PurchaseRequisitionItem extends BaseModel
         'extra_attributes' => 'array',
     ];
 
-    // Backward compatibility accessors
+    // Backward compatibility accessors/mutators
     public function getQtyAttribute()
     {
         return $this->quantity;
+    }
+
+    public function setQtyAttribute($value): void
+    {
+        $this->attributes['quantity'] = $value;
     }
 
     public function getUomAttribute()
@@ -39,6 +44,11 @@ class PurchaseRequisitionItem extends BaseModel
         return $this->estimated_price;
     }
 
+    public function setEstimatedUnitCostAttribute($value): void
+    {
+        $this->attributes['estimated_price'] = $value;
+    }
+
     public function getEstimatedTotalAttribute()
     {
         return bcmul((string) ($this->quantity ?? 0), (string) ($this->estimated_price ?? 0), 4);
@@ -47,6 +57,11 @@ class PurchaseRequisitionItem extends BaseModel
     public function getNotesAttribute()
     {
         return $this->specifications;
+    }
+
+    public function setNotesAttribute($value): void
+    {
+        $this->attributes['specifications'] = $value;
     }
 
     // Relationships

@@ -11,31 +11,50 @@ class GRNItem extends BaseModel
     protected $table = 'grn_items';
 
     /**
-     * Fillable fields aligned with migration:
-     * 2026_01_04_000005_create_sales_purchases_tables.php
+     * Canonical columns (DB-first):
+     * - Quantities: expected_quantity / received_quantity / accepted_quantity / rejected_quantity
+     * - Condition at receipt: item_condition (good|damaged|defective)
+     * - Inspection result: inspection_pass + defect_* + inspection_notes
      */
     protected $fillable = [
         'grn_id',
         'branch_id',
         'product_id',
         'purchase_item_id',
+
+        'unit_cost',
         'expected_quantity',
         'received_quantity',
         'accepted_quantity',
         'rejected_quantity',
+
         'rejection_reason',
         'batch_number',
         'expiry_date',
-        'quality_status',
+        'item_condition',
+
         'notes',
+
+        // Inspection fields
+        'inspection_pass',
+        'defect_category',
+        'defect_description',
+        'inspection_notes',
+        'received_photos',
+        'inspection_photos',
     ];
 
     protected $casts = [
+        'unit_cost' => 'decimal:4',
         'expected_quantity' => 'decimal:4',
         'received_quantity' => 'decimal:4',
         'accepted_quantity' => 'decimal:4',
         'rejected_quantity' => 'decimal:4',
         'expiry_date' => 'date',
+
+        'inspection_pass' => 'boolean',
+        'received_photos' => 'array',
+        'inspection_photos' => 'array',
     ];
 
     // Relationships
@@ -54,27 +73,6 @@ class GRNItem extends BaseModel
         return $this->belongsTo(PurchaseItem::class, 'purchase_item_id');
     }
 
-    // Backward compatibility accessors
-    public function getQtyOrderedAttribute()
-    {
-        return $this->expected_quantity;
-    }
-
-    public function getQtyReceivedAttribute()
-    {
-        return $this->received_quantity;
-    }
-
-    public function getQtyAcceptedAttribute()
-    {
-        return $this->accepted_quantity;
-    }
-
-    public function getQtyRejectedAttribute()
-    {
-        return $this->rejected_quantity;
-    }
-
     // Business Logic
     public function hasDiscrepancy(): bool
     {
@@ -84,23 +82,22 @@ class GRNItem extends BaseModel
     public function getDiscrepancyPercentage(): float
     {
         $expectedQty = decimal_float($this->expected_quantity ?? 0, 4);
-        // Prevent division by zero
         if ($expectedQty <= 0) {
             return 0.0;
         }
 
-        $acceptedQty = $this->accepted_quantity ?? max(0, $this->received_quantity - $this->rejected_quantity);
+        $acceptedQty = $this->accepted_quantity ?? max(0, ($this->received_quantity ?? 0) - ($this->rejected_quantity ?? 0));
 
         return (abs($expectedQty - decimal_float($acceptedQty, 4)) / $expectedQty) * 100;
     }
 
     public function isFullyReceived(): bool
     {
-        return $this->received_quantity >= $this->expected_quantity && $this->rejected_quantity == 0;
+        return ($this->received_quantity ?? 0) >= ($this->expected_quantity ?? 0) && ($this->rejected_quantity ?? 0) == 0;
     }
 
     public function isPartiallyReceived(): bool
     {
-        return $this->received_quantity > 0 && $this->received_quantity < $this->expected_quantity;
+        return ($this->received_quantity ?? 0) > 0 && ($this->received_quantity ?? 0) < ($this->expected_quantity ?? 0);
     }
 }

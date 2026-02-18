@@ -30,6 +30,8 @@ class BankAccount extends BaseModel
         'account_type',
         'opening_balance',
         'current_balance',
+        'last_reconciled_at',
+        'last_reconciled_balance',
         'opening_date',
         'status',
         'notes',
@@ -41,6 +43,8 @@ class BankAccount extends BaseModel
     protected $casts = [
         'opening_balance' => 'decimal:4',
         'current_balance' => 'decimal:4',
+        'last_reconciled_balance' => 'decimal:2',
+        'last_reconciled_at' => 'datetime',
         'opening_date' => 'date',
         'meta' => 'array',
     ];

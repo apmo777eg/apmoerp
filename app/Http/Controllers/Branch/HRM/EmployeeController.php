@@ -43,7 +43,8 @@ class EmployeeController extends Controller
         $branchId = (int) ($data['branch_id'] ?? $request->attributes->get('branch_id'));
         if (Schema::hasTable('branch_employee')) {
             DB::table('branch_employee')->updateOrInsert(
-                ['hr_employee_id' => $data['employee_id'], 'branch_id' => $branchId],
+                // FIX: pivot column is employee_id (not hr_employee_id)
+                ['employee_id' => $data['employee_id'], 'branch_id' => $branchId],
                 ['created_at' => now(), 'updated_at' => now()]
             );
         } else {
@@ -57,7 +58,8 @@ class EmployeeController extends Controller
     {
         $branchId = (int) $request->attributes->get('branch_id');
         if (Schema::hasTable('branch_employee')) {
-            DB::table('branch_employee')->where('hr_employee_id', $employee->id)->where('branch_id', $branchId)->delete();
+            // FIX: pivot column is employee_id (not hr_employee_id)
+            DB::table('branch_employee')->where('employee_id', $employee->id)->where('branch_id', $branchId)->delete();
         } else {
             $employee->branch_id = null;
             $employee->save();

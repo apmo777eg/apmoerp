@@ -26,7 +26,8 @@ class Index extends Component
 
     public function mount(): void
     {
-        $this->authorize('purchases.manage');
+        // Route middleware already uses purchases.view; keep component consistent.
+        $this->authorize('purchases.view');
     }
 
     public function updatingSearch(): void
@@ -92,9 +93,9 @@ class Index extends Component
             ->with(['purchase', 'supplier', 'inspectedBy'])
             ->when($this->search, function ($q) {
                 $q->where(function ($query) {
-                    $query->where('code', 'like', "%{$this->search}%")
+                    $query->where('reference_number', 'like', "%{$this->search}%")
                         ->orWhereHas('purchase', function ($q) {
-                            $q->where('code', 'like', "%{$this->search}%");
+                            $q->where('reference_number', 'like', "%{$this->search}%");
                         })
                         ->orWhereHas('supplier', function ($q) {
                             $q->where('name', 'like', "%{$this->search}%");
@@ -107,13 +108,15 @@ class Index extends Component
         $grns = $query->paginate(15);
 
         // Calculate statistics
-        $stats = [
+                $stats = [
             'total' => GoodsReceivedNote::count(),
-            'pending' => GoodsReceivedNote::where('status', 'pending')->count(),
-            'approved' => GoodsReceivedNote::where('status', 'approved')->count(),
-            'rejected' => GoodsReceivedNote::where('status', 'rejected')->count(),
-            'partial' => GoodsReceivedNote::where('status', 'partial')->count(),
-            'complete' => GoodsReceivedNote::where('status', 'complete')->count(),
+            'draft' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_DRAFT)->count(),
+            'pending' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_PENDING)->count(),
+            'inspecting' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_INSPECTING)->count(),
+            'approved' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_APPROVED)->count(),
+            'rejected' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_REJECTED)->count(),
+            'partial' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_PARTIAL)->count(),
+            'complete' => GoodsReceivedNote::where('status', GoodsReceivedNote::STATUS_COMPLETE)->count(),
         ];
 
         return view('livewire.purchases.grn.index', [

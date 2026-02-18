@@ -57,6 +57,7 @@ class SearchHistory extends BaseModel
             ->groupBy('query')
             ->orderByDesc('count')
             ->limit($limit)
+            ->get()
             ->pluck('query')
             ->toArray();
     }

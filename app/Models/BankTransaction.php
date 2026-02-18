@@ -8,6 +8,7 @@ use App\Traits\HasBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * BankTransaction - Bank transaction record model
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class BankTransaction extends Model
 {
-    use HasBranch;
+    use HasBranch, SoftDeletes;
     protected $fillable = [
         'bank_account_id',
         'branch_id',

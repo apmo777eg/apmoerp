@@ -26,7 +26,7 @@ class Form extends Component
 
     public ?int $warehouse_id = null;
 
-    public float $quantity_planned = 1.0;
+    public float $planned_quantity = 1.0;
 
     public string $status = 'draft';
 
@@ -47,8 +47,8 @@ class Form extends Component
             'bom_id' => ['required', new \App\Rules\BranchScopedExists('bills_of_materials', 'id', $branchId)],
             'product_id' => ['required', new \App\Rules\BranchScopedExists('products', 'id', $branchId)],
             'warehouse_id' => ['required', new \App\Rules\BranchScopedExists('warehouses', 'id', $branchId)],
-            'quantity_planned' => ['required', 'numeric', 'min:0.01'],
-            'status' => ['required', 'in:draft,planned,released,in_progress,completed,cancelled'],
+            'planned_quantity' => ['required', 'numeric', 'min:0.01'],
+            'status' => ['required', 'in:draft,pending,in_progress,completed,cancelled'],
             'priority' => ['required', 'in:low,normal,high,urgent'],
             'planned_start_date' => ['nullable', 'date'],
             'planned_end_date' => ['nullable', 'date', 'after_or_equal:planned_start_date'],
@@ -78,7 +78,7 @@ class Form extends Component
         $this->product_id = $this->productionOrder->product_id;
         $this->warehouse_id = $this->productionOrder->warehouse_id;
         // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-        $this->quantity_planned = decimal_float($this->productionOrder->quantity_planned, 4);
+        $this->planned_quantity = decimal_float($this->productionOrder->planned_quantity, 4);
         $this->status = $this->productionOrder->status;
         $this->priority = $this->productionOrder->priority;
         $this->planned_start_date = $this->productionOrder->planned_start_date?->format('Y-m-d');
@@ -109,7 +109,7 @@ class Form extends Component
             'bom_id' => $this->bom_id,
             'product_id' => $this->product_id,
             'warehouse_id' => $this->warehouse_id,
-            'quantity_planned' => $this->quantity_planned,
+            'planned_quantity' => $this->planned_quantity,
             'status' => $this->status,
             'priority' => $this->priority,
             'planned_start_date' => $this->planned_start_date,
@@ -124,7 +124,7 @@ class Form extends Component
         } else {
             // Only set created_by on create
             $data['created_by'] = $user->id;
-            $data['order_number'] = ProductionOrder::generateOrderNumber($branchId);
+            // reference_number is generated in ProductionOrder::booted()
             ProductionOrder::create($data);
             session()->flash('success', __('Production Order created successfully.'));
         }

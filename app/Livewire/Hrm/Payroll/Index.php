@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Hrm\Payroll;
 
 use App\Models\Payroll;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -60,9 +61,7 @@ class Index extends Component
         $query = Payroll::query()
             ->with('employee')
             ->when($this->branchId, function ($q) {
-                $q->whereHas('employee', function ($employeeQuery) {
-                    $employeeQuery->where('branch_id', $this->branchId);
-                });
+                $q->where('branch_id', $this->branchId);
             })
             ->when($this->search !== null && $this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
@@ -76,9 +75,15 @@ class Index extends Component
                 $q->where('status', $this->status);
             })
             ->when($this->period, function ($q) {
-                $q->where('period', $this->period);
+                try {
+                    $dt = Carbon::createFromFormat('Y-m', (string) $this->period);
+                    $q->where('year', (int) $dt->year)->where('month', (int) $dt->month);
+                } catch (\Throwable) {
+                    // Ignore invalid input; UI validates period format.
+                }
             })
-            ->orderByDesc('period')
+            ->orderByDesc('year')
+            ->orderByDesc('month')
             ->orderByDesc('id');
 
         $runs = $query->paginate(20);

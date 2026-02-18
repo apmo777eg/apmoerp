@@ -29,7 +29,7 @@ class InstallmentService
         return $this->handleServiceOperation(
             callback: function () use ($sale, $customer, $numInstallments, $downPayment, $interestRate, $startDate, $userId) {
                 // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-                $totalAmount = decimal_float($sale->grand_total);
+                $totalAmount = decimal_float($sale->total_amount);
 
                 if ($numInstallments < 1) {
                     throw new InvalidArgumentException(__('Number of installments must be at least 1'));

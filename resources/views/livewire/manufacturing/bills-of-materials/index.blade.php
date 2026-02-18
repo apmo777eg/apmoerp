@@ -75,7 +75,7 @@
     <div class="erp-card p-4">
         <div class="flex flex-col lg:flex-row gap-4 mb-6">
             <div class="flex-1 relative">
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="{{ __('Search by BOM number, name or product...') }}" class="erp-input pr-10">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="{{ __('Search by reference number, name or product...') }}" class="erp-input pr-10">
                 <div wire:loading.delay wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
                     <svg class="animate-spin h-4 w-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -97,9 +97,9 @@
             <table class="erp-table">
                 <thead>
                     <tr>
-                        <th wire:click="sortBy('bom_number')" class="cursor-pointer hover:bg-slate-100">
-                            {{ __('BOM Number') }}
-                            @if($sortField === 'bom_number')
+                        <th wire:click="sortBy('reference_number')" class="cursor-pointer hover:bg-slate-100">
+                            {{ __('Reference') }}
+                            @if($sortField === 'reference_number')
                                 <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
@@ -121,7 +121,7 @@
                 <tbody>
                     @forelse($boms as $bom)
                         <tr wire:key="bom-{{ $bom->id }}">
-                            <td class="font-medium">{{ $bom->bom_number }}</td>
+                            <td class="font-medium">{{ $bom->reference_number }}</td>
                             <td>
                                 <div class="font-medium">{{ $bom->name }}</div>
                                 @if($bom->name_ar)

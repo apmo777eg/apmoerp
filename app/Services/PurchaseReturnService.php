@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\DebitNote;
-use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
@@ -43,7 +42,7 @@ class PurchaseReturnService
             'supplier_id' => ['nullable', 'integer', new BranchScopedExists('suppliers', 'id', $branchId, allowNull: true)],
             'branch_id' => 'nullable|integer|exists:branches,id',
             'warehouse_id' => ['nullable', 'integer', new BranchScopedExists('warehouses', 'id', $branchId, allowNull: true)],
-            // V57-CRITICAL-03 FIX: Use BranchScopedExists for grn_id
+            // Branch-aware GRN (optional)
             'grn_id' => ['nullable', 'integer', new BranchScopedExists('goods_received_notes', 'id', $branchId, allowNull: true)],
             'return_type' => 'nullable|in:full,partial,defective,excess',
             'reason' => 'required|string|max:255',
@@ -52,15 +51,18 @@ class PurchaseReturnService
             'return_date' => 'nullable|date',
             'tracking_number' => 'nullable|string|max:100',
             'courier_name' => 'nullable|string|max:100',
+
             'items' => 'required|array|min:1',
             'items.*.product_id' => ['required', 'integer', new BranchScopedExists('products', 'id', $branchId)],
             // V24-CRIT-04 FIX: Add required validation for purchase_item_id
             'items.*.purchase_item_id' => 'required|integer|exists:purchase_items,id',
             'items.*.qty_returned' => 'required|numeric|min:0.001',
-            'items.*.condition' => 'nullable|in:defective,damaged,wrong_item,excess,expired',
+            // Canonical column: item_condition
+            'items.*.item_condition' => 'nullable|in:defective,damaged,wrong_item,excess,expired',
             'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.batch_number' => 'nullable|string|max:50',
             'items.*.expiry_date' => 'nullable|date',
+            'items.*.reason' => 'nullable|string|max:255',
             'items.*.notes' => 'nullable|string',
         ])->validate();
 
@@ -71,71 +73,88 @@ class PurchaseReturnService
             // V25-HIGH-07 FIX: Build an indexed map for efficient lookup
             $purchaseItemsById = $purchase->items->keyBy('id');
 
-            // Create purchase return
             $return = PurchaseReturn::create([
-                'purchase_id' => $validated['purchase_id'],
+                'purchase_id' => $purchase->id,
                 'supplier_id' => $validated['supplier_id'] ?? $purchase->supplier_id,
                 'branch_id' => $validated['branch_id'] ?? $purchase->branch_id,
                 'warehouse_id' => $validated['warehouse_id'] ?? $purchase->warehouse_id,
+                'grn_id' => $validated['grn_id'] ?? null,
                 'return_type' => $validated['return_type'] ?? PurchaseReturn::TYPE_FULL,
-                'reason' => $validated['reason'],
                 'status' => PurchaseReturn::STATUS_PENDING,
-                'created_by' => Auth::id(),
+                'reason' => $validated['reason'],
                 'notes' => $validated['notes'] ?? null,
-                'expected_debit_note_amount' => 0,
+                'internal_notes' => $validated['internal_notes'] ?? null,
+                'return_date' => $validated['return_date'] ?? now()->toDateString(),
+                'tracking_number' => $validated['tracking_number'] ?? null,
+                'courier_name' => $validated['courier_name'] ?? null,
+                'currency' => $purchase->currency ?? null,
+                'subtotal' => 0,
+                'tax_amount' => 0,
+                'total_amount' => 0,
+                // V33-CRIT-02 FIX: Use actual_user_id() for correct audit attribution during impersonation
+                'created_by' => actual_user_id(),
             ]);
 
-            // Add return items
-            $totalAmount = 0;
+            $subtotal = 0.0;
+            $taxTotal = 0.0;
+
             foreach ($validated['items'] as $itemData) {
-                // V25-HIGH-07 FIX: Validate purchase_item belongs to the purchase (using efficient lookup)
+                // Ensure purchase_item belongs to the purchase
                 $purchaseItem = $purchaseItemsById->get($itemData['purchase_item_id']);
                 if (! $purchaseItem) {
                     throw new \InvalidArgumentException(
-                        "Purchase item ID {$itemData['purchase_item_id']} does not belong to purchase ID {$validated['purchase_id']}"
+                        "Purchase item ID {$itemData['purchase_item_id']} does not belong to purchase ID {$purchase->id}"
                     );
                 }
 
-                // V25-HIGH-07 FIX: Validate product_id matches the purchase item's product
-                if ($purchaseItem->product_id != $itemData['product_id']) {
+                // Validate product_id matches the purchase item's product
+                if ((int) $purchaseItem->product_id !== (int) $itemData['product_id']) {
                     throw new \InvalidArgumentException(
                         "Product ID {$itemData['product_id']} does not match purchase item's product ID {$purchaseItem->product_id}"
                     );
                 }
 
-                // V25-HIGH-07 FIX: Validate qty_returned does not exceed purchase item quantity
                 $qtyReturned = decimal_float($itemData['qty_returned'], 4);
                 $purchaseQty = decimal_float($purchaseItem->quantity, 4);
+
                 if ($qtyReturned > $purchaseQty) {
                     throw new \InvalidArgumentException(
                         "Return quantity ({$qtyReturned}) exceeds purchase quantity ({$purchaseQty}) for product ID {$itemData['product_id']}"
                     );
                 }
 
-                // V24-CRIT-04 FIX: Use null coalescing for nullable fields to prevent undefined index
-                // V25-HIGH-07 FIX: Default unit_cost from purchase item if not provided
-                $unitCost = $itemData['unit_cost'] ?? $purchaseItem->unit_price ?? 0;
-                $condition = $itemData['condition'] ?? null;
+                $unitCost = decimal_float($itemData['unit_cost'] ?? ($purchaseItem->unit_price ?? 0), 4);
 
-                $item = PurchaseReturnItem::create([
+                // For now: returns are stored without tax breakdown per line unless explicitly implemented.
+                $lineSubtotal = decimal_float($qtyReturned * $unitCost, 4);
+                $lineTax = decimal_float(0, 4);
+                $lineTotal = decimal_float($lineSubtotal + $lineTax, 4);
+
+                PurchaseReturnItem::create([
                     'purchase_return_id' => $return->id,
-                    'purchase_item_id' => $itemData['purchase_item_id'],
-                    'product_id' => $itemData['product_id'],
+                    'purchase_item_id' => $purchaseItem->id,
+                    'product_id' => (int) $itemData['product_id'],
+                    'branch_id' => $return->branch_id,
                     'qty_returned' => $qtyReturned,
-                    'qty_original' => $purchaseQty, // V25-HIGH-07 FIX: Track original qty
+                    'qty_original' => $purchaseQty,
                     'unit_cost' => $unitCost,
-                    'condition' => $condition,
+                    'tax_amount' => $lineTax,
+                    'line_total' => $lineTotal,
+                    'item_condition' => $itemData['item_condition'] ?? null,
                     'batch_number' => $itemData['batch_number'] ?? null,
                     'expiry_date' => $itemData['expiry_date'] ?? null,
+                    'reason' => $itemData['reason'] ?? null,
                     'notes' => $itemData['notes'] ?? null,
                 ]);
 
-                $totalAmount += $item->qty_returned * $unitCost;
+                $subtotal += $lineSubtotal;
+                $taxTotal += $lineTax;
             }
 
-            // Update expected debit note amount
             $return->update([
-                'expected_debit_note_amount' => $totalAmount,
+                'subtotal' => decimal_float($subtotal, 4),
+                'tax_amount' => decimal_float($taxTotal, 4),
+                'total_amount' => decimal_float($subtotal + $taxTotal, 4),
             ]);
 
             return $return->fresh('items');
@@ -165,10 +184,9 @@ class PurchaseReturnService
                 'approved_at' => now(),
             ]);
 
-            // Create debit note if amount is greater than zero
-            if ($return->expected_debit_note_amount > 0) {
-                $debitNote = $this->createDebitNote($return, $data);
-                $return->update(['debit_note_id' => $debitNote->id]);
+            // Create debit note if return total is greater than zero
+            if (decimal_float($return->total_amount, 4) > 0) {
+                $this->createDebitNote($return, $data);
             }
 
             // Update supplier performance metrics
@@ -200,9 +218,10 @@ class PurchaseReturnService
                 'status' => PurchaseReturn::STATUS_COMPLETED,
                 'completed_by' => Auth::id(),
                 'completed_at' => now(),
+                'shipped_date' => $data['shipped_date'] ?? now()->toDateString(),
                 'tracking_number' => $data['tracking_number'] ?? null,
-                'carrier' => $data['carrier'] ?? null,
-                'metadata' => array_merge($return->metadata ?? [], [
+                'courier_name' => $data['courier_name'] ?? $return->courier_name,
+                'extra_attributes' => array_merge($return->extra_attributes ?? [], [
                     'shipping_details' => $data,
                     'completed_at' => now()->toIso8601String(),
                 ]),
@@ -278,7 +297,7 @@ class PurchaseReturnService
             'purchase_return_id' => $return->id,
             'supplier_id' => $return->supplier_id,
             'branch_id' => $return->branch_id,
-            'amount' => $data['amount'] ?? $return->expected_debit_note_amount,
+            'amount' => $data['amount'] ?? $return->total_amount,
             'tax_amount' => $data['tax_amount'] ?? 0,
             'status' => DebitNote::STATUS_PENDING,
             'notes' => $data['notes'] ?? "Debit note for purchase return {$return->return_number}",
@@ -426,9 +445,9 @@ class PurchaseReturnService
             $query->where('created_at', '<=', $filters['to_date']);
         }
 
-        $totalReturns = $query->count();
-        $totalAmount = $query->sum('expected_debit_note_amount');
-        $approvedReturns = $query->where('status', PurchaseReturn::STATUS_APPROVED)->count();
+        $totalReturns = (clone $query)->count();
+        $totalAmount = (clone $query)->sum('total_amount');
+        $approvedReturns = (clone $query)->where('status', PurchaseReturn::STATUS_APPROVED)->count();
 
         return [
             'total_returns' => $totalReturns,
@@ -460,8 +479,8 @@ class PurchaseReturnService
             });
         }
 
-        return $query->select('condition', DB::raw('COUNT(*) as count'), DB::raw('SUM(qty_returned) as total_qty'))
-            ->groupBy('condition')
+        return $query->select('item_condition', DB::raw('COUNT(*) as count'), DB::raw('SUM(qty_returned) as total_qty'))
+            ->groupBy('item_condition')
             ->get()
             ->toArray();
     }

@@ -24,6 +24,8 @@ class Form extends Component
 
     public ?int $journalEntryId = null;
 
+    public bool $readOnly = false;
+
     /**
      * @var array<string,mixed>
      */
@@ -41,7 +43,14 @@ class Form extends Component
 
     public function mount(?JournalEntry $journalEntry = null): void
     {
-        $this->authorize('accounting.create');
+        if ($journalEntry) {
+            $this->authorize('accounting.view');
+            $canUpdate = auth()->user()?->can('accounting.update') ?? false;
+            $this->readOnly = ! $canUpdate || $journalEntry->status === 'posted';
+        } else {
+            $this->authorize('accounting.create');
+            $this->readOnly = false;
+        }
 
         $this->journalEntryId = $journalEntry?->id;
         $this->form['entry_date'] = now()->format('Y-m-d');

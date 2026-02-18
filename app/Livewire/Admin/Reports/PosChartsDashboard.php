@@ -79,7 +79,7 @@ class PosChartsDashboard extends Component
 
         $totalSales = $sales->count();
         // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-        $totalRevenue = decimal_float($sales->sum('grand_total'));
+        $totalRevenue = decimal_float($sales->sum('total_amount'));
 
         // V33-CRIT-01 FIX: Group by sale_date instead of created_at for accurate daily reporting
         $groupedByDay = $sales->groupBy(function (Sale $sale): string {
@@ -96,7 +96,7 @@ class PosChartsDashboard extends Component
 
             $dayLabels[] = $date;
             // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            $dayValues[] = decimal_float($items->sum('grand_total'));
+            $dayValues[] = decimal_float($items->sum('total_amount'));
         }
 
         $groupedByBranch = $sales->groupBy('branch_id');
@@ -118,7 +118,7 @@ class PosChartsDashboard extends Component
         foreach ($groupedByBranch as $branchId => $items) {
             $branchLabels[] = $branchId ? ($branchNameMap[$branchId] ?? ('#'.$branchId)) : __('N/A');
             // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            $branchValues[] = decimal_float($items->sum('grand_total'));
+            $branchValues[] = decimal_float($items->sum('total_amount'));
         }
 
         $chartSalesByDay = [

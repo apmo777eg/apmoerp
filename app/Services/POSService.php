@@ -380,6 +380,7 @@ class POSService implements POSServiceInterface
                 $paymentSummary = SalePayment::whereIn('sale_id', $salesQuery->pluck('id'))
                     ->selectRaw('payment_method, SUM(amount) as total')
                     ->groupBy('payment_method')
+                    ->get()
                     ->pluck('total', 'payment_method')
                     ->toArray();
 

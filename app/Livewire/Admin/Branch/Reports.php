@@ -94,7 +94,7 @@ class Reports extends Component
             'total_amount' => (clone $query)->sum('total_amount'),
             'average_sale' => (clone $query)->avg('total_amount') ?? 0,
             'paid_amount' => (clone $query)->sum('paid_amount'),
-            'due_amount' => (clone $query)->selectRaw('SUM(total_amount - paid_amount) as due')->value('due') ?? 0,
+            'due_amount' => (clone $query)->selectRaw('SUM(total_amount - paid_amount) as due')->first()?->due ?? 0,
         ];
     }
 

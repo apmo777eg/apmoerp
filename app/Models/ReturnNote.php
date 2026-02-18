@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ReturnNote Model - Simple returns (legacy)
@@ -32,9 +32,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class ReturnNote extends BaseModel
 {
-    use SoftDeletes;
-
-    protected ?string $moduleKey = 'sales';
+protected ?string $moduleKey = 'sales';
 
     protected $table = 'return_notes';
 
@@ -65,6 +63,36 @@ class ReturnNote extends BaseModel
         'total_amount' => 'decimal:4',
         'restock_items' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::creating(function (self $model): void {
+            if ($model->reference_number) {
+                return;
+            }
+
+            $model->reference_number = DB::transaction(function () use ($model) {
+                $prefix = 'RTN-'.date('Ymd').'-';
+
+                $last = static::query()
+                    ->when($model->branch_id, fn ($q) => $q->where('branch_id', $model->branch_id))
+                    ->where('reference_number', 'like', $prefix.'%')
+                    ->lockForUpdate()
+                    ->orderByDesc('id')
+                    ->first();
+
+                $seq = 1;
+                if ($last && preg_match('/RTN-\d{8}-(\d{5})$/', (string) $last->reference_number, $matches)) {
+                    $seq = ((int) $matches[1]) + 1;
+                }
+
+                return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+            });
+        });
+    }
+
 
     // Status constants
     public const STATUS_PENDING = 'pending';

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin\HrmCentral;
 use App\Http\Controllers\Controller;
 use App\Models\Payroll;
 use App\Services\Contracts\HRMServiceInterface as HRM;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PayrollController extends Controller
@@ -18,7 +19,14 @@ class PayrollController extends Controller
         $per = min(max($request->integer('per_page', 20), 1), 100);
         $q = Payroll::query()->orderByDesc('id');
         if ($request->filled('period')) {
-            $q->where('period', $request->input('period'));
+            $period = (string) $request->input('period');
+
+            try {
+                $dt = Carbon::createFromFormat('Y-m', $period);
+                $q->where('year', (int) $dt->year)->where('month', (int) $dt->month);
+            } catch (\Throwable) {
+                return $this->fail(__('Invalid period format. Expected Y-m.'), 422);
+            }
         }
 
         return $this->ok($q->paginate($per));
@@ -58,7 +66,7 @@ class PayrollController extends Controller
         }
 
         $payroll->status = 'paid';
-        $payroll->paid_at = now();
+        $payroll->payment_date = now();
         $payroll->save();
 
         return $this->ok($payroll, __('Payroll marked as paid'));

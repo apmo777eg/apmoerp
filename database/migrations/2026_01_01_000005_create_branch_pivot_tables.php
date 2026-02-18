@@ -28,10 +28,13 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete()
                 ->name('fk_brusr_user__usr');
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('activated_at')->nullable();
             $table->timestamps();
 
             $table->unique(['branch_id', 'user_id'], 'uq_brusr_branch_user');
             $table->index('user_id', 'idx_brusr_user_id');
+            $table->index('is_active', 'idx_brusr_is_active');
         });
 
         // branch_modules pivot
@@ -80,6 +83,7 @@ return new class extends Migration
             $table->boolean('is_primary')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['branch_id', 'user_id'], 'uq_bradm_branch_user');
             $table->index('user_id', 'idx_bradm_user_id');

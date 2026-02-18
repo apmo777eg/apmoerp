@@ -109,7 +109,8 @@ class Form extends Component
         $module = Module::where('id', $moduleId)
             ->where(function ($query) {
                 $query->where('is_service', true)
-                    ->orWhere('key', 'services');
+                    // modules table canonical key column is `module_key` (DB-first)
+                    ->orWhere('module_key', 'services');
             })
             ->first();
 
@@ -240,7 +241,8 @@ class Form extends Component
     {
         $modules = Module::where(function ($query) {
             $query->where('is_service', true)
-                ->orWhere('key', 'services');
+                // modules table canonical key column is `module_key` (DB-first)
+                ->orWhere('module_key', 'services');
         })
             ->orderBy('name')
             ->get();

@@ -327,6 +327,7 @@ trait LoadsDashboardData
             ->whereBetween('sale_date', [$startDate, $endDate])
             ->selectRaw('DATE(sale_date) as business_date, SUM(total_amount) as total')
             ->groupByRaw('DATE(sale_date)')
+            ->get()
             ->pluck('total', 'business_date')
             ->toArray();
 

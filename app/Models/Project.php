@@ -203,8 +203,7 @@ class Project extends Model
     public function getTotalActualCost(): float
     {
         $timeLogsCost = $this->timeLogs()
-            ->selectRaw('SUM(hours * hourly_rate) as total')
-            ->value('total') ?? 0;
+            ->sum(DB::raw('hours * hourly_rate')) ?? 0;
 
         $expensesCost = $this->expenses()
             ->where('status', 'approved')

@@ -142,9 +142,9 @@
                                 <span class="ms-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th wire:click="sortBy('grand_total')" class="cursor-pointer hover:bg-slate-100">
+                        <th wire:click="sortBy('total_amount')" class="cursor-pointer hover:bg-slate-100">
                             {{ __('Total') }}
-                            @if($sortField === 'grand_total')
+                            @if($sortField === 'total_amount')
                                 <span class="ms-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
@@ -158,14 +158,14 @@
                 <tbody>
                     @forelse($purchases as $purchase)
                         <tr wire:key="purchase-{{ $purchase->id }}" class="hover:bg-slate-50">
-                            <td class="font-medium text-slate-800">{{ $purchase->code }}</td>
+                            <td class="font-medium text-slate-800">{{ $purchase->reference_number }}</td>
                             <td>{{ $purchase->supplier?->name ?? '-' }}</td>
                             <td>{{ $purchase->branch?->name ?? '-' }}</td>
                             <td>{{ $purchase->created_at?->format('Y-m-d H:i') ?? '-' }}</td>
-                            <td class="font-semibold text-purple-600">{{ number_format($purchase->grand_total, 2) }} {{ __('EGP') }}</td>
-                            <td class="text-blue-600">{{ number_format($purchase->paid_total, 2) }}</td>
-                            <td class="{{ $purchase->due_total > 0 ? 'text-red-600 font-medium' : 'text-slate-500' }}">
-                                {{ number_format($purchase->due_total, 2) }}
+                            <td class="font-semibold text-purple-600">{{ number_format($purchase->total_amount, 2) }} {{ __('EGP') }}</td>
+                            <td class="text-blue-600">{{ number_format($purchase->paid_amount, 2) }}</td>
+                            <td class="{{ $purchase->remaining_amount > 0 ? 'text-red-600 font-medium' : 'text-slate-500' }}">
+                                {{ number_format($purchase->remaining_amount, 2) }}
                             </td>
                             <td>
                                 @php
@@ -184,12 +184,8 @@
                             <td class="text-sm text-slate-500">{{ $purchase->createdBy?->name ?? '-' }}</td>
                             <td>
                                 <div class="flex items-center gap-2">
-                                    <button class="text-blue-600 hover:text-blue-800" title="{{ __('View') }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </button>
-                                    <button class="text-slate-600 hover:text-slate-800" title="{{ __('Print') }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                    </button>
+                                    <a href="{{ route('app.purchases.show', $purchase->id) }}" class="text-blue-600 hover:text-blue-800" title="{{ __('View') }}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></a>
+                                    <a href="{{ route('app.purchases.show', $purchase->id) }}?print=1" target="_blank" rel="noopener" class="text-slate-600 hover:text-slate-800" title="{{ __('Print') }}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg></a>
                                 </div>
                             </td>
                         </tr>

@@ -56,7 +56,8 @@ trait AuditsChanges
 
             $moduleKey = null;
             if (method_exists($this, 'module') && $this->module_id) {
-                $moduleKey = $this->module?->key;
+                // DB-first: canonical column in `modules` is `module_key`.
+                $moduleKey = $this->module?->module_key;
             }
 
             // Get key safely - may not be set yet during creation

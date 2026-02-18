@@ -41,6 +41,10 @@ return new class extends Migration
         // Store integrations
         Schema::create('store_integrations', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_stoint_branch__brnch');
             $table->foreignId('store_id')
                 ->constrained('stores')
                 ->cascadeOnDelete()
@@ -56,14 +60,20 @@ return new class extends Migration
             $table->json('permissions')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('store_id', 'idx_storint_store_id');
+            $table->index('branch_id', 'idx_storint_branch_id');
             $table->index('is_active', 'idx_storint_is_active');
         });
 
         // Store tokens
         Schema::create('store_tokens', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_stotok_branch__brnch');
             $table->foreignId('store_id')
                 ->constrained('stores')
                 ->cascadeOnDelete()
@@ -74,8 +84,10 @@ return new class extends Migration
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('store_id', 'idx_stortkn_store_id');
+            $table->index('branch_id', 'idx_stortkn_branch_id');
         });
 
         // Store orders
@@ -108,6 +120,10 @@ return new class extends Migration
         // Store sync logs
         Schema::create('store_sync_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_stosyn_branch__brnch');
             $table->foreignId('store_id')
                 ->constrained('stores')
                 ->cascadeOnDelete()
@@ -123,8 +139,10 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('store_id', 'idx_storsync_store_id');
+            $table->index('branch_id', 'idx_storsync_branch_id');
             $table->index('status', 'idx_storsync_status');
             $table->index('type', 'idx_storsync_type');
         });
@@ -132,6 +150,10 @@ return new class extends Migration
         // Product store mappings
         Schema::create('product_store_mappings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_prdstm_branch__brnch');
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->cascadeOnDelete()
@@ -145,9 +167,11 @@ return new class extends Migration
             $table->json('external_data')->nullable();
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['product_id', 'store_id'], 'uq_prdstm_prod_store');
             $table->index('store_id', 'idx_prdstm_store_id');
+            $table->index('branch_id', 'idx_prdstm_branch_id');
             $table->index('external_id', 'idx_prdstm_external_id');
         });
     }

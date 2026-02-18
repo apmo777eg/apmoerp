@@ -70,7 +70,7 @@ return new class extends Migration
             $table->string('entity_type', 100)->nullable();
             $table->unsignedBigInteger('entity_id')->nullable();
             $table->string('action_url', 500)->nullable();
-            $table->string('status', 30)->default('active'); // active, acknowledged, resolved
+            $table->string('status', 30)->default('new'); // new, acknowledged, resolved, ignored
             $table->timestamp('triggered_at');
             $table->timestamp('acknowledged_at')->nullable();
             $table->foreignId('acknowledged_by')
@@ -86,6 +86,7 @@ return new class extends Migration
                 ->name('fk_altinst_resolved_by__usr');
             $table->text('resolution_notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('alert_rule_id', 'idx_altinst_rule_id');
             $table->index('branch_id', 'idx_altinst_branch_id');
@@ -97,6 +98,11 @@ return new class extends Migration
         // Alert recipients
         Schema::create('alert_recipients', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete()
+                ->name('fk_alrtrec_branch__brnch');
             $table->foreignId('alert_instance_id')
                 ->constrained('alert_instances')
                 ->cascadeOnDelete()
@@ -110,6 +116,7 @@ return new class extends Migration
             $table->boolean('read')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['alert_instance_id', 'user_id'], 'uq_altrcpt_inst_user');
             $table->index('user_id', 'idx_altrcpt_user_id');
@@ -135,6 +142,7 @@ return new class extends Migration
             $table->date('period_end');
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['branch_id', 'metric_key', 'entity_type', 'entity_id', 'period_start'], 'uq_anmbase_metric');
             $table->index('branch_id', 'idx_anmbase_branch_id');
@@ -159,7 +167,7 @@ return new class extends Migration
                 ->name('fk_lowstk_warehouse__wh');
             $table->decimal('current_stock', 18, 4)->default(0);
             $table->decimal('alert_threshold', 18, 4)->default(0);
-            $table->string('status', 30)->default('active'); // active, acknowledged, resolved
+            $table->string('status', 30)->default('new'); // new, acknowledged, resolved, ignored
             $table->foreignId('acknowledged_by')
                 ->nullable()
                 ->constrained('users')

@@ -76,7 +76,7 @@ class Depreciation extends Component
                 DB::raw('COUNT(*) as total_assets'),
                 DB::raw('SUM(purchase_cost) as total_purchase_cost'),
                 DB::raw('SUM(accumulated_depreciation) as total_depreciation'),
-                DB::raw('SUM(current_value) as total_book_value'),
+                DB::raw('SUM(book_value) as total_book_value'),
             ])
             ->first();
 

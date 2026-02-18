@@ -50,6 +50,7 @@ use App\Livewire\Sales\Index as SalesIndexPage;
 use App\Livewire\Suppliers\Form as SupplierFormPage;
 use App\Livewire\Suppliers\Index as SuppliersIndexPage;
 use App\Livewire\Warehouse\Index as WarehouseIndexPage;
+use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -229,6 +230,33 @@ Route::get('/download/export', function () {
 
 /*
 |--------------------------------------------------------------------------
+| Customer Portal Routes
+|--------------------------------------------------------------------------
+|
+| Lightweight customer-facing portal (session-based) for invoices/orders/profile.
+|
+*/
+
+Route::prefix('portal')->name('portal.')->group(function () {
+    Route::get('/login', [CustomerPortalController::class, 'login'])->name('login');
+    Route::post('/login', [CustomerPortalController::class, 'authenticate'])->name('authenticate');
+    Route::post('/logout', [CustomerPortalController::class, 'logout'])->name('logout');
+
+    Route::get('/', [CustomerPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/orders', [CustomerPortalController::class, 'orders'])->name('orders');
+    Route::get('/orders/{orderId}', [CustomerPortalController::class, 'orderDetails'])->name('orders.details');
+    Route::get('/orders/{orderId}/invoice', [CustomerPortalController::class, 'downloadInvoice'])->name('orders.invoice');
+
+    Route::get('/profile', [CustomerPortalController::class, 'profile'])->name('profile');
+    Route::post('/profile', [CustomerPortalController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/change-password', [CustomerPortalController::class, 'changePassword'])->name('password.change');
+
+    Route::get('/loyalty', [CustomerPortalController::class, 'loyaltyPoints'])->name('loyalty');
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | Authentication Routes
 |--------------------------------------------------------------------------
 */
@@ -368,6 +396,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/requisitions/create', \App\Livewire\Purchases\Requisitions\Form::class)
             ->name('requisitions.create')
             ->middleware('can:purchases.requisitions.create');
+        Route::get('/requisitions/{requisition}/edit', \App\Livewire\Purchases\Requisitions\Form::class)
+            ->name('requisitions.edit')
+            ->middleware('can:purchases.requisitions.manage');
+
 
         // Quotations
         Route::get('/quotations', \App\Livewire\Purchases\Quotations\Index::class)
@@ -378,8 +410,19 @@ Route::middleware('auth')->group(function () {
             ->name('quotations.create')
             ->middleware('can:purchases.manage');
 
-        Route::get('/quotations/{quotation}/compare', \App\Livewire\Purchases\Quotations\Compare::class)
+        Route::get('/quotations/{id}/edit', \App\Livewire\Purchases\Quotations\Form::class)
+            ->name('quotations.edit')
+            ->middleware('can:purchases.manage');
+
+        Route::get('/quotations/compare/{requisition?}', \App\Livewire\Purchases\Quotations\Compare::class)
             ->name('quotations.compare')
+            ->middleware('can:purchases.view');
+
+        // Legacy path: redirect to requisition compare
+        Route::get('/quotations/{quotation}/compare', function (\App\Models\SupplierQuotation $quotation) {
+            return redirect()->route('app.purchases.quotations.compare', ['requisition' => $quotation->requisition_id]);
+        })
+            ->name('quotations.compare.legacy')
             ->middleware('can:purchases.view');
 
         // Goods Received Notes

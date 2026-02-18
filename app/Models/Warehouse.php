@@ -24,10 +24,12 @@ class Warehouse extends BaseModel
         'name_ar',
         'code',
         'type',
+        'section',
         'address',
         'phone',
         'manager_id',
         'is_active',
+        'status',
         'is_default',
         'allow_negative_stock',
         'settings',
@@ -104,5 +106,32 @@ class Warehouse extends BaseModel
     public function getStatusAttribute(): string
     {
         return $this->is_active ? 'active' : 'inactive';
+    }
+
+    public function setStatusAttribute($value): void
+    {
+        $status = is_string($value) ? strtolower(trim($value)) : $value;
+
+        if ($status === true || $status === 1 || $status === '1' || $status === 'active') {
+            $this->attributes['is_active'] = true;
+            $this->attributes['status'] = 'active';
+            return;
+        }
+
+        if ($status === false || $status === 0 || $status === '0' || $status === 'inactive') {
+            $this->attributes['is_active'] = false;
+            $this->attributes['status'] = 'inactive';
+            return;
+        }
+
+        // Fallback: store what we got, keep is_active unchanged.
+        $this->attributes['status'] = is_string($value) ? trim($value) : (string) $value;
+    }
+
+    public function setIsActiveAttribute($value): void
+    {
+        $isActive = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        $this->attributes['is_active'] = $isActive ?? (bool) $value;
+        $this->attributes['status'] = $this->attributes['is_active'] ? 'active' : 'inactive';
     }
 }

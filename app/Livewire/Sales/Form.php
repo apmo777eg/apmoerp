@@ -187,8 +187,8 @@ class Form extends Component
             $this->shipping_method = $sale->shipping_method ?? '';
             $this->tracking_number = $sale->tracking_number ?? '';
             // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
-            $this->discount_total = decimal_float($sale->discount_total ?? 0);
-            $this->shipping_total = decimal_float($sale->shipping_total ?? 0);
+            $this->discount_total = decimal_float($sale->discount_amount ?? 0);
+            $this->shipping_total = decimal_float($sale->shipping_amount ?? 0);
 
             $this->items = $sale->items->map(fn ($item) => [
                 'id' => $item->id,

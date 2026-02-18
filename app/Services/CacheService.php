@@ -107,7 +107,8 @@ class CacheService
                         return \App\Models\Branch::find($branchId)?->settings ?? [];
                     }
 
-                    return \App\Models\SystemSetting::pluck('value', 'key')->toArray();
+                    // DB-first canonical key column is `setting_key` (system_settings table has no `key`).
+                    return \App\Models\SystemSetting::pluck('value', 'setting_key')->toArray();
                 });
             },
             operation: 'getSettings',

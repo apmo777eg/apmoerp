@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalePayment extends Model
 {
+    use SoftDeletes;
+
     /**
      * Fillable fields aligned with migration:
      * 2026_01_04_000005_create_sales_purchases_tables.php

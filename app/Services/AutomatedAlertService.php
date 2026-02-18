@@ -124,14 +124,14 @@ class AutomatedAlertService
                 'type' => 'overdue_payment',
                 'severity' => $this->getPaymentOverdueSeverity($daysOverdue),
                 'sale_id' => $sale->id,
-                'sale_code' => $sale->code,
+                'sale_code' => $sale->reference_number,
                 'customer_id' => $sale->customer_id,
                 'customer_name' => $customerName,
                 'amount_due' => $amountDue,
                 'payment_due_date' => $sale->due_date,
                 'days_overdue' => $daysOverdue,
                 'branch_id' => $sale->branch_id,
-                'message' => "Payment overdue: Invoice {$sale->code} for {$customerName} is {$daysOverdue} days overdue",
+                'message' => "Payment overdue: Invoice {$sale->reference_number} for {$customerName} is {$daysOverdue} days overdue",
                 'action_required' => 'contact_customer',
             ];
         }

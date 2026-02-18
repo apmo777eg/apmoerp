@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">{{ $project->name }}</h1>
-            <p class="text-sm text-slate-500">{{ $project->code }}</p>
+            <p class="text-sm text-slate-500">{{ $project->reference_number }}</p>
         </div>
         <div class="flex gap-2">
             @can('projects.edit')

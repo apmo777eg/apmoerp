@@ -37,7 +37,7 @@ class Index extends Component
      */
     protected function allowedSortColumns(): array
     {
-        return ['id', 'name', 'asset_code', 'serial_number', 'status', 'category', 'purchase_cost', 'current_value', 'created_at', 'updated_at'];
+        return ['id', 'name', 'asset_code', 'serial_number', 'status', 'category', 'purchase_cost', 'book_value', 'created_at', 'updated_at'];
     }
 
     public function mount(): void
@@ -60,7 +60,7 @@ class Index extends Component
                 COUNT(*) as total_assets,
                 COUNT(CASE WHEN status = ? THEN 1 END) as active_assets,
                 SUM(CASE WHEN status = ? THEN purchase_cost ELSE 0 END) as total_value,
-                SUM(CASE WHEN status = ? THEN current_value ELSE 0 END) as total_book_value
+                SUM(CASE WHEN status = ? THEN book_value ELSE 0 END) as total_book_value
             ', ['active', 'active', 'active'])
             ->first();
 

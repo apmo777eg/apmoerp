@@ -237,6 +237,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_rntpay_created_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('branch_id', 'idx_rntpay_branch_id');
             $table->index('contract_id', 'idx_rntpay_contract_id');

@@ -55,8 +55,8 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">{{ __('Budget') }}</label>
-                    <input type="number" step="0.01" wire:model="budget" class="erp-input">
-                    @error('budget') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    <input type="number" step="0.01" wire:model="budget_amount" class="erp-input">
+                    @error('budget_amount') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">{{ __('Status') }}</label>

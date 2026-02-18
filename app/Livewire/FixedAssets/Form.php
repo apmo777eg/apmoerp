@@ -99,6 +99,9 @@ class Form extends Component
             $this->isEditing = true;
             $this->asset = $asset;
             $this->fill($asset->toArray());
+            $totalMonths = (int) ($asset->useful_life_months ?? 0);
+            $this->useful_life_years = (string) max(1, intdiv($totalMonths, 12));
+            $this->useful_life_months = (string) ($totalMonths % 12);
             $this->purchase_date = $asset->purchase_date?->format('Y-m-d') ?? now()->format('Y-m-d');
             $this->warranty_expiry = $asset->warranty_expiry?->format('Y-m-d') ?? '';
         } else {
@@ -131,9 +134,9 @@ class Form extends Component
             'purchase_date' => $this->purchase_date,
             'purchase_cost' => $this->purchase_cost,
             'salvage_value' => $this->salvage_value,
-            'useful_life_years' => $this->useful_life_years,
-            'useful_life_months' => $this->useful_life_months ?: 0,
+            'useful_life_months' => ((int) $this->useful_life_years * 12) + (int) ($this->useful_life_months ?: 0),
             'depreciation_method' => $this->depreciation_method,
+            'depreciation_start_date' => $this->purchase_date,
             'depreciation_rate' => $this->depreciation_rate ?: null,
             'supplier_id' => $this->supplier_id,
             'serial_number' => $this->serial_number,

@@ -26,8 +26,6 @@ class Expenses extends Component
 
     public ?int $editingExpenseId = null;
 
-    public array $form = [];
-
     // Form fields
     public string $category = '';
 
@@ -114,16 +112,28 @@ class Expenses extends Component
         $this->authorize('projects.expenses.manage');
         $this->resetForm();
         $this->editingExpense = null;
+        $this->editingExpenseId = null;
+        $this->showModal = true;
     }
 
     public function editExpense(int $id): void
     {
         $this->authorize('projects.expenses.manage');
         $this->editingExpense = $this->project->expenses()->findOrFail($id);
+        $this->editingExpenseId = $id;
+        $this->showModal = true;
         $this->fill($this->editingExpense->only([
             'category', 'amount', 'expense_date', 'vendor', 'description',
             'billable', 'user_id', 'task_id',
         ]));
+    }
+
+    public function closeModal(): void
+    {
+        $this->showModal = false;
+        $this->editingExpense = null;
+        $this->editingExpenseId = null;
+        $this->resetForm();
     }
 
     public function save(): void
@@ -146,8 +156,7 @@ class Expenses extends Component
         }
 
         session()->flash('success', __('Expense saved successfully'));
-        $this->resetForm();
-        $this->editingExpense = null;
+        $this->closeModal();
     }
 
     public function approve(int $id): void

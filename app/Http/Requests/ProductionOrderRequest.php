@@ -22,15 +22,16 @@ class ProductionOrderRequest extends FormRequest
         $branchId = $this->user()?->branch_id;
 
         return [
-            // V58-CRITICAL-02 FIX: Use BranchScopedExists for branch-aware validation
             'bom_id' => ['required', new BranchScopedExists('bills_of_materials', 'id', $branchId)],
-            'order_number' => ['sometimes', 'string', 'max:50', 'unique:production_orders,order_number,'.($this->route('order') ? $this->route('order')->id : 'NULL')],
-            'quantity_planned' => ['required', 'numeric', 'min:0.01'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'priority' => ['required', 'in:low,medium,high,urgent'],
-            'status' => ['sometimes', 'in:draft,planned,in_progress,completed,cancelled'],
-            'work_center_id' => ['nullable', new BranchScopedExists('work_centers', 'id', $branchId, allowNull: true)],
+            'reference_number' => ['sometimes', 'string', 'max:50', 'unique:production_orders,reference_number,'.($this->route('order') ? $this->route('order')->id : 'NULL')],
+
+            'planned_quantity' => ['required', 'numeric', 'min:0.01'],
+            'planned_start_date' => ['required', 'date'],
+            'planned_end_date' => ['required', 'date', 'after_or_equal:planned_start_date'],
+
+            'priority' => ['required', 'in:low,normal,high,urgent'],
+            'status' => ['sometimes', 'in:draft,pending,in_progress,completed,cancelled'],
+
             'notes' => $this->unicodeText(required: false),
             'branch_id' => ['nullable', 'exists:branches,id'],
         ];

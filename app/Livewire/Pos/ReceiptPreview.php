@@ -22,7 +22,7 @@ class ReceiptPreview extends Component
 
         if ($sale) {
             $this->receiptData = [
-                'receipt_number' => $sale->code ?? 'SO-'.str_pad((string) $sale->id, 6, '0', STR_PAD_LEFT),
+                'receipt_number' => $sale->reference_number ?? 'SO-'.str_pad((string) $sale->id, 6, '0', STR_PAD_LEFT),
                 'date' => $sale->created_at->format('Y-m-d H:i'),
                 'branch' => $sale->branch?->name ?? config('app.name'),
                 'customer' => $sale->customer?->name ?? __('Walk-in Customer'),
@@ -32,10 +32,10 @@ class ReceiptPreview extends Component
                     'price' => $item->unit_price,
                     'total' => $item->line_total,
                 ])->toArray(),
-                'subtotal' => $sale->sub_total,
-                'discount' => $sale->discount_total,
-                'tax' => $sale->tax_total,
-                'total' => $sale->grand_total,
+                'subtotal' => $sale->subtotal,
+                'discount' => $sale->discount_amount,
+                'tax' => $sale->tax_amount,
+                'total' => $sale->total_amount,
                 'payments' => $sale->payments->map(fn ($p) => [
                     'method' => ucfirst($p->payment_method),
                     'amount' => $p->amount,

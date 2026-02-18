@@ -158,6 +158,11 @@ class RolesSeeder extends Seeder
             'purchases.return',
             'purchases.import',
             'purchases.export',
+            'purchases.requisitions.view',
+            'purchases.requisitions.create',
+            'purchases.requisitions.approve',
+            'purchases.requisitions.manage',
+
             // Customers
             'customers.view',
             'customers.create',
@@ -324,6 +329,11 @@ class RolesSeeder extends Seeder
             'purchases.approve',
             'purchases.receive',
             // Customers
+            'purchases.requisitions.view',
+            'purchases.requisitions.create',
+            'purchases.requisitions.approve',
+            'purchases.requisitions.manage',
+
             'customers.view',
             'customers.create',
             'customers.update',
@@ -580,6 +590,8 @@ class RolesSeeder extends Seeder
             // Purchases (receiving)
             'purchases.view',
             'purchases.receive',
+            'purchases.requisitions.view',
+
             // Suppliers (view)
             'suppliers.view',
             // Reports
@@ -614,6 +626,8 @@ class RolesSeeder extends Seeder
             // Purchases (receiving only)
             'purchases.view',
             'purchases.receive',
+            'purchases.requisitions.view',
+
             // Media
             'media.view',
             'media.upload',
@@ -660,6 +674,10 @@ class RolesSeeder extends Seeder
             // Documents (personal)
             'documents.view',
             'documents.download',
+            // Purchases Requisitions
+            'purchases.requisitions.view',
+            'purchases.requisitions.create',
+
             // System
             'system.view-notifications',
         ];

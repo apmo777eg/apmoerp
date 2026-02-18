@@ -376,6 +376,10 @@ return new class extends Migration
         // Stock transfer approvals
         Schema::create('stock_transfer_approvals', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_stktrfa_branch__brnch');
             $table->foreignId('stock_transfer_id')
                 ->constrained('stock_transfers')
                 ->cascadeOnDelete()
@@ -389,6 +393,7 @@ return new class extends Migration
             $table->text('comments')->nullable();
             $table->timestamp('responded_at')->nullable();
             $table->timestamps();
+            $table->index('branch_id', 'idx_stktrfa_branch_id');
 
             $table->index('stock_transfer_id', 'idx_stktrfa_transfer_id');
         });
@@ -396,6 +401,10 @@ return new class extends Migration
         // Stock transfer documents
         Schema::create('stock_transfer_documents', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_stktrfd_branch__brnch');
             $table->foreignId('stock_transfer_id')
                 ->constrained('stock_transfers')
                 ->cascadeOnDelete()
@@ -413,6 +422,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_stktrfd_uploaded_by__usr');
             $table->timestamps();
+            $table->index('branch_id', 'idx_stktrfd_branch_id');
 
             $table->index('stock_transfer_id', 'idx_stktrfd_transfer_id');
         });
@@ -449,6 +459,10 @@ return new class extends Migration
         // Inventory in transit
         Schema::create('inventory_transits', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_invtrs_branch__brnch');
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->cascadeOnDelete()
@@ -483,6 +497,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_invtrs_created_by__usr');
             $table->timestamps();
+            $table->index('branch_id', 'idx_invtrs_branch_id');
 
             $table->index('product_id', 'idx_invtrs_product_id');
             $table->index('from_warehouse_id', 'idx_invtrs_from_wh');
@@ -493,6 +508,10 @@ return new class extends Migration
         // Stock movements
         Schema::create('stock_movements', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_stkmov_branch__brnch');
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->cascadeOnDelete()
@@ -528,6 +547,9 @@ return new class extends Migration
             $table->index(['reference_type', 'reference_id'], 'idx_stkmv_reference');
             $table->index('created_at', 'idx_stkmv_created_at');
             $table->index('created_by', 'idx_stkmv_created_by');
+            $table->index(['product_id', 'warehouse_id', 'deleted_at'], 'idx_stkmov_prod_wh_del');
+            $table->index(['branch_id', 'product_id', 'deleted_at'], 'idx_stkmov_branch_prod_del');
+            $table->index('branch_id', 'idx_stkmov_branch_id');
         });
     }
 

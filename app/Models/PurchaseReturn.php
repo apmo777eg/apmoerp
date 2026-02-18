@@ -33,7 +33,6 @@ class PurchaseReturn extends Model
         'subtotal',
         'tax_amount',
         'total_amount',
-        'expected_credit',
         'currency',
         'notes',
         'internal_notes',
@@ -47,17 +46,29 @@ class PurchaseReturn extends Model
         'shipped_by',
         'created_by',
         'updated_by',
+        'completed_by',
+        'completed_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
+        'cancellation_reason',
+        'cancelled_by',
+        'cancelled_at',
+        'extra_attributes',
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'total_amount' => 'decimal:2',
-        'expected_credit' => 'decimal:2',
+        'subtotal' => 'decimal:4',
+        'tax_amount' => 'decimal:4',
+        'total_amount' => 'decimal:4',
         'return_date' => 'date',
         'shipped_date' => 'date',
         'received_by_supplier_date' => 'date',
         'approved_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'extra_attributes' => 'array',
     ];
 
     // Status constants
@@ -70,6 +81,8 @@ class PurchaseReturn extends Model
     public const STATUS_COMPLETED = 'completed';
 
     public const STATUS_CANCELLED = 'cancelled';
+
+    public const STATUS_REJECTED = 'rejected';
 
     // Type constants
     public const TYPE_FULL = 'full';
@@ -192,9 +205,19 @@ class PurchaseReturn extends Model
         return $this->status === self::STATUS_CANCELLED;
     }
 
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
     public function canBeApproved(): bool
     {
         return $this->isPending();
+    }
+
+    public function canBeRejected(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_APPROVED], true);
     }
 
     public function canBeShipped(): bool
@@ -204,7 +227,8 @@ class PurchaseReturn extends Model
 
     public function canBeCompleted(): bool
     {
-        return $this->isShipped();
+        // Some flows skip an explicit 'shipped' status; allow completion from 'approved' as well.
+        return in_array($this->status, [self::STATUS_APPROVED, self::STATUS_SHIPPED], true);
     }
 
     public function canBeCancelled(): bool
@@ -249,6 +273,11 @@ class PurchaseReturn extends Model
     public function scopeCancelled($query)
     {
         return $query->where('status', self::STATUS_CANCELLED);
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', self::STATUS_REJECTED);
     }
 
     public function scopeBySupplier($query, int $supplierId)

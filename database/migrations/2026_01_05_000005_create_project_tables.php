@@ -95,6 +95,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_projms_updated_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('project_id', 'idx_projms_project_id');
             $table->index('status', 'idx_projms_status');
@@ -222,6 +223,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_projexp_updated_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('project_id', 'idx_projexp_project_id');
             $table->index('task_id', 'idx_projexp_task_id');
@@ -271,6 +273,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_projtl_updated_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('project_id', 'idx_projtl_project_id');
             $table->index('task_id', 'idx_projtl_task_id');

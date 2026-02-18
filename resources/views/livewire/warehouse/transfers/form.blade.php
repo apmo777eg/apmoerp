@@ -21,7 +21,7 @@
                         <select wire:model="fromWarehouseId" class="erp-input" required>
                             <option value="">{{ __('Select source warehouse') }}</option>
                             @foreach($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }} ({{ $warehouse->code }})</option>
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }} ({{ $warehouse->reference_number }})</option>
                             @endforeach
                         </select>
                         @error('fromWarehouseId') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -32,7 +32,7 @@
                         <select wire:model="toWarehouseId" class="erp-input" required>
                             <option value="">{{ __('Select destination warehouse') }}</option>
                             @foreach($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }} ({{ $warehouse->code }})</option>
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }} ({{ $warehouse->reference_number }})</option>
                             @endforeach
                         </select>
                         @error('toWarehouseId') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

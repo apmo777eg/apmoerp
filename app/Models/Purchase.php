@@ -7,14 +7,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Purchase extends BaseModel
 {
-    use LogsActivity, SoftDeletes;
+    use LogsActivity;
 
     protected ?string $moduleKey = 'purchases';
 
@@ -164,9 +163,18 @@ class Purchase extends BaseModel
     // Business Logic
     public function getTotalQuantityReceived(): float
     {
-        return $this->grns()->where('status', 'completed')->get()->sum(function ($grn) {
-            return $grn->items()->sum('accepted_quantity');
-        });
+        // Only count GRNs that passed inspection / are finalized.
+        // NOTE: canonical statuses are defined on GoodsReceivedNote.
+        return $this->grns()
+            ->whereIn('status', [
+                GoodsReceivedNote::STATUS_APPROVED,
+                GoodsReceivedNote::STATUS_PARTIAL,
+                GoodsReceivedNote::STATUS_COMPLETE,
+            ])
+            ->get()
+            ->sum(function ($grn) {
+                return (float) $grn->items()->sum('accepted_quantity');
+            });
     }
 
     public function isFullyReceived(): bool
@@ -249,62 +257,6 @@ class Purchase extends BaseModel
         }
 
         $this->saveQuietly();
-    }
-
-    // Backward compatibility accessors
-    public function getCodeAttribute()
-    {
-        return $this->reference_number;
-    }
-
-    public function getReferenceNoAttribute()
-    {
-        return $this->reference_number;
-    }
-
-    public function getGrandTotalAttribute()
-    {
-        return $this->total_amount;
-    }
-
-    public function getSubTotalAttribute()
-    {
-        return $this->subtotal;
-    }
-
-    public function getTaxTotalAttribute()
-    {
-        return $this->tax_amount;
-    }
-
-    public function getShippingTotalAttribute()
-    {
-        return $this->shipping_amount;
-    }
-
-    public function getPaymentDueDateAttribute()
-    {
-        return $this->due_date;
-    }
-
-    public function getExpectedDeliveryDateAttribute()
-    {
-        return $this->expected_date;
-    }
-
-    public function getPaidTotalAttribute()
-    {
-        return $this->paid_amount;
-    }
-
-    public function getDueTotalAttribute()
-    {
-        return $this->remaining_amount;
-    }
-
-    public function getDiscountTotalAttribute()
-    {
-        return $this->discount_amount;
     }
 
     public function getActivitylogOptions(): LogOptions

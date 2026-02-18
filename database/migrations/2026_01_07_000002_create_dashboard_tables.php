@@ -38,6 +38,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('category', 'idx_dshwgt_category');
             $table->index('is_active', 'idx_dshwgt_is_active');
@@ -59,6 +60,7 @@ return new class extends Migration
             $table->boolean('is_default')->default(false);
             $table->json('layout_config')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['user_id', 'branch_id', 'name'], 'uq_usrdshly_user_branch_name');
             $table->index('user_id', 'idx_usrdshly_user_id');
@@ -67,6 +69,10 @@ return new class extends Migration
         // User dashboard widgets (user-owned)
         Schema::create('user_dashboard_widgets', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_usrwdg_branch__brnch');
             $table->foreignId('user_dashboard_layout_id')
                 ->constrained('user_dashboard_layouts')
                 ->cascadeOnDelete()
@@ -83,6 +89,7 @@ return new class extends Migration
             $table->boolean('is_visible')->default(true);
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('user_dashboard_layout_id', 'idx_usrdshwgt_layout_id');
         });
@@ -111,6 +118,7 @@ return new class extends Migration
             $table->timestamp('cached_at');
             $table->timestamp('expires_at');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['cache_key', 'user_id', 'branch_id'], 'uq_wgtcache_key_user_branch');
             $table->index('expires_at', 'idx_wgtcache_expires');

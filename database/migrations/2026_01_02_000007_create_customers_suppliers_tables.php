@@ -58,6 +58,8 @@ return new class extends Migration
             $table->string('loyalty_tier', 30)->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_blocked')->default(false);
+            $table->boolean('portal_enabled')->default(false);
+            $table->string('portal_password')->nullable();
             $table->string('block_reason', 500)->nullable();
             $table->text('notes')->nullable();
             $table->json('custom_fields')->nullable();

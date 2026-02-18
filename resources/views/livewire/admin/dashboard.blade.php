@@ -186,13 +186,13 @@
                         @forelse($latestSales as $sale)
                             <tr class="erp-pos-row">
                                 <td class="py-2 pr-4">
-                                    {{ $sale->code ?? ('#'.$sale->id) }}
+                                    {{ $sale->reference_number ?? ('#'.$sale->id) }}
                                 </td>
                                 <td class="py-2 pr-4">
                                     {{ optional($sale->customer)->name ?? '—' }}
                                 </td>
                                 <td class="py-2 pr-4">
-                                    {{ number_format($sale->grand_total ?? 0, 2) }}
+                                    {{ number_format($sale->total_amount ?? 0, 2) }}
                                 </td>
                                 <td class="py-2 pr-4">
                                     {{ $sale->created_at }}
@@ -239,7 +239,7 @@
                         @forelse($soon as $contract)
                             <tr class="erp-pos-row">
                                 <td class="py-2 pr-4">
-                                    {{ optional($contract->unit)->code ?? '—' }}
+                                    {{ optional($contract->unit)->reference_number ?? '—' }}
                                 </td>
                                 <td class="py-2 pr-4">
                                     {{ optional($contract->tenant)->name ?? '—' }}

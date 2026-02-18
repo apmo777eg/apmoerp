@@ -10,11 +10,19 @@ class SupplierQuotationItem extends BaseModel
 
     protected $table = 'supplier_quotation_items';
 
+    /**
+     * Fillable aligned with migration + safe legacy aliases.
+     *
+     * Legacy keys (qty/unit_cost/tax_rate) are mapped via mutators to the real columns.
+     */
     protected $fillable = [
-        'quotation_id', 'branch_id', 'product_id', 'quantity',
-        'unit_price', 'tax_percent', 'line_total',
+        'quotation_id', 'branch_id', 'product_id',
+        'quantity', 'unit_price', 'tax_percent', 'line_total',
         'notes', 'extra_attributes',
         'created_by', 'updated_by',
+
+        // Legacy aliases (mapped to real columns by mutators)
+        'qty', 'unit_cost', 'tax_rate',
     ];
 
     protected $casts = [
@@ -31,14 +39,29 @@ class SupplierQuotationItem extends BaseModel
         return $this->quantity;
     }
 
+    public function setQtyAttribute($value): void
+    {
+        $this->attributes['quantity'] = $value;
+    }
+
     public function getUnitCostAttribute()
     {
         return $this->unit_price;
     }
 
+    public function setUnitCostAttribute($value): void
+    {
+        $this->attributes['unit_price'] = $value;
+    }
+
     public function getTaxRateAttribute()
     {
         return $this->tax_percent;
+    }
+
+    public function setTaxRateAttribute($value): void
+    {
+        $this->attributes['tax_percent'] = $value;
     }
 
     public function getUomAttribute()

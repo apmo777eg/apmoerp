@@ -36,6 +36,27 @@ class JournalEntryLine extends Model
         'credit' => 'decimal:4',
     ];
 
+
+    /**
+     * Ensure branch_id is set even when created from console/jobs
+     * where BranchContextManager may not be initialized.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model): void {
+            if ($model->branch_id !== null) {
+                return;
+            }
+
+            if ($model->journal_entry_id) {
+                $entry = JournalEntry::withoutGlobalScopes()->find($model->journal_entry_id);
+                if ($entry && $entry->branch_id) {
+                    $model->branch_id = $entry->branch_id;
+                }
+            }
+        });
+    }
+
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);

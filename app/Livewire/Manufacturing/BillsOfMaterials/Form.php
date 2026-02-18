@@ -111,7 +111,7 @@ class Form extends Component
             $this->bom->update($data);
             session()->flash('success', __('BOM updated successfully.'));
         } else {
-            $data['bom_number'] = BillOfMaterial::generateBomNumber($branchId);
+            // reference_number is generated in BillOfMaterial::booted() (DB-first)
             BillOfMaterial::create($data);
             session()->flash('success', __('BOM created successfully.'));
         }

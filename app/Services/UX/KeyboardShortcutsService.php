@@ -195,11 +195,10 @@ class KeyboardShortcutsService
      */
     public function getUserShortcuts(int $userId): array
     {
-        $prefs = \App\Models\UserPreference::where('user_id', $userId)
-            ->where('key', 'keyboard_shortcuts')
-            ->first();
+        // DB-first: user_preferences is one row per user and stores shortcuts in `pos_shortcuts` JSON.
+        $prefs = \App\Models\UserPreference::getForUser($userId);
 
-        return $prefs?->value ?? [];
+        return $prefs->pos_shortcuts ?? [];
     }
 
     /**
@@ -207,9 +206,8 @@ class KeyboardShortcutsService
      */
     public function saveUserShortcuts(int $userId, array $shortcuts): void
     {
-        \App\Models\UserPreference::updateOrCreate(
-            ['user_id' => $userId, 'key' => 'keyboard_shortcuts'],
-            ['value' => $shortcuts]
-        );
+        // DB-first: store shortcuts in `pos_shortcuts` JSON column.
+        $prefs = \App\Models\UserPreference::getForUser($userId);
+        $prefs->update(['pos_shortcuts' => $shortcuts]);
     }
 }

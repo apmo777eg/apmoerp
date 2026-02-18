@@ -88,6 +88,7 @@ return new class extends Migration
             $table->string('reference', 100)->nullable();
             $table->json('extra_attributes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('contract_id', 'idx_vehpay_contract_id');
             $table->index('paid_at', 'idx_vehpay_paid_at');

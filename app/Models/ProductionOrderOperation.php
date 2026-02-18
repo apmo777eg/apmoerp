@@ -30,8 +30,8 @@ class ProductionOrderOperation extends BaseModel
 
     protected $casts = [
         'sequence' => 'integer',
-        'planned_duration_minutes' => 'decimal:2',
-        'actual_duration_minutes' => 'decimal:2',
+        'planned_duration_minutes' => 'integer',
+        'actual_duration_minutes' => 'integer',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'quality_results' => 'array',

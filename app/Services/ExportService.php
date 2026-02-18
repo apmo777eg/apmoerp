@@ -67,7 +67,8 @@ class ExportService
                 'phone' => __('Phone'),
                 'address' => __('Address'),
                 'balance' => __('Balance'),
-                'customer_tier' => __('Customer Tier'),
+                // FIX: customers table uses `type` (individual/company)
+                'type' => __('Type'),
                 'created_at' => __('Created At'),
             ],
             'suppliers' => [

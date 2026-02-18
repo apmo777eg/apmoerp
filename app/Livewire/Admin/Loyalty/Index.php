@@ -130,13 +130,14 @@ class Index extends Component
                         ->orWhere('phone', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->tier, fn ($q) => $q->where('customer_tier', $this->tier))
+            // FIX: customers table uses loyalty_tier for loyalty segmentation
+            ->when($this->tier, fn ($q) => $q->where('loyalty_tier', $this->tier))
             ->orderByDesc('loyalty_points');
 
         $stats = [
             'total_points' => Customer::when($branchId, fn ($q) => $q->where('branch_id', $branchId))->sum('loyalty_points'),
-            'vip_customers' => Customer::when($branchId, fn ($q) => $q->where('branch_id', $branchId))->where('customer_tier', 'vip')->count(),
-            'premium_customers' => Customer::when($branchId, fn ($q) => $q->where('branch_id', $branchId))->where('customer_tier', 'premium')->count(),
+            'vip_customers' => Customer::when($branchId, fn ($q) => $q->where('branch_id', $branchId))->where('loyalty_tier', 'vip')->count(),
+            'premium_customers' => Customer::when($branchId, fn ($q) => $q->where('branch_id', $branchId))->where('loyalty_tier', 'premium')->count(),
         ];
 
         return view('livewire.admin.loyalty.index', [

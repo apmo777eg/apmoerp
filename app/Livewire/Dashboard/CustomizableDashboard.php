@@ -233,6 +233,7 @@ class CustomizableDashboard extends Component
             ->selectRaw('DATE(sale_date) as business_date, SUM(total_amount) as total')
             ->groupByRaw('DATE(sale_date)')
             ->orderByRaw('DATE(sale_date)')
+            ->get()
             ->pluck('total', 'business_date')
             ->map(fn ($v) => (float) $v)
             ->toArray();

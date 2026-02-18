@@ -31,7 +31,10 @@ class CustomerResource extends JsonResource
             ),
             'payment_terms' => $this->payment_terms,
             'payment_due_days' => (int) ($this->payment_due_days ?? 30),
-            'customer_tier' => $this->customer_tier,
+            // Backward compatible: keep customer_tier but map to loyalty_tier
+            'customer_tier' => $this->loyalty_tier,
+            'loyalty_tier' => $this->loyalty_tier,
+            'type' => $this->type,
             'preferred_currency' => $this->preferred_currency,
             'balance' => $this->when(
                 $request->user()?->can('customers.view-financial'),

@@ -1,275 +1,250 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductionOrder extends BaseModel
 {
-    use HasFactory, SoftDeletes;
+    protected ?string $moduleKey = 'manufacturing';
 
-    /**
-     * Fillable fields aligned with migration:
-     * 2026_01_04_000009_create_manufacturing_tables.php
-     */
+    protected $table = 'production_orders';
+
     protected $fillable = [
+        'reference_number',
         'branch_id',
         'bom_id',
+        'sale_id',
         'product_id',
         'warehouse_id',
-        'reference_number',
-        'status',
-        'priority',
+
         'planned_quantity',
         'produced_quantity',
         'rejected_quantity',
+
         'planned_start_date',
         'planned_end_date',
         'actual_start_date',
         'actual_end_date',
+
+        'status',
+        'priority',
+
         'estimated_cost',
         'actual_cost',
         'material_cost',
         'labor_cost',
         'overhead_cost',
-        'sale_id',
+
         'notes',
         'custom_fields',
+
         'created_by',
         'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'planned_quantity' => 'decimal:4',
         'produced_quantity' => 'decimal:4',
         'rejected_quantity' => 'decimal:4',
-        'estimated_cost' => 'decimal:4',
-        'actual_cost' => 'decimal:4',
-        'material_cost' => 'decimal:4',
-        'labor_cost' => 'decimal:4',
-        'overhead_cost' => 'decimal:4',
+
         'planned_start_date' => 'date',
         'planned_end_date' => 'date',
         'actual_start_date' => 'datetime',
         'actual_end_date' => 'datetime',
+
+        'estimated_cost' => 'decimal:2',
+        'actual_cost' => 'decimal:2',
+        'material_cost' => 'decimal:2',
+        'labor_cost' => 'decimal:2',
+        'overhead_cost' => 'decimal:2',
+
         'custom_fields' => 'array',
+        'approved_at' => 'datetime',
     ];
 
-    /**
-     * Get the branch that owns the production order.
-     */
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_NORMAL = 'normal';
+    public const PRIORITY_HIGH = 'high';
+    public const PRIORITY_URGENT = 'urgent';
+
+    protected static function booted(): void
+    {
+        static::creating(function (ProductionOrder $order) {
+            if (! $order->reference_number) {
+                $order->reference_number = $order->generateReferenceNumber();
+            }
+        });
+    }
+
+    // Relationships
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
-    /**
-     * Get the BOM used.
-     */
     public function bom(): BelongsTo
     {
         return $this->belongsTo(BillOfMaterial::class, 'bom_id');
     }
 
-    /**
-     * Get the product being manufactured.
-     */
-    public function product(): BelongsTo
-    {
-        return $this->belongsTo(Product::class);
-    }
-
-    /**
-     * Get the warehouse for finished goods.
-     */
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
-
-    /**
-     * Get the creator.
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Get the approver.
-     */
-    public function approver(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    /**
-     * Get the linked sale (if make-to-order).
-     */
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
     }
 
-    /**
-     * Get the order items (materials).
-     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
     public function items(): HasMany
     {
-        return $this->hasMany(ProductionOrderItem::class);
+        return $this->hasMany(ProductionOrderItem::class, 'production_order_id');
     }
 
-    /**
-     * Get the order operations.
-     */
     public function operations(): HasMany
     {
-        return $this->hasMany(ProductionOrderOperation::class);
+        return $this->hasMany(ProductionOrderOperation::class, 'production_order_id');
     }
 
-    /**
-     * Get manufacturing transactions.
-     */
-    public function transactions(): HasMany
+    public function createdBy(): BelongsTo
     {
-        return $this->hasMany(ManufacturingTransaction::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    // Backward compatibility accessors
-    public function getOrderNumberAttribute()
+    public function approvedBy(): BelongsTo
     {
-        return $this->reference_number;
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function getQuantityPlannedAttribute()
-    {
-        return $this->planned_quantity;
-    }
-
-    public function getQuantityProducedAttribute()
-    {
-        return $this->produced_quantity;
-    }
-
-    public function getQuantityScrappedAttribute()
-    {
-        return $this->rejected_quantity;
-    }
-
-    public function getMetadataAttribute()
-    {
-        return $this->custom_fields;
-    }
-
-    /**
-     * Calculate completion percentage.
-     */
-    public function getCompletionPercentageAttribute(): float
-    {
-        $plannedQty = decimal_float($this->planned_quantity ?? 0, 4);
-        // Prevent division by zero
-        if ($plannedQty <= 0) {
-            return 0.0;
-        }
-
-        return (decimal_float($this->produced_quantity ?? 0, 4) / $plannedQty) * 100;
-    }
-
-    /**
-     * Calculate remaining quantity to produce.
-     */
-    public function getRemainingQuantityAttribute(): float
-    {
-        return decimal_float($this->planned_quantity, 4) - decimal_float($this->produced_quantity, 4) - decimal_float($this->rejected_quantity, 4);
-    }
-
-    /**
-     * Scope: By status.
-     */
+    // Scopes
     public function scopeStatus(Builder $query, string $status): Builder
     {
         return $query->where('status', $status);
     }
 
-    /**
-     * Scope: In progress.
-     */
-    public function scopeInProgress(Builder $query): Builder
+    public function scopeActive(Builder $query): Builder
     {
-        return $query->whereIn('status', ['planned', 'in_progress']);
+        return $query->whereNotIn('status', [self::STATUS_COMPLETED, self::STATUS_CANCELLED]);
     }
 
-    /**
-     * Scope: Completed.
-     */
-    public function scopeCompleted(Builder $query): Builder
+    // Helpers
+    public function getDisplayNameAttribute(): string
     {
-        return $query->where('status', 'completed');
+        return $this->reference_number ?: 'PO-' . $this->id;
     }
 
-    /**
-     * Scope: By priority.
-     */
-    public function scopePriority(Builder $query, string $priority): Builder
-    {
-        return $query->where('priority', $priority);
-    }
 
-    /**
-     * Generate next production order number.
-     *
-     * V55-HIGH-02 FIX: Use database locking to prevent race conditions.
-     * Without locking, concurrent requests could get the same order number.
-     */
     public static function generateOrderNumber(int $branchId): string
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($branchId) {
-            $prefix = 'PRO';
-            $date = now()->format('Ym');
+        $tmp = new static();
+        $tmp->branch_id = $branchId;
 
-            // V55-HIGH-02 FIX: Use lockForUpdate to prevent race conditions
-            $lastOrder = static::where('branch_id', $branchId)
-                ->where('reference_number', 'like', "{$prefix}-{$date}-%")
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->first();
-
-            if ($lastOrder) {
-                $lastNumber = (int) substr($lastOrder->reference_number, -4);
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
-            }
-
-            return sprintf('%s-%s-%04d', $prefix, $date, $newNumber);
-        });
+        return $tmp->generateReferenceNumber();
     }
 
-    /**
-     * Start production.
-     */
-    public function start(): void
+    public function generateReferenceNumber(): string
     {
-        $this->update([
-            'status' => 'in_progress',
-            'actual_start_date' => now(),
-        ]);
+        $prefix = 'PO-' . date('Ym') . '-';
+
+        $count = static::query()
+            ->when($this->branch_id, fn ($q) => $q->where('branch_id', $this->branch_id))
+            ->where('reference_number', 'like', $prefix . '%')
+            ->count();
+
+        return $prefix . str_pad((string) ($count + 1), 4, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * Complete production.
-     */
-    public function complete(): void
+    public function isCompleted(): bool
     {
-        $this->update([
-            'status' => 'completed',
-            'actual_end_date' => now(),
-        ]);
+        return $this->status === self::STATUS_COMPLETED;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function getCompletionPercentage(): float
+    {
+        $planned = decimal_float($this->planned_quantity ?? 0, 4);
+        if ($planned <= 0) {
+            return 0.0;
+        }
+
+        $produced = decimal_float($this->produced_quantity ?? 0, 4);
+
+        return min(100.0, ($produced / $planned) * 100);
+    }
+
+    public function canStart(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_DRAFT], true);
+    }
+
+    public function canComplete(): bool
+    {
+        return $this->status === self::STATUS_IN_PROGRESS;
+    }
+
+    public function canCancel(): bool
+    {
+        return ! $this->isCompleted() && ! $this->isCancelled();
+    }
+
+    public function calculateRequiredMaterials(): array
+    {
+        if (! $this->bom) {
+            return [];
+        }
+
+        return $this->bom->calculateRequiredMaterials((float) ($this->planned_quantity ?? 0));
+    }
+
+    public function checkMaterialAvailability(): array
+    {
+        if (! $this->bom) {
+            return [];
+        }
+
+        return $this->bom->checkMaterialAvailability((float) ($this->planned_quantity ?? 0), $this->warehouse_id);
+    }
+
+    public function getStatusLabel(): string
+    {
+        return match ($this->status) {
+            self::STATUS_DRAFT => __('Draft'),
+            self::STATUS_PENDING => __('Pending'),
+            self::STATUS_IN_PROGRESS => __('In Progress'),
+            self::STATUS_COMPLETED => __('Completed'),
+            self::STATUS_CANCELLED => __('Cancelled'),
+            default => ucfirst(str_replace('_', ' ', (string) $this->status)),
+        };
+    }
+
+    public function getPriorityLabel(): string
+    {
+        return match ($this->priority) {
+            self::PRIORITY_LOW => __('Low'),
+            self::PRIORITY_NORMAL => __('Normal'),
+            self::PRIORITY_HIGH => __('High'),
+            self::PRIORITY_URGENT => __('Urgent'),
+            default => ucfirst((string) $this->priority),
+        };
     }
 }

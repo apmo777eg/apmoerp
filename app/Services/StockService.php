@@ -62,8 +62,7 @@ class StockService
         // quantity is signed: positive = in, negative = out
         // Simply sum all quantities to get current stock
         // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
-        return decimal_float($query->selectRaw('COALESCE(SUM(quantity), 0) as stock')
-            ->value('stock'), 4);
+        return decimal_float($query->sum('quantity') ?? 0, 4);
     }
 
     /**
@@ -140,8 +139,7 @@ class StockService
 
         // Calculate value: SUM(quantity * unit_cost)
         // COALESCE handles NULL unit_cost values (cross-database compatible)
-        return decimal_float($query->selectRaw('SUM(quantity * COALESCE(unit_cost, 0)) as value')
-            ->value('value') ?? 0);
+        return decimal_float($query->sum(DB::raw('quantity * COALESCE(unit_cost, 0)')) ?? 0, 4);
     }
 
     /**

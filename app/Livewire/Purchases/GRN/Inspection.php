@@ -38,7 +38,7 @@ class Inspection extends Component
     {
         $this->authorize('grn.inspect');
 
-        $this->grn = GoodsReceivedNote::with(['items.product', 'purchaseOrder', 'supplier'])
+        $this->grn = GoodsReceivedNote::with(['items.product', 'purchase', 'supplier'])
             ->findOrFail($id);
 
         // Initialize inspection data for each item

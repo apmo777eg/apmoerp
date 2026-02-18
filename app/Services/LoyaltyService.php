@@ -32,7 +32,7 @@ class LoyaltyService
                 }
 
                 // Calculate points: (grand_total / amount_per_point) * points_per_amount
-                $ratio = bcdiv((string) $sale->grand_total, $amountPerPoint, 4);
+                $ratio = bcdiv((string) $sale->total_amount, $amountPerPoint, 4);
                 $pointsDecimal = bcmul($ratio, (string) $settings->points_per_amount, 2);
                 $points = (int) floor(decimal_float($pointsDecimal));
 
@@ -53,7 +53,7 @@ class LoyaltyService
                         'type' => 'earn',
                         'points' => $points,
                         'balance_after' => $customer->loyalty_points,
-                        'description' => __('Points earned from sale #:invoice', ['invoice' => $sale->code]),
+                        'description' => __('Points earned from sale #:invoice', ['invoice' => $sale->reference_number]),
                         'created_by' => $userId,
                     ]);
                 });
@@ -236,11 +236,11 @@ class LoyaltyService
             default => 'new',
         };
 
-        $currentTier = $customer->customer_tier ?? 'new';
+        // FIX: customers table stores loyalty tier in `loyalty_tier`
+        $currentTier = $customer->loyalty_tier ?? 'new';
         if ($currentTier !== $tier) {
             $customer->update([
-                'customer_tier' => $tier,
-                'tier_updated_at' => now(),
+                'loyalty_tier' => $tier,
             ]);
         }
     }
@@ -293,9 +293,9 @@ class LoyaltyService
                 }
 
                 // Calculate points to reverse
-                if ($returnAmount !== null && $sale->grand_total > 0) {
+                if ($returnAmount !== null && $sale->total_amount > 0) {
                     // Partial return - reverse proportional points using BCMath
-                    $returnRatio = bcdiv((string) $returnAmount, (string) $sale->grand_total, 6);
+                    $returnRatio = bcdiv((string) $returnAmount, (string) $sale->total_amount, 6);
                     $pointsToReverse = (int) floor(decimal_float(bcmul((string) $originalTransaction->points, $returnRatio, 6)));
                 } else {
                     // Full return - reverse all points from this sale
@@ -353,10 +353,10 @@ class LoyaltyService
                         'balance_after' => $customer->loyalty_points,
                         'description' => $returnAmount !== null
                             ? __('Points reversed for partial return of sale #:invoice (:amount)', [
-                                'invoice' => $sale->code,
+                                'invoice' => $sale->reference_number,
                                 'amount' => number_format($returnAmount, 2),
                             ])
-                            : __('Points reversed for return of sale #:invoice', ['invoice' => $sale->code]),
+                            : __('Points reversed for return of sale #:invoice', ['invoice' => $sale->reference_number]),
                         'created_by' => $userId,
                     ]);
                 });

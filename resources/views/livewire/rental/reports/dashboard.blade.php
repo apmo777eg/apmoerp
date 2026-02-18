@@ -147,7 +147,7 @@
                                 {{ optional(optional($row->unit)->property)->name ?? '—' }}
                             </td>
                             <td class="py-2 pr-4">
-                                {{ optional($row->unit)->code ?? '—' }}
+                                {{ optional($row->unit)->reference_number ?? '—' }}
                             </td>
                             <td class="py-2 pr-4">
                                 {{ optional($row->tenant)->name ?? '—' }}

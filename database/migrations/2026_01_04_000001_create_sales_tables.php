@@ -146,6 +146,8 @@ return new class extends Migration
             $table->index('customer_id', 'idx_sale_customer_id');
             $table->index('warehouse_id', 'idx_sale_warehouse_id');
             $table->index('status', 'idx_sale_status');
+            $table->index(['branch_id', 'sale_date'], 'idx_sales_branch_date');
+            $table->index(['branch_id', 'status'], 'idx_sales_branch_status');
             $table->index('payment_status', 'idx_sale_payment_status');
             $table->index('sale_date', 'idx_sale_date');
             $table->index('type', 'idx_sale_type');
@@ -240,6 +242,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_salep_received_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('sale_id', 'idx_salep_sale_id');
             $table->index('payment_date', 'idx_salep_date');
@@ -250,6 +253,10 @@ return new class extends Migration
         // Receipts
         Schema::create('receipts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_rcpt_branch__brnch');
             $table->foreignId('sale_id')
                 ->nullable()
                 ->constrained('sales')
@@ -270,6 +277,9 @@ return new class extends Migration
 
             $table->index('sale_id', 'idx_rcpt_sale_id');
             $table->index('payment_id', 'idx_rcpt_payment_id');
+
+            $table->index('branch_id', 'idx_rece_branch_id');
+            $table->index(['branch_id', 'created_at'], 'idx_rcpt_branch_created');
         });
 
         // Deliveries
@@ -279,6 +289,10 @@ return new class extends Migration
                 ->constrained('sales')
                 ->cascadeOnDelete()
                 ->name('fk_dlv_sale__sale');
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_dlv_branch__brnch');
             $table->string('reference_number', 50);
             $table->string('status', 30)->default('pending'); // pending, in_transit, delivered, failed
             $table->date('scheduled_date')->nullable();
@@ -302,6 +316,9 @@ return new class extends Migration
             $table->index('sale_id', 'idx_dlv_sale_id');
             $table->index('status', 'idx_dlv_status');
             $table->index('scheduled_date', 'idx_dlv_scheduled');
+
+            $table->index('branch_id', 'idx_deli_branch_id');
+            $table->index(['branch_id', 'status'], 'idx_deliv_branch_status');
         });
     }
 

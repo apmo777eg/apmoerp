@@ -15,7 +15,7 @@
                         <select wire:model="warehouseId" class="erp-input" required>
                             <option value="">{{ __('Select warehouse') }}</option>
                             @foreach($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }} ({{ $warehouse->code }})</option>
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }} ({{ $warehouse->reference_number }})</option>
                             @endforeach
                         </select>
                         @error('warehouseId') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

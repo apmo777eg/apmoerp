@@ -41,6 +41,28 @@ class WorkflowNotification extends Model
         'sent_at' => 'datetime',
     ];
 
+    /**
+     * Ensure branch_id is derived from the parent workflow instance when not provided.
+     *
+     * These records are often created from jobs/console where BranchContextManager may be missing.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model): void {
+            if ($model->branch_id !== null) {
+                return;
+            }
+
+            if ($model->workflow_instance_id) {
+                $instance = WorkflowInstance::withoutGlobalScopes()->find($model->workflow_instance_id);
+                if ($instance && $instance->branch_id) {
+                    $model->branch_id = $instance->branch_id;
+                }
+            }
+        });
+    }
+
+
     public function workflowInstance(): BelongsTo
     {
         return $this->belongsTo(WorkflowInstance::class);

@@ -209,7 +209,7 @@ class SmartNotificationsService
                             type: 'overdue_invoice',
                             title: __('Overdue Invoice'),
                             message: __('Invoice :ref from :customer is :days days overdue (Due: :amount)', [
-                                'ref' => $invoice->reference_no ?? $invoice->code,
+                                'ref' => $invoice->reference_number,
                                 'customer' => $customerName,
                                 'days' => $daysOverdue,
                                 'amount' => number_format($dueTotal, 2),
@@ -218,13 +218,13 @@ class SmartNotificationsService
                             actionLabel: __('View Invoice'),
                             data: [
                                 'invoice_id' => $invoice->id,
-                                'reference' => $invoice->reference_no ?? $invoice->code,
+                                'reference' => $invoice->reference_number,
                                 'customer' => $customerName,
                                 'due_total' => $dueTotal,
                                 'days_overdue' => $daysOverdue,
                             ]
                         ));
-                        $notified[] = $invoice->reference_no ?? $invoice->code;
+                        $notified[] = $invoice->reference_number;
                     }
                 }
             }
@@ -275,7 +275,7 @@ class SmartNotificationsService
                         type: 'payment_reminder',
                         title: __('Payment Reminder'),
                         message: __('Invoice :ref from :customer is due in :days days (Amount: :amount)', [
-                            'ref' => $invoice->reference_no ?? $invoice->code,
+                            'ref' => $invoice->reference_number,
                             'customer' => $customerName,
                             'days' => $daysBefore,
                             'amount' => number_format($dueTotal, 2),
@@ -284,13 +284,13 @@ class SmartNotificationsService
                         actionLabel: __('View Invoice'),
                         data: [
                             'invoice_id' => $invoice->id,
-                            'reference' => $invoice->reference_no ?? $invoice->code,
+                            'reference' => $invoice->reference_number,
                             'customer' => $customerName,
                             'due_total' => $dueTotal,
                             'days_until_due' => $daysBefore,
                         ]
                     ));
-                    $notified[] = $invoice->reference_no ?? $invoice->code;
+                    $notified[] = $invoice->reference_number;
                 }
             }
         } catch (\Exception $e) {

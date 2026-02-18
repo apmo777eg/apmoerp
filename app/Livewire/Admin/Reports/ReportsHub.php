@@ -48,7 +48,8 @@ class ReportsHub extends Component
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
                     ->orWhere('description', 'like', $term)
-                    ->orWhere('key', 'like', $term);
+                    // DB-first canonical column is `template_key` (not `key`)
+                    ->orWhere('template_key', 'like', $term);
             });
         }
 

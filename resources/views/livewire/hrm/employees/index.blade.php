@@ -159,7 +159,7 @@
                                     </div>
                                     <div>
                                         <div class="font-medium text-slate-800 dark:text-white">{{ $employee->name }}</div>
-                                        <div class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ $employee->code }}</div>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ $employee->reference_number }}</div>
                                     </div>
                                 </div>
                             </td>

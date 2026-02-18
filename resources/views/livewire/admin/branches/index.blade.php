@@ -166,7 +166,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                                    {{ $branch->code ?? '-' }}
+                                    {{ $branch->reference_number ?? '-' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">

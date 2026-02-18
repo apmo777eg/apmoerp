@@ -41,16 +41,16 @@ class HRMService implements HRMServiceInterface
 
                 $attendance = Attendance::firstOrNew([
                     'employee_id' => $employeeId,
-                    'date' => $date,
+                    'attendance_date' => $date,
                 ], [
                     'branch_id' => $branchId,
-                    'status' => 'pending',
+                    'status' => 'present',
                 ]);
 
                 if ($type === 'in') {
-                    $attendance->check_in = $ts;
+                    $attendance->clock_in = $ts;
                 } else {
-                    $attendance->check_out = $ts;
+                    $attendance->clock_out = $ts;
                 }
 
                 $attendance->save();
@@ -110,10 +110,14 @@ class HRMService implements HRMServiceInterface
                         $basic = decimal_float($emp->salary);
 
                         $extra = $emp->extra_attributes ?? [];
-                        $housingAllowance = decimal_float($extra['housing_allowance'] ?? 0);
-                        $transportAllowance = decimal_float($extra['transport_allowance'] ?? 0);
-                        $otherAllowance = decimal_float($extra['other_allowance'] ?? 0);
-                        $totalAllowances = $housingAllowance + $transportAllowance + $otherAllowance;
+
+                        // Prefer canonical employee columns, fallback to extra_attributes for legacy installs
+                        $housingAllowance = decimal_float($emp->housing_allowance ?? ($extra['housing_allowance'] ?? 0));
+                        $transportAllowance = decimal_float($emp->transport_allowance ?? ($extra['transport_allowance'] ?? 0));
+                        $mealAllowance = decimal_float($emp->meal_allowance ?? ($extra['meal_allowance'] ?? 0));
+                        $otherAllowance = decimal_float($emp->other_allowances ?? ($extra['other_allowance'] ?? ($extra['other_allowances'] ?? 0)));
+
+                        $totalAllowances = $housingAllowance + $transportAllowance + $mealAllowance + $otherAllowance;
 
                         $grossSalary = $basic + $totalAllowances;
                         $socialInsurance = $this->calculateSocialInsurance($grossSalary);
@@ -128,11 +132,13 @@ class HRMService implements HRMServiceInterface
                         Payroll::create([
                             'branch_id' => $emp->branch_id,
                             'employee_id' => $emp->getKey(),
+                            'reference_number' => sprintf('PAY-%04d%02d-%d', $year, $month, $emp->getKey()),
                             'year' => $year,
                             'month' => $month,
                             'salary' => $basic,
                             'housing_allowance' => $housingAllowance,
                             'transport_allowance' => $transportAllowance,
+                            'meal_allowance' => $mealAllowance,
                             'other_allowances' => $otherAllowance,
                             'gross_salary' => $grossSalary,
                             'tax_deduction' => $tax,
@@ -226,7 +232,7 @@ class HRMService implements HRMServiceInterface
             $absenceDays = Attendance::query()
                 ->where('employee_id', $emp->getKey())
                 ->where('status', 'absent')
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('attendance_date', [$startDate, $endDate])
                 ->count();
 
             if ($absenceDays <= 0) {

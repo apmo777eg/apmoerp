@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Traits\HasBranch;
@@ -8,9 +10,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Purchase Return Item Model
- * 
- * Individual items returned to suppliers with condition tracking.
+ * Purchase Return Item
+ *
+ * Canonical column for condition is: item_condition
+ * (No alias column named "condition" exists in the DB schema.)
  */
 class PurchaseReturnItem extends Model
 {
@@ -29,6 +32,7 @@ class PurchaseReturnItem extends Model
         'line_total',
         'item_condition',
         'batch_number',
+        'expiry_date',
         'reason',
         'notes',
         'deduct_from_stock',
@@ -37,14 +41,14 @@ class PurchaseReturnItem extends Model
     ];
 
     protected $casts = [
-        'qty_returned' => 'decimal:3',
-        'qty_original' => 'decimal:3',
-        // V27-MED-04 FIX: Align precision with PurchaseItem (decimal:4) to avoid rounding drift
+        'qty_returned' => 'decimal:4',
+        'qty_original' => 'decimal:4',
         'unit_cost' => 'decimal:4',
         'tax_amount' => 'decimal:4',
         'line_total' => 'decimal:4',
         'deduct_from_stock' => 'boolean',
         'deducted_at' => 'datetime',
+        'expiry_date' => 'date',
     ];
 
     // Condition constants
@@ -54,8 +58,9 @@ class PurchaseReturnItem extends Model
     public const CONDITION_EXCESS = 'excess';
     public const CONDITION_EXPIRED = 'expired';
 
-    // Relationships
-
+    /**
+     * Relationships
+     */
     public function purchaseReturn(): BelongsTo
     {
         return $this->belongsTo(PurchaseReturn::class);
@@ -81,8 +86,9 @@ class PurchaseReturnItem extends Model
         return $this->belongsTo(User::class, 'deducted_by');
     }
 
-    // Helper methods
-
+    /**
+     * Helper methods
+     */
     public function isDefective(): bool
     {
         return $this->item_condition === self::CONDITION_DEFECTIVE;
@@ -110,6 +116,6 @@ class PurchaseReturnItem extends Model
 
     public function isDeducted(): bool
     {
-        return !is_null($this->deducted_at);
+        return ! is_null($this->deducted_at);
     }
 }

@@ -71,7 +71,7 @@
         
         <button type="button" 
                 x-show="query.length > 0"
-                @click="clearSearch()"
+                x-on:click="clearSearch()"
                 class="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 hover:text-slate-600">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>

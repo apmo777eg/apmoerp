@@ -125,7 +125,7 @@
                     @php
                         $attendanceModel = '\\App\\Models\\Attendance';
                         $latest = class_exists($attendanceModel)
-                            ? $attendanceModel::with('employee')->orderByDesc('date')->limit(10)->get()
+                            ? $attendanceModel::with('employee')->orderByDesc('attendance_date')->limit(10)->get()
                             : collect();
                     @endphp
                     @forelse($latest as $row)

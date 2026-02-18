@@ -6,6 +6,7 @@ namespace App\Livewire\Hrm\Payroll;
 
 use App\Models\HREmployee;
 use App\Models\Payroll;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -70,37 +71,55 @@ class Run extends Component
 
             $employees = $employeesQuery->get();
 
+            $dt = Carbon::createFromFormat('Y-m', (string) $this->period);
+            $year = (int) $dt->year;
+            $month = (int) $dt->month;
+
             foreach ($employees as $employee) {
                 // If a payroll for this employee & period already exists, skip it.
-                $existing = Payroll::query()
+                $exists = Payroll::query()
                     ->where('employee_id', $employee->id)
-                    ->where('period', $this->period)
-                    ->first();
+                    ->where('year', $year)
+                    ->where('month', $month)
+                    ->exists();
 
-                if ($existing) {
+                if ($exists) {
                     continue;
                 }
 
-                $basic = (string) ($employee->salary ?? '0');
-                $allowances = '0.00';
-                $deductions = '0.00';
+                $basic = decimal_float($employee->salary ?? 0);
 
-                // Calculate net salary with bcmath precision
-                $netCalc = bcadd($basic, $allowances, 2);
-                $net = bcsub($netCalc, $deductions, 2);
+                // Allowances from canonical employee columns
+                $housing = decimal_float($employee->housing_allowance ?? 0);
+                $transport = decimal_float($employee->transport_allowance ?? 0);
+                $meal = decimal_float($employee->meal_allowance ?? 0);
+                $other = decimal_float($employee->other_allowances ?? 0);
 
-                $model = new Payroll;
-                $model->employee_id = $employee->id;
-                $model->period = $this->period;
-                $model->basic = decimal_float($basic);
-                $model->allowances = decimal_float($allowances);
-                $model->deductions = decimal_float($deductions);
-                $model->net = decimal_float($net);
-                $model->status = 'draft';
-                $model->extra_attributes = [];
-                $model->save();
+                $gross = $basic + $housing + $transport + $meal + $other;
+
+                // Deductions can be extended later (tax/insurance/loans).
+                $totalDeductions = 0.0;
+                $net = max(0, $gross - $totalDeductions);
+
+                Payroll::create([
+                    'branch_id' => $this->branchId,
+                    'employee_id' => $employee->id,
+                    'year' => $year,
+                    'month' => $month,
+                    'salary' => $basic,
+                    'housing_allowance' => $housing,
+                    'transport_allowance' => $transport,
+                    'meal_allowance' => $meal,
+                    'other_allowances' => $other,
+                    'gross_salary' => $gross,
+                    'total_deductions' => $totalDeductions,
+                    'net_salary' => $net,
+                    'status' => 'draft',
+                    'extra_attributes' => [],
+                ]);
             }
         });
+
 
         session()->flash('status', __('Payroll generated for :period', ['period' => $this->period]));
 

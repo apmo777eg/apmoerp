@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Purchases\Quotations;
 
 use App\Models\SupplierQuotation;
@@ -12,30 +14,44 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use AuthorizesRequests, WithPagination;
+    use AuthorizesRequests;
+    use WithPagination;
 
     #[Url]
-    public $search = '';
+    public string $search = '';
 
     #[Url]
-    public $statusFilter = '';
+    public string $status = '';
 
-    public $sortField = 'created_at';
+    public string $sortField = 'created_at';
 
-    public $sortDirection = 'desc';
+    public string $sortDirection = 'desc';
+
+    protected array $allowedSortFields = [
+        'created_at',
+        'reference_number',
+        'quotation_date',
+        'valid_until',
+        'status',
+        'total_amount',
+    ];
 
     public function mount(): void
     {
         $this->authorize('purchases.view');
     }
 
-    public function updatingSearch()
+    public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    public function sortBy($field)
+    public function sortBy(string $field): void
     {
+        if (! in_array($field, $this->allowedSortFields, true)) {
+            return;
+        }
+
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -44,94 +60,88 @@ class Index extends Component
         }
     }
 
-    public function accept($id)
+    public function accept(int $id): void
     {
         $this->authorize('purchases.manage');
 
         $quotation = SupplierQuotation::findOrFail($id);
 
         if ($quotation->isExpired()) {
-            session()->flash('error', __('Cannot accept expired quotation'));
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => __('Cannot accept expired quotation'),
+            ]);
 
             return;
         }
 
-        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
-        $quotation->update([
-            'status' => 'accepted',
-            'accepted_at' => now(),
-            'accepted_by' => actual_user_id(),
-        ]);
+        $quotation->accept(function_exists('actual_user_id') ? actual_user_id() : auth()->id());
 
-        session()->flash('success', __('Quotation accepted successfully'));
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => __('Quotation accepted successfully'),
+        ]);
     }
 
-    public function reject($id, $reason = null)
+    public function reject(int $id, string $reason = ''): void
     {
         $this->authorize('purchases.manage');
 
         $quotation = SupplierQuotation::findOrFail($id);
+        $quotation->reject($reason ?: __('Rejected'), function_exists('actual_user_id') ? actual_user_id() : auth()->id());
 
-        // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation
-        $quotation->update([
-            'status' => 'rejected',
-            'rejected_at' => now(),
-            'rejected_by' => actual_user_id(),
-            'rejection_reason' => $reason,
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => __('Quotation rejected'),
         ]);
-
-        session()->flash('success', __('Quotation rejected successfully'));
-    }
-
-    public function delete($id)
-    {
-        $this->authorize('purchases.manage');
-
-        SupplierQuotation::findOrFail($id)->delete();
-
-        session()->flash('success', __('Quotation deleted successfully'));
     }
 
     public function render()
     {
-        $query = SupplierQuotation::with(['supplier', 'requisition', 'createdBy'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('quotation_number', 'like', '%'.$this->search.'%')
-                        ->orWhereHas('supplier', function ($q) {
-                            $q->where('name', 'like', '%'.$this->search.'%');
-                        })
-                        ->orWhereHas('requisition', function ($q) {
-                            $q->where('requisition_number', 'like', '%'.$this->search.'%');
-                        });
-                });
-            })
-            ->when($this->statusFilter, function ($query) {
-                if ($this->statusFilter === 'expired') {
-                    $query->where('valid_until', '<', now())
-                        ->where('status', 'pending');
-                } else {
-                    $query->where('status', $this->statusFilter);
-                }
-            })
-            ->orderBy($this->sortField, $this->sortDirection);
+        $query = SupplierQuotation::query()
+            ->with(['supplier', 'requisition']);
 
-        $quotations = $query->paginate(15);
+        if ($this->search) {
+            $search = $this->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('reference_number', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function ($s) use ($search) {
+                        $s->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('requisition', function ($r) use ($search) {
+                        $r->where('code', 'like', "%{$search}%")
+                          ->orWhere('subject', 'like', "%{$search}%");
+                    });
+            });
+        }
 
-        // Statistics
-        $stats = [
+        if ($this->status) {
+            if ($this->status === 'expired') {
+                $query->expired();
+            } else {
+                $query->where('status', $this->status);
+            }
+        }
+
+        if (! in_array($this->sortField, $this->allowedSortFields, true)) {
+            $this->sortField = 'created_at';
+        }
+
+        $quotations = $query
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate(15);
+
+        $statistics = [
             'total' => SupplierQuotation::count(),
             'pending' => SupplierQuotation::where('status', 'pending')->count(),
             'accepted' => SupplierQuotation::where('status', 'accepted')->count(),
             'rejected' => SupplierQuotation::where('status', 'rejected')->count(),
-            'expired' => SupplierQuotation::where('status', 'pending')
-                ->where('valid_until', '<', now())
-                ->count(),
+            'expired' => SupplierQuotation::expired()->count(),
         ];
 
         return view('livewire.purchases.quotations.index', [
             'quotations' => $quotations,
-            'stats' => $stats,
+            'statistics' => $statistics,
         ]);
     }
 }

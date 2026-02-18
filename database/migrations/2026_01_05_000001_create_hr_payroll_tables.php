@@ -25,6 +25,7 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_shft_branch__brnch');
             $table->string('name', 100);
+            $table->string('code', 50)->nullable();
             $table->string('name_ar', 100)->nullable();
             $table->time('start_time');
             $table->time('end_time');
@@ -44,6 +45,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->unique(['branch_id', 'name'], 'uq_shft_branch_name');
+            $table->unique(['branch_id', 'code'], 'uq_shft_branch_code');
             $table->index('branch_id', 'idx_shft_branch_id');
             $table->index('is_active', 'idx_shft_is_active');
         });
@@ -129,6 +131,10 @@ return new class extends Migration
         // Employee shifts (pivot)
         Schema::create('employee_shifts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_empshf_branch__brnch');
             $table->foreignId('employee_id')
                 ->constrained('hr_employees')
                 ->cascadeOnDelete()
@@ -141,6 +147,7 @@ return new class extends Migration
             $table->date('end_date')->nullable();
             $table->boolean('is_current')->default(true);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['employee_id', 'shift_id', 'start_date'], 'uq_empshft_emp_shft_start');
             $table->index('employee_id', 'idx_empshft_employee_id');
@@ -204,6 +211,7 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete()
                 ->name('fk_att_approved_by__usr');
+            $table->timestamp('approved_at')->nullable();
             $table->json('extra_attributes')->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -248,6 +256,7 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_lvtyp_created_by__usr');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['branch_id', 'name'], 'uq_lvtyp_branch_name');
             $table->index('branch_id', 'idx_lvtyp_branch_id');
@@ -325,6 +334,10 @@ return new class extends Migration
         // Leave requests
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_lvrq_branch__brnch');
             $table->foreignId('employee_id')
                 ->constrained('hr_employees')
                 ->cascadeOnDelete()

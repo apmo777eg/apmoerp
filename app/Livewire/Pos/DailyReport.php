@@ -108,11 +108,11 @@ class DailyReport extends Component
         $sessions = $sessionsQuery->with(['user', 'closedBy'])->get();
 
         $this->summary = [
-            'total_sales' => $sales->sum('grand_total'),
+            'total_sales' => $sales->sum('total_amount'),
             'total_transactions' => $sales->count(),
-            'total_discount' => $sales->sum('discount_total'),
-            'total_tax' => $sales->sum('tax_total'),
-            'average_sale' => $sales->count() > 0 ? $sales->sum('grand_total') / $sales->count() : 0,
+            'total_discount' => $sales->sum('discount_amount'),
+            'total_tax' => $sales->sum('tax_amount'),
+            'average_sale' => $sales->count() > 0 ? $sales->sum('total_amount') / $sales->count() : 0,
             'payment_breakdown' => $paymentBreakdown,
             'sessions' => $sessions->map(fn ($s) => [
                 'id' => $s->id,

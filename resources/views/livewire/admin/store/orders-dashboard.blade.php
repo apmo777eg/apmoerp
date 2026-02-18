@@ -134,9 +134,9 @@
                                     </span>
                                 </td>
                                 <td class="px-3 py-1.5 text-right text-[11px] text-slate-800">{{ number_format($order->total, 2) }}</td>
-                                <td class="px-3 py-1.5 text-right text-[11px] text-slate-700">{{ number_format($order->discount_total, 2) }}</td>
-                                <td class="px-3 py-1.5 text-right text-[11px] text-slate-700">{{ number_format($order->shipping_total, 2) }}</td>
-                                <td class="px-3 py-1.5 text-right text-[11px] text-slate-700">{{ number_format($order->tax_total, 2) }}</td>
+                                <td class="px-3 py-1.5 text-right text-[11px] text-slate-700">{{ number_format($order->discount_amount, 2) }}</td>
+                                <td class="px-3 py-1.5 text-right text-[11px] text-slate-700">{{ number_format($order->shipping_amount, 2) }}</td>
+                                <td class="px-3 py-1.5 text-right text-[11px] text-slate-700">{{ number_format($order->tax_amount, 2) }}</td>
                                 <td class="px-3 py-1.5 text-[11px] text-slate-700">
                                     @if($saleId)
                                         {{ __('Sale #') }}{{ $saleId }}

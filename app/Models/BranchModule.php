@@ -80,7 +80,8 @@ class BranchModule extends Pivot
         }
 
         return $this->relationLoaded('module') && $this->module
-            ? $this->module->key
+            // DB-first: canonical column in `modules` is `module_key`.
+            ? $this->module->module_key
             : null;
     }
 

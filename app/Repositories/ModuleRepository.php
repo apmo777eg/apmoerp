@@ -30,7 +30,9 @@ class ModuleRepository extends EloquentBaseRepository implements ModuleRepositor
 
     public function findByCode(string $code): ?Module
     {
-        return $this->query()->where('code', $code)->first();
+        // DB-first canonical column is `module_key` (modules table has no `code`).
+        // Keep the method name for backward compatibility with the repository interface.
+        return $this->query()->where('module_key', $code)->first();
     }
 
     public function getActiveModules(): Collection
@@ -56,7 +58,8 @@ class ModuleRepository extends EloquentBaseRepository implements ModuleRepositor
             $query->where(function (Builder $q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('slug', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
+                    // DB-first canonical column is `module_key` (modules table has no `code`).
+                    ->orWhere('module_key', 'like', "%{$search}%");
             });
         }
 

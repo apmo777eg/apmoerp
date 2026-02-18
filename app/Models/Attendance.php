@@ -33,6 +33,7 @@ class Attendance extends BaseModel
         'notes',
         'is_manual',
         'approved_by',
+        'approved_at',
         'extra_attributes',
     ];
 
@@ -40,6 +41,7 @@ class Attendance extends BaseModel
         'attendance_date' => 'date',
         'clock_in' => 'datetime',
         'clock_out' => 'datetime',
+        'approved_at' => 'datetime',
         'is_manual' => 'boolean',
     ];
 

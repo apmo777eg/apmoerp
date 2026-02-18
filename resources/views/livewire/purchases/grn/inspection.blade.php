@@ -2,7 +2,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">{{ __('GRN Inspection') }}</h1>
-            <p class="text-sm text-slate-500">{{ __('Quality inspection for received goods') }} - {{ $grn->code ?? 'GRN-' . $grn->id }}</p>
+            <p class="text-sm text-slate-500">{{ __('Quality inspection for received goods') }} - {{ $grn->reference_number ?? 'GRN-' . $grn->id }}</p>
         </div>
         <div class="flex items-center gap-2">
             <a href="{{ route('app.purchases.grn.index') }}" class="erp-btn-secondary" wire:navigate>
@@ -24,7 +24,7 @@
             </div>
             <div>
                 <p class="text-xs text-slate-500 uppercase">{{ __('Purchase Order') }}</p>
-                <p class="font-medium text-slate-800">{{ $grn->purchaseOrder?->code ?? '—' }}</p>
+                <p class="font-medium text-slate-800">{{ $grn->purchase?->reference_number ?? '—' }}</p>
             </div>
             <div>
                 <p class="text-xs text-slate-500 uppercase">{{ __('Status') }}</p>
@@ -91,8 +91,8 @@
                             <div class="font-medium text-slate-800">{{ $item->product?->name ?? 'Unknown Product' }}</div>
                             <div class="text-xs text-slate-500">SKU: {{ $item->product?->sku ?? '—' }}</div>
                         </td>
-                        <td class="py-3 pr-4">{{ $item->ordered_quantity ?? 0 }}</td>
-                        <td class="py-3 pr-4">{{ $item->received_quantity ?? $item->quantity ?? 0 }}</td>
+                        <td class="py-3 pr-4">{{ $item->expected_quantity ?? 0 }}</td>
+                        <td class="py-3 pr-4">{{ $item->received_quantity ?? 0 }}</td>
                         <td class="py-3 pr-4">
                             <div class="flex items-center justify-center gap-2">
                                 <button type="button"

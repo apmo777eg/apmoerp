@@ -206,7 +206,7 @@ class CommandPalette extends Component
                 ->map(fn ($s) => [
                     'type' => 'Invoice',
                     'icon' => '🧾',
-                    'name' => $s->reference_no ?? "Invoice #{$s->id}",
+                    'name' => $s->reference_number ?? "Invoice #{$s->id}",
                     'subtitle' => $s->customer?->name ?? __('Walk-in Customer'),
                     'url' => route('app.sales.show', $s),
                 ]);

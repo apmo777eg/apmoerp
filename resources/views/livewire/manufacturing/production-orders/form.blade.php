@@ -61,11 +61,11 @@
 
                 {{-- Quantity Planned --}}
                 <div>
-                    <label for="quantity_planned" class="block text-sm font-medium text-slate-700 mb-2">
+                    <label for="planned_quantity" class="block text-sm font-medium text-slate-700 mb-2">
                         {{ __('Quantity to Produce') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" step="0.01" min="0.01" wire:model="quantity_planned" id="quantity_planned" class="erp-input @error('quantity_planned') border-red-500 @enderror">
-                    @error('quantity_planned') <span class="text-sm text-red-500">{{ $message }}</span> @enderror
+                    <input type="number" step="0.01" min="0.01" wire:model="planned_quantity" id="planned_quantity" class="erp-input @error('planned_quantity') border-red-500 @enderror">
+                    @error('planned_quantity') <span class="text-sm text-red-500">{{ $message }}</span> @enderror
                 </div>
 
                 {{-- Priority --}}
@@ -89,8 +89,7 @@
                     </label>
                     <select wire:model="status" id="status" class="erp-input @error('status') border-red-500 @enderror">
                         <option value="draft">{{ __('Draft') }}</option>
-                        <option value="planned">{{ __('Planned') }}</option>
-                        <option value="released">{{ __('Released') }}</option>
+                        <option value="pending">{{ __('Pending') }}</option>
                         <option value="in_progress">{{ __('In Progress') }}</option>
                         <option value="completed">{{ __('Completed') }}</option>
                         <option value="cancelled">{{ __('Cancelled') }}</option>

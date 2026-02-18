@@ -78,7 +78,7 @@
                     @forelse($movements ?? [] as $movement)
                         <tr class="hover:bg-slate-50">
                             <td class="text-sm text-slate-500">{{ $movement->created_at?->format('Y-m-d H:i') }}</td>
-                            <td class="font-mono text-sm">{{ $movement->code }}</td>
+                            <td class="font-mono text-sm">{{ $movement->reference_number }}</td>
                             <td class="font-medium">{{ $movement->product?->name ?? '-' }}</td>
                             <td>{{ $movement->warehouse->name ?? '-' }}</td>
                             <td>

@@ -17,7 +17,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-2">
                         {{ __('Reference Number') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" wire:model="form.reference_number" class="erp-input" required>
+                    <input type="text" wire:model="form.reference_number" @disabled($readOnly) class="erp-input" required>
                     @error('form.reference_number')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
@@ -27,7 +27,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-2">
                         {{ __('Entry Date') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" wire:model="form.entry_date" class="erp-input" required>
+                    <input type="date" wire:model="form.entry_date" @disabled($readOnly) class="erp-input" required>
                     @error('form.entry_date')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
@@ -37,7 +37,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-2">
                         {{ __('Status') }} <span class="text-red-500">*</span>
                     </label>
-                    <select wire:model="form.status" class="erp-input" required>
+                    <select wire:model="form.status" @disabled($readOnly) class="erp-input" required>
                         <option value="draft">{{ __('Draft') }}</option>
                         <option value="posted">{{ __('Posted') }}</option>
                     </select>
@@ -50,7 +50,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-2">
                         {{ __('Description') }}
                     </label>
-                    <textarea wire:model="form.description" rows="2" class="erp-input"></textarea>
+                    <textarea wire:model="form.description" rows="2" @disabled($readOnly) class="erp-input"></textarea>
                     @error('form.description')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
@@ -87,7 +87,7 @@
                             @foreach($lines as $index => $line)
                                 <tr wire:key="line-{{ $index }}">
                                     <td>
-                                        <select wire:model="lines.{{ $index }}.account_id" class="erp-input" required>
+                                        <select wire:model="lines.{{ $index }}.account_id" @disabled($readOnly) class="erp-input" required>
                                             <option value="">{{ __('Select Account') }}</option>
                                             @foreach($accounts as $account)
                                                 <option value="{{ $account->id }}">{{ $account->account_number }} - {{ $account->name }}</option>
@@ -98,19 +98,19 @@
                                         @enderror
                                     </td>
                                     <td>
-                                        <input type="text" wire:model="lines.{{ $index }}.description" class="erp-input" placeholder="{{ __('Line description') }}">
+                                        <input type="text" wire:model="lines.{{ $index }}.description" @disabled($readOnly) class="erp-input" placeholder="{{ __('Line description') }}">
                                         @error("lines.{$index}.description")
                                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                         @enderror
                                     </td>
                                     <td>
-                                        <input type="number" wire:model="lines.{{ $index }}.debit" step="0.01" min="0" class="erp-input">
+                                        <input type="number" wire:model="lines.{{ $index }}.debit" step="0.01" min="0" @disabled($readOnly) class="erp-input">
                                         @error("lines.{$index}.debit")
                                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                         @enderror
                                     </td>
                                     <td>
-                                        <input type="number" wire:model="lines.{{ $index }}.credit" step="0.01" min="0" class="erp-input">
+                                        <input type="number" wire:model="lines.{{ $index }}.credit" step="0.01" min="0" @disabled($readOnly) class="erp-input">
                                         @error("lines.{$index}.credit")
                                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                         @enderror
@@ -154,10 +154,12 @@
             <a href="{{ route('app.accounting.index') }}" class="erp-btn erp-btn-secondary">
                 {{ __('Cancel') }}
             </a>
+            @unless($readOnly)
             <button type="submit" class="erp-btn erp-btn-primary" wire:loading.attr="disabled">
                 <span wire:loading.remove>{{ $journalEntryId ? __('Update Entry') : __('Create Entry') }}</span>
                 <span wire:loading>{{ __('Saving...') }}</span>
             </button>
+            @endunless
         </div>
     </form>
 </div>

@@ -55,13 +55,16 @@ return new class extends Migration
                 ->name('fk_bom_product__prd');
             $table->string('reference_number', 50);
             $table->string('name', 191);
+            $table->string('name_ar', 191)->nullable();
             $table->string('version', 20)->default('1.0');
             $table->decimal('quantity', 18, 4)->default(1);
-            $table->decimal('yield_percentage', 5, 2)->default(100);
+            $table->decimal('scrap_percentage', 5, 2)->default(0);
+            $table->boolean('is_multi_level')->default(false);
             $table->decimal('estimated_cost', 18, 4)->default(0);
             $table->decimal('estimated_time_hours', 8, 2)->default(0);
-            $table->string('status', 30)->default('draft'); // draft, active, inactive
+            $table->string('status', 30)->default('draft'); // draft, active, archived
             $table->text('notes')->nullable();
+            $table->text('description')->nullable();
             $table->json('custom_fields')->nullable();
             $table->foreignId('created_by')
                 ->nullable()
@@ -299,6 +302,10 @@ return new class extends Migration
         // Manufacturing transactions
         Schema::create('manufacturing_transactions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_mfgtrn_branch__brnch');
             $table->foreignId('production_order_id')
                 ->constrained('production_orders')
                 ->cascadeOnDelete()
@@ -313,6 +320,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('production_order_id', 'idx_mfgtxn_order_id');
             $table->index('transaction_type', 'idx_mfgtxn_type');

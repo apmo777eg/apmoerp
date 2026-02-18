@@ -10,8 +10,6 @@ use Illuminate\Support\Facades\Schema;
  * Migration: Missing tables identified from code analysis
  *
  * Tables required by the codebase but missing from migrations:
- * - departments: Referenced in purchase requisitions validation (exists:departments,id)
- * - cost_centers: Referenced in purchase requisitions validation (exists:cost_centers,id)
  * - report_schedules: Used by ScheduledReportService and Livewire components (DB::table('report_schedules'))
  * - product_compatibility: Used by SparePartsService for backward compatibility (DB::table('product_compatibility'))
  * - wood_conversions: Used by WoodService for wood conversion tracking
@@ -24,71 +22,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Departments (Branch-owned) - for organizational structure
-        Schema::create('departments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('branch_id')
-                ->constrained('branches')
-                ->cascadeOnDelete()
-                ->name('fk_dept_branch__brnch');
-            $table->string('name', 100);
-            $table->string('name_ar', 100)->nullable();
-            $table->string('code', 50)->nullable();
-            $table->text('description')->nullable();
-            $table->foreignId('parent_id')
-                ->nullable()
-                ->constrained('departments')
-                ->nullOnDelete()
-                ->name('fk_dept_parent__dept');
-            $table->foreignId('manager_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete()
-                ->name('fk_dept_manager__usr');
-            $table->boolean('is_active')->default(true);
-            $table->unsignedSmallInteger('sort_order')->default(0);
-            $table->timestamps();
-            $table->softDeletes();
-
-            $table->unique(['branch_id', 'code'], 'uq_dept_branch_code');
-            $table->index('branch_id', 'idx_dept_branch_id');
-            $table->index('is_active', 'idx_dept_is_active');
-            $table->index('parent_id', 'idx_dept_parent_id');
-        });
-
-        // Cost Centers (Branch-owned) - for cost allocation and tracking
-        Schema::create('cost_centers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('branch_id')
-                ->constrained('branches')
-                ->cascadeOnDelete()
-                ->name('fk_cc_branch__brnch');
-            $table->string('name', 100);
-            $table->string('name_ar', 100)->nullable();
-            $table->string('code', 50);
-            $table->text('description')->nullable();
-            $table->foreignId('parent_id')
-                ->nullable()
-                ->constrained('cost_centers')
-                ->nullOnDelete()
-                ->name('fk_cc_parent__cc');
-            $table->foreignId('department_id')
-                ->nullable()
-                ->constrained('departments')
-                ->nullOnDelete()
-                ->name('fk_cc_dept__dept');
-            $table->decimal('budget', 18, 4)->default(0);
-            $table->string('budget_period', 20)->default('yearly'); // monthly, quarterly, yearly
-            $table->boolean('is_active')->default(true);
-            $table->unsignedSmallInteger('sort_order')->default(0);
-            $table->timestamps();
-            $table->softDeletes();
-
-            $table->unique(['branch_id', 'code'], 'uq_cc_branch_code');
-            $table->index('branch_id', 'idx_cc_branch_id');
-            $table->index('is_active', 'idx_cc_is_active');
-            $table->index('department_id', 'idx_cc_dept_id');
-        });
 
         // Report Schedules (User-owned) - for scheduled report generation
         // Note: The existing 'scheduled_reports' table has different structure

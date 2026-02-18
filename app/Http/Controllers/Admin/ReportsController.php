@@ -337,8 +337,7 @@ class ReportsController extends Controller
         $totalSalesRaw = $salesQuery->sum('total_amount') ?? 0;
 
         // BUG-1 FIX: Calculate COGS as SUM(cost_price * quantity) from sale_items
-        $totalCogsRaw = $cogsQuery->selectRaw('SUM(COALESCE(cost_price, 0) * COALESCE(quantity, 0)) as total_cogs')
-            ->value('total_cogs') ?? 0;
+        $totalCogsRaw = (clone $cogsQuery)->sum(DB::raw('COALESCE(cost_price, 0) * COALESCE(quantity, 0)')) ?? 0;
 
         $totalExpensesRaw = $expensesQuery->sum('amount') ?? 0;
 

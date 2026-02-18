@@ -87,10 +87,10 @@ class InAppMessage extends Notification implements ShouldQueue
     /**
      * القناة الخاصة (Private Channel) لكل مستخدم.
      */
-    public function broadcastOn(): array
+    public function broadcastOn($notifiable): array
     {
         return [
-            new \Illuminate\Notifications\Channels\BroadcastChannel('private-App.Models.User.'.$this->notifiable->id),
+            new \Illuminate\Broadcasting\PrivateChannel('App.Models.User.'.$notifiable->id),
         ];
     }
 }

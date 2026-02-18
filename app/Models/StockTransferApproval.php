@@ -28,6 +28,26 @@ class StockTransferApproval extends Model
         'responded_at' => 'datetime',
     ];
 
+    /**
+     * Ensure branch_id is derived from the parent stock transfer when not provided (works in console/jobs).
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model): void {
+            if ($model->branch_id !== null) {
+                return;
+            }
+
+            if ($model->stock_transfer_id) {
+                $parent = StockTransfer::withoutGlobalScopes()->find($model->stock_transfer_id);
+                if ($parent && $parent->branch_id) {
+                    $model->branch_id = $parent->branch_id;
+                }
+            }
+        });
+    }
+
+
     // Status constants
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';

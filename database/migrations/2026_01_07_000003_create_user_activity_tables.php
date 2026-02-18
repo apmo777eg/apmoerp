@@ -123,13 +123,13 @@ return new class extends Migration
                 ->constrained('branches')
                 ->nullOnDelete()
                 ->name('fk_srchhst_branch__brnch');
-            $table->string('query', 500)->nullable();
-            $table->string('search_query', 500);
+            $table->string('query', 500);
             $table->string('module', 100)->nullable();
             $table->string('context', 191)->nullable();
             $table->string('search_type', 50)->nullable();
             $table->unsignedInteger('results_count')->default(0);
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('user_id', 'idx_srchhst_user_id');
             $table->index('search_type', 'idx_srchhst_type');
@@ -154,6 +154,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamp('indexed_at');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['searchable_type', 'searchable_id'], 'idx_srchidx_searchable');
             $table->index('category', 'idx_srchidx_category');

@@ -163,8 +163,8 @@
                                 class="mt-1 erp-input">
                                 <option value="">{{ __('Select Currency') }}</option>
                                 @foreach($currencies as $currency)
-                                    <option value="{{ $currency->code }}">
-                                        {{ $currency->code }} - {{ $currency->name }} ({{ $currency->symbol }})
+                                    <option value="{{ $currency->reference_number }}">
+                                        {{ $currency->reference_number }} - {{ $currency->name }} ({{ $currency->symbol }})
                                     </option>
                                 @endforeach
                             </select>

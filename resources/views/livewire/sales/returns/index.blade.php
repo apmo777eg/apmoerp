@@ -50,7 +50,7 @@
                                 <td>
                                     @if($return->sale)
                                         <a href="{{ route('app.sales.show', $return->sale_id) }}" class="text-emerald-600 hover:text-emerald-800 hover:underline">
-                                            {{ $return->sale->code ?: '#' . $return->sale_id }}
+                                            {{ $return->sale->reference_number ?: '#' . $return->sale_id }}
                                         </a>
                                     @else
                                         <span class="text-slate-400">-</span>
@@ -107,19 +107,19 @@
                                 @foreach($sales as $sale)
                                     <option value="{{ $sale->id }}">
                                         {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
-                                        {{ $sale->code ?: '#' . $sale->id }} - 
+                                        {{ $sale->reference_number ?: '#' . $sale->id }} - 
                                         {{ $sale->customer?->name ?? __('Walk-in Customer') }} - 
-                                        {{ number_format(decimal_float($sale->grand_total), 2) }}
+                                        {{ number_format(decimal_float($sale->total_amount), 2) }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                     @else
                         <div class="mb-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                            <p class="text-sm"><strong>{{ __('Invoice') }}:</strong> {{ $selectedSale->code ?: '#' . $selectedSale->id }}</p>
+                            <p class="text-sm"><strong>{{ __('Invoice') }}:</strong> {{ $selectedSale->reference_number ?: '#' . $selectedSale->id }}</p>
                             <p class="text-sm"><strong>{{ __('Customer') }}:</strong> {{ $selectedSale->customer?->name ?? __('Walk-in Customer') }}</p>
                             {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
-                            <p class="text-sm"><strong>{{ __('Total') }}:</strong> {{ number_format(decimal_float($selectedSale->grand_total), 2) }}</p>
+                            <p class="text-sm"><strong>{{ __('Total') }}:</strong> {{ number_format(decimal_float($selectedSale->total_amount), 2) }}</p>
                         </div>
 
                         <div class="mb-4">

@@ -31,6 +31,8 @@ class Form extends Component
      */
     public ?int $effectiveBranchId = null;
 
+    public bool $readOnly = false;
+
     /**
      * @var array<string,mixed>
      */
@@ -48,7 +50,13 @@ class Form extends Component
 
     public function mount(?Account $account = null): void
     {
-        $this->authorize('accounting.create');
+        if ($account) {
+            $this->authorize('accounting.view');
+            $this->readOnly = ! (auth()->user()?->can('accounting.update') ?? false);
+        } else {
+            $this->authorize('accounting.create');
+            $this->readOnly = false;
+        }
 
         $this->accountId = $account?->id;
         $this->effectiveBranchId = $account?->branch_id ?? current_branch_id();

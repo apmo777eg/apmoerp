@@ -81,8 +81,8 @@
                             <td>{{ $customer->email ?? '-' }}</td>
                             <td dir="ltr">{{ $customer->phone ?? '-' }}</td>
                             <td>
-                                <span class="px-2 py-1 text-xs rounded-full {{ $customer->customer_type === 'company' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700' }}">
-                                    {{ $customer->customer_type === 'company' ? __('Company') : __('Individual') }}
+                                <span class="px-2 py-1 text-xs rounded-full {{ $customer->type === 'company' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700' }}">
+                                    {{ $customer->type === 'company' ? __('Company') : __('Individual') }}
                                 </span>
                             </td>
                             <td class="{{ $customer->balance < 0 ? 'text-red-600' : 'text-emerald-600' }}">

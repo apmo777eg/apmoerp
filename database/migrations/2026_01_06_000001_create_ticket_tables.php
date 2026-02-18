@@ -190,6 +190,10 @@ return new class extends Migration
         // Ticket replies
         Schema::create('ticket_replies', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('branch_id')
+                ->constrained('branches')
+                ->cascadeOnDelete()
+                ->name('fk_tkrepl_branch__brnch');
             $table->foreignId('ticket_id')
                 ->constrained('tickets')
                 ->cascadeOnDelete()
@@ -218,6 +222,7 @@ return new class extends Migration
                 ->name('fk_tktrpl_updated_by__usr');
             $table->timestamps();
             $table->softDeletes();
+            $table->index('branch_id', 'idx_tkrepl_branch_id');
 
             $table->index('ticket_id', 'idx_tktrpl_ticket_id');
             $table->index('user_id', 'idx_tktrpl_user_id');

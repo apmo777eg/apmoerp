@@ -159,7 +159,7 @@
                 <tbody>
                     @forelse($sales as $sale)
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
-                        <td class="px-4 py-3 font-mono text-xs">{{ $sale->code }}</td>
+                        <td class="px-4 py-3 font-mono text-xs">{{ $sale->reference_number }}</td>
                         <td class="px-4 py-3">{{ $sale->customer?->name ?? '-' }}</td>
                         <td class="px-4 py-3">
                             @foreach($sale->payments as $payment)
@@ -168,9 +168,9 @@
                                 </span>
                             @endforeach
                         </td>
-                        <td class="px-4 py-3">{{ number_format($sale->sub_total, 2) }}</td>
-                        <td class="px-4 py-3 text-amber-600">{{ number_format($sale->discount_total, 2) }}</td>
-                        <td class="px-4 py-3 font-semibold text-emerald-700">{{ number_format($sale->grand_total, 2) }}</td>
+                        <td class="px-4 py-3">{{ number_format($sale->subtotal, 2) }}</td>
+                        <td class="px-4 py-3 text-amber-600">{{ number_format($sale->discount_amount, 2) }}</td>
+                        <td class="px-4 py-3 font-semibold text-emerald-700">{{ number_format($sale->total_amount, 2) }}</td>
                         <td class="px-4 py-3">{{ $sale->createdBy?->name ?? '-' }}</td>
                         <td class="px-4 py-3 text-xs">{{ $sale->created_at?->format('H:i') }}</td>
                     </tr>

@@ -123,8 +123,7 @@ class ProductHistory extends Component
             // quantity is signed: positive = in, negative = out
             $currentStock = StockMovement::where('product_id', $this->product->id)
                 ->whereHas('warehouse', fn ($q) => $q->where('branch_id', $this->branchId))
-                ->selectRaw('SUM(quantity) as stock')
-                ->value('stock') ?? 0;
+                ->sum('quantity') ?? 0;
         }
 
         $this->stockMovements = $stockMovements instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator

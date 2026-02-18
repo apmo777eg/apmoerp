@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Branch\HRM;
 
+use Carbon\Carbon;
+
 use App\Http\Controllers\Controller;
 use App\Rules\BranchScopedExists;
 use Illuminate\Http\Request;
@@ -36,7 +38,11 @@ class ReportsController extends Controller
         }
 
         if (! empty($validated['status'])) {
-            $query->where('status', $validated['status']);
+            if ($validated['status'] === 'pending') {
+                $query->pending();
+            } else {
+                $query->where('status', $validated['status']);
+            }
         }
 
         if (! empty($validated['branch_id'])) {
@@ -106,8 +112,8 @@ class ReportsController extends Controller
         // V57-CRITICAL-03 FIX: Use BranchScopedExists to prevent cross-branch employee references
         $validated = $request->validate([
             'employee_id' => ['nullable', 'integer', new BranchScopedExists('hr_employees', 'id', null, true)],
-            'period' => 'nullable|string|max:20',
-            'status' => 'nullable|string|in:pending,paid,cancelled',
+            'period' => 'nullable|date_format:Y-m',
+            'status' => 'nullable|string|in:pending,draft,calculated,approved,paid,cancelled',
         ]);
 
         $model = '\\App\\Models\\Payroll';
@@ -124,11 +130,16 @@ class ReportsController extends Controller
         }
 
         if (! empty($validated['period'])) {
-            $query->where('period', $validated['period']);
+            $dt = Carbon::createFromFormat('Y-m', (string) $validated['period']);
+            $query->where('year', (int) $dt->year)->where('month', (int) $dt->month);
         }
 
         if (! empty($validated['status'])) {
-            $query->where('status', $validated['status']);
+            if ($validated['status'] === 'pending') {
+                $query->pending();
+            } else {
+                $query->where('status', $validated['status']);
+            }
         }
 
         $filename = 'hrm_payroll_'.now()->format('Ymd_His').'.xlsx';

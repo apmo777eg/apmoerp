@@ -24,7 +24,7 @@ return new class extends Migration
                 ->constrained('branches')
                 ->cascadeOnDelete()
                 ->name('fk_rtn_branch__brnch');
-            $table->string('reference_number', 50)->nullable();
+            $table->string('reference_number', 50);
             $table->foreignId('sale_id')
                 ->nullable()
                 ->constrained('sales')
@@ -50,7 +50,6 @@ return new class extends Migration
                 ->constrained('warehouses')
                 ->nullOnDelete()
                 ->name('fk_rtn_warehouse__wh');
-            $table->string('code', 50);
             $table->string('type', 30); // sale_return, purchase_return
             $table->string('status', 30)->default('pending');
             $table->date('return_date');
@@ -73,7 +72,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['branch_id', 'code'], 'uq_rtn_branch_code');
+            $table->unique(['branch_id', 'reference_number'], 'uq_rtn_branch_ref');
             $table->index('branch_id', 'idx_rtn_branch_id');
             $table->index('sale_id', 'idx_rtn_sale_id');
             $table->index('purchase_id', 'idx_rtn_purchase_id');
@@ -227,10 +226,10 @@ return new class extends Migration
             $table->decimal('subtotal', 18, 2)->default(0);
             $table->decimal('tax_amount', 18, 2)->default(0);
             $table->decimal('total_amount', 18, 2)->default(0);
-            $table->decimal('expected_credit', 18, 2)->default(0);
             $table->string('currency', 10)->default('USD');
             $table->text('notes')->nullable();
             $table->text('internal_notes')->nullable();
+            $table->json('extra_attributes')->nullable();
             $table->date('return_date')->nullable();
             $table->string('tracking_number', 100)->nullable();
             $table->string('courier_name', 100)->nullable();
@@ -242,6 +241,15 @@ return new class extends Migration
                 ->nullOnDelete()
                 ->name('fk_prrtn_approved_by__usr');
             $table->timestamp('approved_at')->nullable();
+            // Workflow audit fields
+            $table->foreignId('completed_by')->nullable()->constrained('users')->nullOnDelete()->name('fk_prrtn_completed_by__usr');
+            $table->timestamp('completed_at')->nullable();
+            $table->foreignId('rejected_by')->nullable()->constrained('users')->nullOnDelete()->name('fk_prrtn_rejected_by__usr');
+            $table->timestamp('rejected_at')->nullable();
+            $table->text('rejection_reason')->nullable();
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->nullOnDelete()->name('fk_prrtn_cancelled_by__usr');
+            $table->timestamp('cancelled_at')->nullable();
+            $table->text('cancellation_reason')->nullable();
             $table->foreignId('shipped_by')
                 ->nullable()
                 ->constrained('users')
@@ -293,13 +301,14 @@ return new class extends Migration
                 ->constrained('branches')
                 ->nullOnDelete()
                 ->name('fk_prrtni_branch__brnch');
-            $table->decimal('qty_returned', 18, 3);
-            $table->decimal('qty_original', 18, 3)->default(0);
+            $table->decimal('qty_returned', 18, 4);
+            $table->decimal('qty_original', 18, 4)->default(0);
             $table->decimal('unit_cost', 18, 4)->default(0);
             $table->decimal('tax_amount', 18, 4)->default(0);
             $table->decimal('line_total', 18, 4)->default(0);
             $table->string('item_condition', 30)->nullable();
             $table->string('batch_number', 100)->nullable();
+            $table->date('expiry_date')->nullable();
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('deduct_from_stock')->default(true);

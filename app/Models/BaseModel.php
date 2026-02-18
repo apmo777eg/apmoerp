@@ -111,7 +111,14 @@ abstract class BaseModel extends Model
      */
     public function getDisplayName(): string
     {
-        return $this->name ?? $this->title ?? $this->code ?? "#{$this->id}";
+        foreach (['name', 'title', 'reference_number', 'return_number', 'asset_code', 'code'] as $key) {
+            $value = $this->{$key} ?? null;
+            if ($value !== null && $value !== '') {
+                return (string) $value;
+            }
+        }
+
+        return 'ID:'.(string) $this->getKey();
     }
 
     /**

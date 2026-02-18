@@ -39,7 +39,7 @@
                 <tfoot>
                     <tr class="font-bold">
                         <td colspan="3" class="text-right py-4">{{ __('Total') }}</td>
-                        <td class="text-right">{{ number_format($purchase->grand_total, 2) }}</td>
+                        <td class="text-right">{{ number_format($purchase->total_amount, 2) }}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -52,3 +52,13 @@
         </div>
     </div>
 </div>
+
+@if(request()->boolean('print'))
+    <script>
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                try { window.print(); } catch (e) {}
+            }, 250);
+        });
+    </script>
+@endif

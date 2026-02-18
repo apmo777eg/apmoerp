@@ -111,13 +111,13 @@ class WhatsAppService
         $saleDate = $sale->sale_date ?? $sale->created_at;
 
         return __("Invoice #:invoice\n\nDear :customer,\n\nThank you for your purchase!\n\n:items\n\nSubtotal: :subtotal\nTax: :tax\nDiscount: :discount\n\nTotal: :total\n\nDate: :date\n\nThank you for shopping with us!", [
-            'invoice' => $sale->code,
+            'invoice' => $sale->reference_number,
             'customer' => $sale->customer?->name ?? __('Customer'),
             'items' => $items,
-            'subtotal' => number_format(decimal_float($sale->sub_total), 2),
-            'tax' => number_format(decimal_float($sale->tax_total), 2),
-            'discount' => number_format(decimal_float($sale->discount_total), 2),
-            'total' => number_format(decimal_float($sale->grand_total), 2),
+            'subtotal' => number_format(decimal_float($sale->subtotal), 2),
+            'tax' => number_format(decimal_float($sale->tax_amount), 2),
+            'discount' => number_format(decimal_float($sale->discount_amount), 2),
+            'total' => number_format(decimal_float($sale->total_amount), 2),
             'date' => $saleDate->format('Y-m-d H:i'),
         ]);
     }

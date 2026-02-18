@@ -358,7 +358,8 @@ class CustomerBehaviorService
                             'monthly_value' => round($monthlyValue, 2),
                             'months_active' => $monthsActive,
                             'clv_percentage' => $totalCLV > 0 ? round(($c->sales_sum_total_amount / $totalCLV) * 100, 2) : 0,
-                            'tier' => $c->customer_tier ?? 'standard',
+                            // FIX: customers table stores loyalty tier in `loyalty_tier`
+                            'tier' => $c->loyalty_tier ?? 'standard',
                         ];
                     })->toArray(),
                     'summary' => [

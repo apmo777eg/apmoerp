@@ -86,7 +86,7 @@
     <div class="erp-card p-4">
         <div class="flex flex-col lg:flex-row gap-4 mb-6">
             <div class="flex-1 relative">
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="{{ __('Search by order number, product or BOM...') }}" class="erp-input pr-10">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="{{ __('Search by reference number, product or BOM...') }}" class="erp-input pr-10">
                 <div wire:loading.delay wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
                     <svg class="animate-spin h-4 w-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -98,8 +98,7 @@
                 <select wire:model.live="status" class="erp-input w-full lg:w-40">
                     <option value="">{{ __('All Status') }}</option>
                     <option value="draft">{{ __('Draft') }}</option>
-                    <option value="confirmed">{{ __('Confirmed') }}</option>
-                    <option value="released">{{ __('Released') }}</option>
+                    <option value="pending">{{ __('Pending') }}</option>
                     <option value="in_progress">{{ __('In Progress') }}</option>
                     <option value="completed">{{ __('Completed') }}</option>
                     <option value="cancelled">{{ __('Cancelled') }}</option>
@@ -120,9 +119,9 @@
             <table class="erp-table">
                 <thead>
                     <tr>
-                        <th wire:click="sortBy('order_number')" class="cursor-pointer hover:bg-slate-100">
-                            {{ __('Order Number') }}
-                            @if($sortField === 'order_number')
+                        <th wire:click="sortBy('reference_number')" class="cursor-pointer hover:bg-slate-100">
+                            {{ __('Reference') }}
+                            @if($sortField === 'reference_number')
                                 <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
@@ -140,21 +139,21 @@
                 <tbody>
                     @forelse($orders as $order)
                         <tr wire:key="order-{{ $order->id }}">
-                            <td class="font-medium">{{ $order->order_number }}</td>
+                            <td class="font-medium">{{ $order->reference_number }}</td>
                             <td>
                                 <div class="font-medium">{{ $order->product?->name ?? '-' }}</div>
                                 @if($order->product->sku)
                                     <div class="text-xs text-slate-500">{{ $order->product->sku }}</div>
                                 @endif
                             </td>
-                            <td>{{ $order->bom->bom_number ?? '-' }}</td>
+                            <td>{{ $order->bom->reference_number ?? '-' }}</td>
                             {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}
-                            <td>{{ number_format(decimal_float($order->quantity_planned), 2) }}</td>
-                            <td>{{ number_format(decimal_float($order->quantity_produced), 2) }}</td>
+                            <td>{{ number_format(decimal_float($order->planned_quantity), 2) }}</td>
+                            <td>{{ number_format(decimal_float($order->produced_quantity), 2) }}</td>
                             <td>
                                 @php
-                                    $progress = $order->quantity_planned > 0 
-                                        ? ($order->quantity_produced / $order->quantity_planned) * 100 
+                                    $progress = $order->planned_quantity > 0 
+                                        ? ($order->produced_quantity / $order->planned_quantity) * 100 
                                         : 0;
                                 @endphp
                                 <div class="flex items-center gap-2">
@@ -180,10 +179,8 @@
                                     <span class="erp-badge erp-badge-success">{{ __('Completed') }}</span>
                                 @elseif($order->status === 'in_progress')
                                     <span class="erp-badge erp-badge-primary">{{ __('In Progress') }}</span>
-                                @elseif($order->status === 'released')
-                                    <span class="erp-badge erp-badge-info">{{ __('Released') }}</span>
-                                @elseif($order->status === 'confirmed')
-                                    <span class="erp-badge erp-badge-secondary">{{ __('Confirmed') }}</span>
+                                @elseif($order->status === 'pending')
+                                    <span class="erp-badge erp-badge-secondary">{{ __('Pending') }}</span>
                                 @elseif($order->status === 'draft')
                                     <span class="erp-badge erp-badge-warning">{{ __('Draft') }}</span>
                                 @else

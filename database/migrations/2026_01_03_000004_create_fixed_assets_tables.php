@@ -24,12 +24,18 @@ return new class extends Migration
                 ->constrained('branches')
                 ->cascadeOnDelete()
                 ->name('fk_fxast_branch__brnch');
+            // Optional supplier association (FK added later after suppliers table exists)
+            $table->unsignedBigInteger('supplier_id')->nullable();
+            $table->index('supplier_id', 'idx_fxast_supplier_id');
             $table->string('asset_code', 50);
             $table->string('name', 191);
             $table->string('name_ar', 191)->nullable();
             $table->string('category', 50)->nullable();
             $table->text('description')->nullable();
+            $table->text('notes')->nullable();
             $table->string('serial_number', 100)->nullable();
+            $table->string('model', 191)->nullable();
+            $table->string('manufacturer', 191)->nullable();
             $table->string('location', 191)->nullable();
             $table->foreignId('assigned_to')
                 ->nullable()
@@ -41,8 +47,12 @@ return new class extends Migration
             $table->decimal('salvage_value', 18, 4)->default(0);
             $table->unsignedSmallInteger('useful_life_months')->nullable();
             $table->string('depreciation_method', 30)->default('straight_line'); // straight_line, declining_balance, units_of_production
+            $table->date('depreciation_start_date')->nullable();
+            $table->date('last_depreciation_date')->nullable();
+            $table->decimal('depreciation_rate', 8, 4)->nullable();
             $table->decimal('accumulated_depreciation', 18, 4)->default(0);
-            $table->decimal('current_value', 18, 4)->default(0);
+            // Book value of the asset (purchase_cost - accumulated_depreciation)
+            $table->decimal('book_value', 18, 4)->default(0);
             $table->foreignId('asset_account_id')
                 ->nullable()
                 ->constrained('accounts')
@@ -68,6 +78,8 @@ return new class extends Migration
             $table->date('warranty_expiry')->nullable();
             $table->string('warranty_vendor', 191)->nullable();
             $table->json('custom_fields')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete()->name('fk_fxast_created_by__usr');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete()->name('fk_fxast_updated_by__usr');
             $table->timestamps();
             $table->softDeletes();
 
@@ -76,6 +88,8 @@ return new class extends Migration
             $table->index('status', 'idx_fxast_status');
             $table->index('category', 'idx_fxast_category');
             $table->index('assigned_to', 'idx_fxast_assigned');
+            $table->index('depreciation_start_date', 'idx_fxast_depr_start');
+            $table->index('last_depreciation_date', 'idx_fxast_last_depr');
             $table->index(['branch_id', 'id'], 'idx_fxast_branch_id_id');
         });
 

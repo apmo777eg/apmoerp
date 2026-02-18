@@ -87,11 +87,11 @@ class POSController extends Controller
                 'message' => __('Sale completed successfully'),
                 'data' => [
                     'id' => $sale->id,
-                    'code' => $sale->code,
+                    'code' => $sale->reference_number,
                     'client_uuid' => $sale->client_uuid,
-                    'grand_total' => $sale->grand_total,
-                    'paid_total' => $sale->paid_total,
-                    'due_total' => $sale->due_total,
+                    'grand_total' => $sale->total_amount,
+                    'paid_total' => $sale->paid_amount,
+                    'due_total' => $sale->remaining_amount,
                     'status' => $sale->status,
                     'items' => $sale->items->map(fn ($item) => [
                         'product_id' => $item->product_id,
@@ -104,7 +104,7 @@ class POSController extends Controller
                     'payments' => $sale->payments->map(fn ($p) => [
                         'method' => $p->payment_method,
                         'amount' => $p->amount,
-                        'reference_no' => $p->reference_no,
+                        'reference_no' => $p->reference_number,
                     ]),
                     'created_at' => $sale->created_at?->toIso8601String(),
                 ],

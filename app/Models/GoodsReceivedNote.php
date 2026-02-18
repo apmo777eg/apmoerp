@@ -10,6 +10,20 @@ class GoodsReceivedNote extends BaseModel
 {
     use SoftDeletes;
 
+    /**
+     * Statuses used across Livewire screens.
+     *
+     * NOTE: This column is a plain string (no DB enum) so we unify conventions in code.
+     */
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_INSPECTING = 'inspecting';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_PARTIAL = 'partial';
+    public const STATUS_COMPLETE = 'complete';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_CANCELLED = 'cancelled';
+
     protected ?string $moduleKey = 'purchases';
 
     protected $table = 'goods_received_notes';
@@ -28,6 +42,8 @@ class GoodsReceivedNote extends BaseModel
         'status',
         'received_date',
         'notes',
+        'inspection_notes',
+        'rejection_reason',
         'received_by_name',
         'received_by',
         'inspected_by',
@@ -44,8 +60,41 @@ class GoodsReceivedNote extends BaseModel
         parent::booted();
 
         static::creating(function ($model) {
+            // Ensure required FK values are present.
+            // Many UI screens only provide purchase_id; derive supplier/warehouse/branch from it.
+            if ($model->purchase_id && (! $model->branch_id || ! $model->warehouse_id || ! $model->supplier_id)) {
+                $purchase = Purchase::query()
+                    ->select(['id', 'branch_id', 'warehouse_id', 'supplier_id'])
+                    ->find($model->purchase_id);
+
+                if ($purchase) {
+                    $model->branch_id = $model->branch_id ?: $purchase->branch_id;
+                    $model->supplier_id = $model->supplier_id ?: $purchase->supplier_id;
+                    $model->warehouse_id = $model->warehouse_id ?: $purchase->warehouse_id;
+                }
+            }
+
+            // Warehouse is NOT nullable in schema; pick a safe default if still empty.
+            if (! $model->warehouse_id && $model->branch_id) {
+                $fallbackWarehouseId = Warehouse::query()
+                    ->where('branch_id', $model->branch_id)
+                    ->value('id');
+
+                if ($fallbackWarehouseId) {
+                    $model->warehouse_id = $fallbackWarehouseId;
+                }
+            }
+
             if (! $model->reference_number) {
                 $model->reference_number = static::generateReferenceNumber();
+            }
+
+            if (! $model->received_date) {
+                $model->received_date = today();
+            }
+
+            if (! $model->received_by && auth()->check()) {
+                $model->received_by = auth()->id();
             }
         });
     }
@@ -110,33 +159,22 @@ class GoodsReceivedNote extends BaseModel
         return $this->hasMany(GRNItem::class, 'grn_id');
     }
 
-    // Backward compatibility accessor
-    public function getCodeAttribute()
-    {
-        return $this->reference_number;
-    }
-
-    public function getDeliveryNoteNoAttribute()
-    {
-        return $this->supplier_delivery_note;
-    }
-
     // Scopes
     public function scopePendingInspection(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'inspecting');
+        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_INSPECTING]);
     }
 
     public function scopeApproved(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'completed');
+        return $query->whereIn('status', [self::STATUS_APPROVED, self::STATUS_COMPLETE]);
     }
 
     // Business Logic
     public function approve(int $approvedBy): void
     {
         $this->update([
-            'status' => 'completed',
+            'status' => self::STATUS_APPROVED,
             'inspected_by' => $approvedBy,
             'inspected_at' => now(),
         ]);
@@ -145,16 +183,16 @@ class GoodsReceivedNote extends BaseModel
     public function reject(int $rejectedBy, string $reason): void
     {
         $this->update([
-            'status' => 'rejected',
+            'status' => self::STATUS_REJECTED,
             'inspected_by' => $rejectedBy,
             'inspected_at' => now(),
-            'notes' => $reason,
+            'rejection_reason' => $reason,
         ]);
     }
 
     public function canBeApproved(): bool
     {
-        return in_array($this->status, ['pending', 'inspecting']);
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_INSPECTING], true);
     }
 
     public function getTotalQuantityReceived(): float

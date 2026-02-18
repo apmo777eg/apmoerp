@@ -48,11 +48,11 @@ class Index extends Component
     {
         return [
             'created_at',
-            'order_number',
+            'reference_number',
             'status',
             'priority',
-            'quantity_planned',
-            'quantity_produced',
+            'planned_quantity',
+            'produced_quantity',
         ];
     }
 
@@ -80,8 +80,8 @@ class Index extends Component
                 'total_orders' => (clone $baseQuery)->count(),
                 'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
                 'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
-                'planned_quantity' => (clone $baseQuery)->sum('quantity_planned'),
-                'produced_quantity' => (clone $baseQuery)->sum('quantity_produced'),
+                'planned_quantity' => (clone $baseQuery)->sum('planned_quantity'),
+                'produced_quantity' => (clone $baseQuery)->sum('produced_quantity'),
             ];
         });
     }
@@ -95,7 +95,7 @@ class Index extends Component
             ->with(['product', 'bom', 'warehouse', 'branch'])
             ->when($user && $user->branch_id, fn ($q) => $q->where('branch_id', $user->branch_id))
             ->when($this->search, fn ($q) => $q->where(function ($query) {
-                $query->where('order_number', 'like', "%{$this->search}%")
+                $query->where('reference_number', 'like', "%{$this->search}%")
                     ->orWhereHas('product', fn ($p) => $p->where('name', 'like', "%{$this->search}%"))
                     ->orWhereHas('bom', fn ($b) => $b->where('name', 'like', "%{$this->search}%"));
             }))

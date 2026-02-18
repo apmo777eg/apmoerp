@@ -25,8 +25,6 @@ class Tasks extends Component
 
     public ?int $editingTaskId = null;
 
-    public array $form = [];
-
     // Form fields
     public string $title = '';
 
@@ -123,12 +121,16 @@ class Tasks extends Component
         $this->authorize('projects.tasks.manage');
         $this->resetForm();
         $this->editingTask = null;
+        $this->editingTaskId = null;
+        $this->showModal = true;
     }
 
     public function editTask(int $id): void
     {
         $this->authorize('projects.tasks.manage');
         $this->editingTask = $this->project->tasks()->findOrFail($id);
+        $this->editingTaskId = $id;
+        $this->showModal = true;
         $this->fill($this->editingTask->only([
             'title', 'description', 'assigned_to', 'parent_task_id',
             'priority', 'status', 'start_date', 'due_date',
@@ -138,6 +140,33 @@ class Tasks extends Component
             ->dependencies()
             ->pluck('project_tasks.id')
             ->toArray();
+    }
+
+    public function closeModal(): void
+    {
+        $this->showModal = false;
+        $this->editingTask = null;
+        $this->editingTaskId = null;
+        $this->resetForm();
+    }
+
+    public function toggleStatus(int $id): void
+    {
+        $this->authorize('projects.tasks.manage');
+
+        $task = $this->project->tasks()->findOrFail($id);
+
+        if ($task->status === 'completed') {
+            $task->update([
+                'status' => 'pending',
+                'progress' => 0,
+            ]);
+        } else {
+            $task->update([
+                'status' => 'completed',
+                'progress' => 100,
+            ]);
+        }
     }
 
     public function save(): void
@@ -166,8 +195,7 @@ class Tasks extends Component
         $task->dependencies()->sync($this->selectedDependencies);
 
         session()->flash('success', __('Task saved successfully'));
-        $this->resetForm();
-        $this->editingTask = null;
+        $this->closeModal();
     }
 
     public function deleteTask(int $id): void

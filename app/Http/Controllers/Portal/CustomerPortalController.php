@@ -170,7 +170,7 @@ class CustomerPortalController extends Controller
         // Generate PDF using existing print service
         $printService = app(\App\Services\Print\PrintService::class);
         $html = $printService->renderInvoice([
-            'invoice_number' => $order->code,
+            'invoice_number' => $order->reference_number,
             'invoice_date' => $order->created_at->format('Y-m-d'),
             'customer' => [
                 'name' => $customer->name,
@@ -184,10 +184,10 @@ class CustomerPortalController extends Controller
                 'price' => $item->unit_price,
                 'total' => $item->line_total,
             ])->toArray(),
-            'subtotal' => $order->sub_total,
-            'tax' => $order->tax_total,
-            'discount' => $order->discount_total,
-            'total' => $order->grand_total,
+            'subtotal' => $order->subtotal,
+            'tax' => $order->tax_amount,
+            'discount' => $order->discount_amount,
+            'total' => $order->total_amount,
             'status' => $order->status,
         ]);
 
