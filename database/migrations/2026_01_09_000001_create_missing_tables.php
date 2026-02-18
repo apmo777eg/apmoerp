@@ -209,33 +209,14 @@ return new class extends Migration
             $table->index('product_id', 'idx_quotei_product_id');
         });
 
-        // Update purchase_requisitions to have proper FK for departments and cost_centers
-        // Note: department_id is currently string, we need to update validation rules instead
-        // The existing column is varchar(50), so we'll add new nullable FK columns
-        Schema::table('purchase_requisitions', function (Blueprint $table) {
-            $table->foreignId('department_id_fk')
-                ->nullable()
-                ->after('department_id')
-                ->constrained('departments')
-                ->nullOnDelete()
-                ->name('fk_prreq_dept__dept');
-            $table->foreignId('cost_center_id')
-                ->nullable()
-                ->after('department_id_fk')
-                ->constrained('cost_centers')
-                ->nullOnDelete()
-                ->name('fk_prreq_cc__cc');
-        });
+        // Note:
+        // purchase_requisitions is already fully defined DB-first in 2026_01_04_000002_create_purchases_tables.php
+        // (department_id + cost_center_id are proper FKs there). We intentionally avoid altering it here
+        // to keep the schema clean and avoid redundant columns.
     }
 
     public function down(): void
     {
-        Schema::table('purchase_requisitions', function (Blueprint $table) {
-            $table->dropForeign('fk_prreq_dept__dept');
-            $table->dropForeign('fk_prreq_cc__cc');
-            $table->dropColumn(['department_id_fk', 'cost_center_id']);
-        });
-
         Schema::table('quotes', function (Blueprint $table) {
             $table->dropForeign('fk_quote_converted_to_sale__sale');
         });
@@ -246,7 +227,5 @@ return new class extends Migration
         Schema::dropIfExists('wood_conversions');
         Schema::dropIfExists('product_compatibility');
         Schema::dropIfExists('report_schedules');
-        Schema::dropIfExists('cost_centers');
-        Schema::dropIfExists('departments');
     }
 };
