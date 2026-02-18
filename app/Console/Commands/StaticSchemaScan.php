@@ -7,22 +7,6 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
-/**
- * StaticSchemaScan
- *
- * Best-effort static scan to catch common "unknown column" bugs before runtime.
- *
- * - Parses database/migrations for Schema::create(...) AND Schema::table(...).
- * - Scans app/**/*.php for common builder calls.
- * - Reports referenced columns that don't exist in parsed schema.
- *
- * False-positive controls:
- * - For where/orderBy/...: only if FIRST argument is a quoted string literal.
- * - For select/addSelect/groupBy: only captures "direct arguments" and array values,
- *   skips arrow-fn return strings and associative array keys.
- * - Ignores dotted columns and JSON paths.
- * - Treats raw aliases / withCount & aggregates aliases / selectSub aliases as known.
- */
 class StaticSchemaScan extends Command
 {
     protected $signature = 'db:static-scan
