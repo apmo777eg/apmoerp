@@ -101,7 +101,8 @@ class GlobalSearchService
         ],
         'sales' => [
             'model' => Sale::class,
-            'title' => ['code'],
+            // Sales table is DB-first and uses reference_number as the canonical identifier
+            'title' => ['reference_number'],
             'content' => ['notes'],
             'icon' => '💵',
             'route' => 'sales.show',
@@ -110,7 +111,8 @@ class GlobalSearchService
         ],
         'purchases' => [
             'model' => Purchase::class,
-            'title' => ['code'],
+            // Purchases table is DB-first and uses reference_number as the canonical identifier
+            'title' => ['reference_number'],
             'content' => ['notes'],
             'icon' => '🛒',
             'route' => 'purchases.show',

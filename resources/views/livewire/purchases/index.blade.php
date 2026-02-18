@@ -128,9 +128,9 @@
             <table class="erp-table">
                 <thead>
                     <tr>
-                        <th wire:click="sortBy('code')" class="cursor-pointer hover:bg-slate-100">
+                        <th wire:click="sortBy('reference_number')" class="cursor-pointer hover:bg-slate-100">
                             {{ __('Code') }}
-                            @if($sortField === 'code')
+                            @if($sortField === 'reference_number')
                                 <span class="ms-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>

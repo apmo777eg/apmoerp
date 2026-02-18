@@ -57,6 +57,8 @@ class Form extends Component
 
     protected function rules(): array
     {
+        $branchId = auth()->user()?->branch_id;
+
         $rules = [
             'name' => 'required|string|max:255',
             'type' => 'required|in:main,secondary,virtual',
@@ -66,9 +68,9 @@ class Form extends Component
         ];
 
         if ($this->warehouseId) {
-            $rules['code'] = 'required|string|max:50|unique:warehouses,code,'.$this->warehouseId;
+            $rules['code'] = 'required|string|max:50|unique:warehouses,code,'.$this->warehouseId.',id'.($branchId ? ',branch_id,'.$branchId : '');
         } else {
-            $rules['code'] = 'nullable|string|max:50|unique:warehouses,code';
+            $rules['code'] = 'nullable|string|max:50|unique:warehouses,code,NULL,id'.($branchId ? ',branch_id,'.$branchId : '');
         }
 
         return $rules;

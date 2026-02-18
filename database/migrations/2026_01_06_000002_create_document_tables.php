@@ -174,6 +174,10 @@ return new class extends Migration
             $table->string('original_filename', 255)->nullable();
             $table->unsignedInteger('size')->nullable();
             $table->string('type', 50)->nullable();
+            // Storage info (required by NotesAttachments + DownloadController)
+            $table->string('disk', 50)->default('local');
+            $table->string('path', 500)->nullable();
+            $table->string('mime_type', 100)->nullable();
             $table->text('description')->nullable();
             $table->json('metadata')->nullable();
             $table->foreignId('branch_id')
@@ -191,6 +195,7 @@ return new class extends Migration
 
             $table->index(['attachable_type', 'attachable_id'], 'idx_attach_attachable');
             $table->index('branch_id', 'idx_attach_branch_id');
+            $table->index('mime_type', 'idx_attach_mime_type');
         });
 
         // Media

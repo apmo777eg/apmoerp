@@ -90,7 +90,7 @@ class LeaveEncashment extends Model
 
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(HrEmployee::class);
+        return $this->belongsTo(HREmployee::class, 'employee_id');
     }
 
     public function leaveType(): BelongsTo

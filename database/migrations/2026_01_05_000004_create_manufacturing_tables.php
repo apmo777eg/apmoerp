@@ -204,6 +204,8 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete()
                 ->name('fk_prodord_approved_by__usr');
+            // Align with ProductionOrder model (approved_at is used in business workflows)
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -233,13 +235,15 @@ return new class extends Migration
                 ->name('fk_prodordi_product__prd');
             $table->decimal('quantity_required', 18, 4);
             $table->decimal('quantity_consumed', 18, 4)->default(0);
+            // Align with ProductionOrderItem model
+            $table->decimal('quantity_issued', 18, 4)->default(0);
             $table->foreignId('unit_id')
                 ->nullable()
                 ->constrained('units_of_measure')
                 ->nullOnDelete()
                 ->name('fk_prodordi_unit__uom');
-            $table->decimal('unit_cost', 18, 2)->default(0);
-            $table->decimal('total_cost', 18, 2)->default(0);
+            $table->decimal('unit_cost', 18, 4)->default(0);
+            $table->decimal('total_cost', 18, 4)->default(0);
             $table->foreignId('warehouse_id')
                 ->nullable()
                 ->constrained('warehouses')
@@ -247,6 +251,20 @@ return new class extends Migration
                 ->name('fk_prodordi_warehouse__wh');
             $table->boolean('is_issued')->default(false);
             $table->timestamp('issued_at')->nullable();
+            $table->foreignId('issued_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_prodordi_issued_by__usr');
+            $table->boolean('is_returned')->default(false);
+            $table->timestamp('returned_at')->nullable();
+            $table->foreignId('returned_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete()
+                ->name('fk_prodordi_returned_by__usr');
+            $table->text('notes')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

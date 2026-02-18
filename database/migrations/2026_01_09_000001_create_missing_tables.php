@@ -209,10 +209,6 @@ return new class extends Migration
             $table->index('product_id', 'idx_quotei_product_id');
         });
 
-        // Note:
-        // purchase_requisitions is already fully defined DB-first in 2026_01_04_000002_create_purchases_tables.php
-        // (department_id + cost_center_id are proper FKs there). We intentionally avoid altering it here
-        // to keep the schema clean and avoid redundant columns.
     }
 
     public function down(): void

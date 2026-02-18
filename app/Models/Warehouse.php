@@ -30,9 +30,12 @@ class Warehouse extends BaseModel
         'manager_id',
         'is_active',
         'status',
+        'notes',
         'is_default',
         'allow_negative_stock',
         'settings',
+        'created_by',
+        'updated_by',
         // For BaseModel compatibility
         'extra_attributes',
     ];
@@ -100,12 +103,6 @@ class Warehouse extends BaseModel
     public function scopeSearch(Builder $query, $t): Builder
     {
         return $query->where(fn ($q) => $q->where('name', 'like', "%$t%")->orWhere('code', 'like', "%$t%"));
-    }
-
-    // Backward compatibility accessor
-    public function getStatusAttribute(): string
-    {
-        return $this->is_active ? 'active' : 'inactive';
     }
 
     public function setStatusAttribute($value): void

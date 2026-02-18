@@ -271,8 +271,9 @@ class StockReorderService
                     'branch_id' => $branchId,
                     'status' => 'pending',
                     'priority' => 'high',
-                    'requisition_date' => now(),
-                    'required_by_date' => now()->addDays(7),
+                    // Canonical column is required_date (see purchase_requisitions migration/model)
+                    // Creation time is tracked by created_at.
+                    'required_date' => now()->addDays(7)->toDateString(),
                     'notes' => 'Auto-generated requisition for low stock items',
                     'created_by' => $userId,
                 ]);

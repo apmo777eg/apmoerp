@@ -275,26 +275,26 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->name('fk_lvbal_type__lvtyp');
             $table->unsignedSmallInteger('year');
-            // NEW-005 FIX: Added columns for enhanced balance tracking
+            // Canonical balance tracking (DB-first, no alias columns)
             $table->decimal('opening_balance', 5, 2)->default(0);
             $table->decimal('annual_quota', 5, 2)->default(0);
             $table->decimal('accrued', 5, 2)->default(0);
             $table->decimal('used', 5, 2)->default(0);
             $table->decimal('pending', 5, 2)->default(0);
-            $table->decimal('available', 5, 2)->default(0);
-            $table->decimal('carry_forward_from_previous', 5, 2)->default(0);
-            $table->date('carry_forward_expiry_date')->nullable();
-            // Original columns
-            $table->decimal('entitled_days', 5, 2)->default(0);
+
+            // Manual adjustments / encashments
+            $table->decimal('adjusted', 5, 2)->default(0);
+            $table->decimal('encashed', 5, 2)->default(0);
+
+            // Stored computed balance values
+            $table->decimal('available_balance', 5, 2)->default(0);
             $table->decimal('carried_forward', 5, 2)->default(0);
-            $table->decimal('accrued_days', 5, 2)->default(0);
-            $table->decimal('used_days', 5, 2)->default(0);
-            $table->decimal('pending_days', 5, 2)->default(0);
-            $table->decimal('encashed_days', 5, 2)->default(0);
-            $table->decimal('expired_days', 5, 2)->default(0);
-            $table->decimal('remaining_days', 5, 2)->default(0);
+
+            // Carry forward expiry (if leave type has expiry rules)
+            $table->date('expires_at')->nullable();
+
             $table->date('last_accrual_date')->nullable();
-            $table->text('notes')->nullable(); // NEW-005 FIX
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->unique(['employee_id', 'leave_type_id', 'year'], 'uq_lvbal_emp_type_year');

@@ -34,6 +34,9 @@ class Purchase extends BaseModel
         'supplier_invoice',
         'type',
         'channel',
+        'shipping_method',
+        'supplier_notes',
+        'internal_notes',
         'status',
         'payment_status',
         // Dates

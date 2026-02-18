@@ -273,6 +273,10 @@ return new class extends Migration
             $table->string('supplier_invoice', 100)->nullable();
             $table->string('type', 30)->default('purchase_order'); // purchase_order, return
             $table->string('channel', 30)->nullable();
+            // Logistics / communication (used by UI + API)
+            $table->string('shipping_method', 191)->nullable();
+            $table->text('supplier_notes')->nullable();
+            $table->text('internal_notes')->nullable();
             $table->string('status', 30)->default('draft'); // draft, pending, confirmed, received, completed, cancelled
             $table->string('payment_status', 30)->default('unpaid'); // unpaid, partial, paid
             // Dates

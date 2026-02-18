@@ -59,6 +59,15 @@ class PurchaseService implements PurchaseServiceInterface
                     'supplier_id' => $payload['supplier_id'] ?? null,
                     'status' => 'draft',
                     'purchase_date' => now()->toDateString(),
+                    'reference_number' => $payload['reference_number'] ?? $payload['reference_no'] ?? null,
+                    'currency' => $payload['currency'] ?? 'USD',
+                    'exchange_rate' => decimal_float($payload['exchange_rate'] ?? 1),
+                    'expected_date' => $payload['expected_date'] ?? null,
+                    'due_date' => $payload['due_date'] ?? null,
+                    'shipping_method' => $payload['shipping_method'] ?? null,
+                    'notes' => $payload['notes'] ?? null,
+                    'supplier_notes' => $payload['supplier_notes'] ?? null,
+                    'internal_notes' => $payload['internal_notes'] ?? null,
                     // Use correct migration column names
                     'subtotal' => 0, 'tax_amount' => 0, 'discount_amount' => 0, 'total_amount' => 0,
                     'paid_amount' => 0,
@@ -117,6 +126,7 @@ class PurchaseService implements PurchaseServiceInterface
 
                     PurchaseItem::create([
                         'purchase_id' => $p->getKey(),
+                        'branch_id' => $branchId,
                         'product_id' => $it['product_id'],
                         'product_name' => $product?->name ?? '',
                         'sku' => $product?->sku ?? null,
@@ -132,12 +142,13 @@ class PurchaseService implements PurchaseServiceInterface
 
                 // FIX U-04: Compute total_amount correctly with tax/shipping/discount
                 // Get header-level shipping if provided
-                $shippingAmount = decimal_float($payload['shipping_amount'] ?? 0);
+                $shippingAmount = decimal_float($payload['shipping_amount'] ?? $payload['shipping_total'] ?? 0);
 
                 // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
                 $p->subtotal = decimal_float(bcround($subtotal, 2));
                 $p->tax_amount = decimal_float(bcround($totalTax, 2));
                 $p->discount_amount = decimal_float(bcround($totalDiscount, 2));
+                $p->shipping_amount = $shippingAmount;
                 
                 // Calculate total_amount = subtotal + tax + shipping - discount
                 // Breaking into intermediate variables for clarity

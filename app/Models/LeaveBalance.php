@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -11,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 
  * Tracks employee leave balances by type and year with accrual tracking.
  */
-class LeaveBalance extends Model
+class LeaveBalance extends BaseModel
 {
     use HasFactory;
 
@@ -24,9 +23,12 @@ class LeaveBalance extends Model
         'accrued',
         'used',
         'pending',
-        'available',
-        'carry_forward_from_previous',
-        'carry_forward_expiry_date',
+        'adjusted',
+        'encashed',
+        'available_balance',
+        'carried_forward',
+        'expires_at',
+        'last_accrual_date',
         'notes',
     ];
 
@@ -37,16 +39,19 @@ class LeaveBalance extends Model
         'accrued' => 'decimal:2',
         'used' => 'decimal:2',
         'pending' => 'decimal:2',
-        'available' => 'decimal:2',
-        'carry_forward_from_previous' => 'decimal:2',
-        'carry_forward_expiry_date' => 'date',
+        'adjusted' => 'decimal:2',
+        'encashed' => 'decimal:2',
+        'available_balance' => 'decimal:2',
+        'carried_forward' => 'decimal:2',
+        'expires_at' => 'date',
+        'last_accrual_date' => 'date',
     ];
 
     // Relationships
 
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(HrEmployee::class);
+        return $this->belongsTo(HREmployee::class, 'employee_id');
     }
 
     public function leaveType(): BelongsTo
@@ -61,7 +66,17 @@ class LeaveBalance extends Model
      */
     public function calculateAvailable(): float
     {
-        return max(0, $this->opening_balance + $this->annual_quota + $this->accrued + $this->carry_forward_from_previous - $this->used - $this->pending);
+        return max(0, (
+            $this->opening_balance
+            + $this->annual_quota
+            + $this->accrued
+            + $this->adjusted
+            + $this->carried_forward
+        ) - (
+            $this->used
+            + $this->pending
+            + $this->encashed
+        ));
     }
 
     /**
@@ -69,7 +84,7 @@ class LeaveBalance extends Model
      */
     public function updateAvailable(): self
     {
-        $this->available = $this->calculateAvailable();
+        $this->available_balance = $this->calculateAvailable();
         $this->save();
         return $this;
     }
@@ -79,7 +94,7 @@ class LeaveBalance extends Model
      */
     public function hasSufficientBalance(float $requestedDays): bool
     {
-        return $this->available >= $requestedDays;
+        return $this->available_balance >= $requestedDays;
     }
 
     /**
@@ -87,9 +102,9 @@ class LeaveBalance extends Model
      */
     public function isCarryForwardExpired(): bool
     {
-        return $this->carry_forward_from_previous > 0 
-            && !is_null($this->carry_forward_expiry_date) 
-            && now()->isAfter($this->carry_forward_expiry_date);
+        return $this->carried_forward > 0
+            && !is_null($this->expires_at)
+            && now()->isAfter($this->expires_at);
     }
 
     /**
@@ -97,7 +112,7 @@ class LeaveBalance extends Model
      */
     public function getTotalBalance(): float
     {
-        return $this->available + $this->pending;
+        return $this->available_balance + $this->pending;
     }
 
     // Scopes
@@ -124,13 +139,13 @@ class LeaveBalance extends Model
 
     public function scopeWithAvailableBalance($query)
     {
-        return $query->where('available', '>', 0);
+        return $query->where('available_balance', '>', 0);
     }
 
     public function scopeExpiredCarryForward($query)
     {
-        return $query->where('carry_forward_from_previous', '>', 0)
-            ->whereNotNull('carry_forward_expiry_date')
-            ->where('carry_forward_expiry_date', '<', now());
+        return $query->where('carried_forward', '>', 0)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now());
     }
 }

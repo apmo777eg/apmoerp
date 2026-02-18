@@ -312,6 +312,7 @@ class Form extends Component
                             'currency' => $this->currency,
                             'notes' => $this->notes,
                             'expected_date' => $this->expected_date ?: null,
+                            'shipping_method' => $this->shipping_method ?: null,
                             'purchase_date' => $purchaseDate,
                             // Use correct migration column names
                             'subtotal' => $this->subTotal,
@@ -319,7 +320,7 @@ class Form extends Component
                             'tax_amount' => $this->taxTotal,
                             'shipping_amount' => $this->shipping_total,
                             'total_amount' => $this->grandTotal,
-                            'paid_amount' => 0,
+                            'paid_amount' => $this->editMode ? decimal_float($this->purchase?->paid_amount ?? 0) : 0,
                             // payment_status handled by updatePaymentStatus()
                         ];
 
@@ -377,6 +378,7 @@ class Form extends Component
 
                             PurchaseItem::create([
                                 'purchase_id' => $purchase->id,
+                                'branch_id' => $branchId,
                                 'product_id' => $item['product_id'],
                                 'product_name' => $product?->name ?? $item['product_name'] ?? '',
                                 'sku' => $product?->sku ?? $item['sku'] ?? null,

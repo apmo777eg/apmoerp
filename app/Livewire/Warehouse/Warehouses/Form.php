@@ -67,9 +67,10 @@ class Form extends Component
         $prefix = 'WH';
         $base = strtoupper(Str::slug(Str::limit($this->name, 10, ''), ''));
 
+        $branchId = auth()->user()?->branch_id;
+
         if (empty($base)) {
             // V8-HIGH-N02 FIX: Use lockForUpdate and filter by branch to prevent race condition
-            $branchId = auth()->user()?->branch_id;
             $lastWarehouse = Warehouse::when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()
                 ->orderBy('id', 'desc')
@@ -82,7 +83,11 @@ class Form extends Component
         $code = $prefix.'-'.$base;
         $counter = 1;
 
-        while (Warehouse::where('code', $code)->where('id', '!=', $this->warehouseId)->exists()) {
+        while (Warehouse::query()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->where('code', $code)
+            ->where('id', '!=', $this->warehouseId)
+            ->exists()) {
             // V30-HIGH-04 FIX: Keep consistent format with `-` separator
             $code = $prefix.'-'.$base.$counter;
             $counter++;
@@ -93,10 +98,13 @@ class Form extends Component
 
     protected function rules(): array
     {
-        // V30-MED-05 FIX: Add unique validation for warehouse code
+        // Unique per-branch (matches uq_wh_branch_code)
+        $branchId = auth()->user()?->branch_id;
+
+        $uniqueRule = 'unique:warehouses,code'.($this->warehouseId ? ','.$this->warehouseId : '').',id'.($branchId ? ',branch_id,'.$branchId : '');
         return [
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:warehouses,code'.($this->warehouseId ? ','.$this->warehouseId : ''),
+            'code' => 'nullable|string|max:50|'.$uniqueRule,
             'type' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
             'address' => 'nullable|string|max:500',
