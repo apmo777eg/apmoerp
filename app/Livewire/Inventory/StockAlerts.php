@@ -7,7 +7,7 @@ namespace App\Livewire\Inventory;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

@@ -6,8 +6,7 @@ namespace App\Livewire\Auth;
 
 use App\Services\AuthService;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.guest')]
 class ForgotPassword extends Component
 {

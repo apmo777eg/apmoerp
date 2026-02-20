@@ -9,8 +9,7 @@ use App\Models\Sale;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use App\Enums\SaleStatus;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class PosChartsDashboard extends Component
 {
     public ?string $dateFrom = null;

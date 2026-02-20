@@ -391,7 +391,7 @@ function initStoreOrdersCharts(data = {}) {
         data: {
             labels: bySource.labels,
             datasets: [{
-                label: '{{ __('Revenue') }}',
+	            label: @js(__('Revenue')),
                 data: bySource.values,
             }],
         },
@@ -410,7 +410,7 @@ function initStoreOrdersCharts(data = {}) {
         data: {
             labels: byDay.labels,
             datasets: [{
-                label: '{{ __('Revenue') }}',
+	            label: @js(__('Revenue')),
                 data: byDay.values,
                 tension: 0.3,
             }],

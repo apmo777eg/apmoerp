@@ -14,7 +14,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     @foreach($this->entities as $key => $entity)
                         <button type="button"
-                            wire:click="$set('entityType', '{{ $key }}')"
+                            wire:click="$set('entityType', @js($key))"
                             class="p-4 rounded-xl border-2 transition-all text-start {{ $entityType === $key ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300' }}"
                         >
                             <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $entity['name'] }}</span>

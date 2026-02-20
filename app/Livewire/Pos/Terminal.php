@@ -11,8 +11,7 @@ use App\Services\BranchContextManager;
 use App\Services\CurrencyService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Terminal extends Component
 {

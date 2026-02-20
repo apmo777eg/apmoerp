@@ -10,7 +10,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class ModuleManager extends Component

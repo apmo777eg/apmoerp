@@ -8,8 +8,7 @@ use App\Http\Requests\Traits\HasMultilingualValidation;
 use App\Models\TicketPriority;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use AuthorizesRequests;

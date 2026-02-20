@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 class Form extends Component
@@ -96,7 +96,12 @@ class Form extends Component
         $this->availableCurrencies = Currency::active()->ordered()->get(['code', 'name', 'symbol'])->toArray();
 
         $this->categories = \App\Models\ProductCategory::active()->orderBy('name')->get(['id', 'name'])->toArray();
-        $this->units = \App\Models\UnitOfMeasure::active()->orderBy('name')->get(['id', 'name', 'symbol'])->toArray();
+	    // Only show units that support inventory items/products (see UI note in the form).
+	    $this->units = \App\Models\UnitOfMeasure::active()
+	        ->forProducts()
+	        ->orderBy('name')
+	        ->get(['id', 'name', 'symbol'])
+	        ->toArray();
 
         // Set default currency from base currency
         $baseCurrency = Currency::getBaseCurrency();

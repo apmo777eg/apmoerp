@@ -7,7 +7,7 @@ namespace App\Livewire\Inventory;
 use App\Models\VehicleModel;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class VehicleModels extends Component

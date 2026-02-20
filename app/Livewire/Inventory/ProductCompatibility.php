@@ -11,7 +11,7 @@ use App\Services\SparePartsService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class ProductCompatibility extends Component

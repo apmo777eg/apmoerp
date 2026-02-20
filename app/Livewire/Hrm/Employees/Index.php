@@ -8,7 +8,7 @@ use App\Models\HREmployee;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class Index extends Component

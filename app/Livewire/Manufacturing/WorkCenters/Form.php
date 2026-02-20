@@ -9,8 +9,7 @@ use App\Models\WorkCenter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use AuthorizesRequests;

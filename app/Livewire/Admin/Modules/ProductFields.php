@@ -8,7 +8,7 @@ use App\Models\Module;
 use App\Models\ModuleProductField;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 #[Layout('layouts.app')]

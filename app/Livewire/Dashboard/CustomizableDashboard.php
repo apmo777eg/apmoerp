@@ -9,8 +9,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use App\Enums\SaleStatus;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Customizable Dashboard with Drag-and-Drop Widget System
  *

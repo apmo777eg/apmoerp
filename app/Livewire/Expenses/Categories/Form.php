@@ -9,8 +9,7 @@ use App\Models\ExpenseCategory;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Form extends Component
 {

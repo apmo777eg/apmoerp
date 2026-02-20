@@ -5,8 +5,7 @@ namespace App\Livewire\Admin\Export;
 use App\Models\ExportLayout;
 use App\Services\ExportService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class CustomizeExport extends Component
 {
     use AuthorizesRequests;

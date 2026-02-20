@@ -60,7 +60,7 @@
             <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors
                 {{ $checklist[$key] ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 hover:border-slate-300' }}">
                 <input type="checkbox" 
-                       wire:click="updateChecklistItem('{{ $key }}', {{ json_encode(!$checklist[$key]) }})"
+                       wire:click="updateChecklistItem(@js($key), @js(! $checklist[$key]))"
                        {{ $checklist[$key] ? 'checked' : '' }}
                        class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                 <span class="text-sm font-medium text-slate-700">{{ $label }}</span>

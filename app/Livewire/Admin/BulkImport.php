@@ -8,7 +8,7 @@ use App\Services\ImportService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 class BulkImport extends Component

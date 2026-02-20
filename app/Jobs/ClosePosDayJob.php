@@ -30,7 +30,7 @@ class ClosePosDayJob implements ShouldQueue
 
         // V22-MED-05 FIX: If no branchId is provided, process all active branches
         if ($this->branchId === null) {
-            $activeBranches = Branch::withoutGlobalScopes()
+            $activeBranches = Branch::query()
                 ->where('is_active', true)
                 ->pluck('id');
 

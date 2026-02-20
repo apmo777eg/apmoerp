@@ -9,8 +9,7 @@ use App\Models\Product;
 use App\Services\StockService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class InventoryChartsDashboard extends Component
 {
     public ?int $branchId = null;

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Spatie\Permission\Models\Role as WebRole;
 
 #[Layout('layouts.app')]

@@ -6,8 +6,7 @@ namespace App\Livewire\Components;
 
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class NotificationsCenter extends Component
 {
     public int $unreadCount = 0;

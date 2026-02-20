@@ -10,7 +10,7 @@ use App\Models\SalePayment;
 use App\Services\BranchAccessService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Enums\SaleStatus;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class DailyReport extends Component

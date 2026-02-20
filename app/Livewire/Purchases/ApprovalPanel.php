@@ -9,8 +9,7 @@ use App\Models\WorkflowApproval;
 use App\Models\WorkflowInstance;
 use App\Services\WorkflowService;
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Purchase Approval Panel Component
  *

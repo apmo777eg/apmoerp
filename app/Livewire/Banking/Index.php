@@ -6,8 +6,7 @@ namespace App\Livewire\Banking;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Index extends Component
 {

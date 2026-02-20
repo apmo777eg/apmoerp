@@ -8,8 +8,7 @@ use App\Livewire\Concerns\AuthorizesWithFriendlyErrors;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Show extends Component
 {
     use AuthorizesWithFriendlyErrors;

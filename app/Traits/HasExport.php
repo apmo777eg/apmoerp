@@ -57,7 +57,9 @@ trait HasExport
     protected function performExport(string $entityType, $data, string $title = 'Export')
     {
         if (empty($this->selectedExportColumns)) {
-            session()->flash('error', __('Please select at least one column'));
+            // UX: Livewire actions should always show feedback.
+            // Session flash messages do not appear on partial Livewire updates.
+            $this->dispatch('notify', type: 'error', message: __('Please select at least one column'));
 
             return null;
         }
@@ -133,7 +135,8 @@ trait HasExport
             // Use JavaScript to trigger download via a dedicated route
             $this->dispatch('trigger-download', url: route('download.export'));
 
-            session()->flash('success', __('Export prepared. Download starting...'));
+            // UX: Explicit feedback
+            $this->dispatch('notify', type: 'success', message: __('Export prepared. Download starting...'));
         } catch (\Throwable $e) {
             logger()->error('Export failed', [
                 'entity_type' => $entityType,
@@ -141,7 +144,7 @@ trait HasExport
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            session()->flash('error', __('Export failed: ').$e->getMessage());
+            $this->dispatch('notify', type: 'error', message: __('Export failed: ').$e->getMessage());
             $this->closeExportModal();
 
             return null;

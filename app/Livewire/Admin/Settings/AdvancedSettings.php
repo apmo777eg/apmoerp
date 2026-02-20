@@ -7,7 +7,7 @@ namespace App\Livewire\Admin\Settings;
 use App\Services\SettingsService;
 use App\Services\Sms\SmsManager;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AdvancedSettings extends Component

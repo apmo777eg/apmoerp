@@ -7,8 +7,7 @@ namespace App\Livewire\Shared;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Onboarding Guide Component
  *

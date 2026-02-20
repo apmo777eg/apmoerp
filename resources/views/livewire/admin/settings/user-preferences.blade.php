@@ -118,7 +118,7 @@
             <div class="grid grid-cols-2 gap-3">
                 @foreach($availableWidgets as $key => $label)
                 <label class="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition {{ ($dashboard_widgets[$key] ?? false) ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : '' }}">
-                    <input type="checkbox" wire:click="toggleWidget('{{ $key }}')" 
+                    <input type="checkbox" wire:click="toggleWidget(@js($key))" 
                         @checked($dashboard_widgets[$key] ?? false) 
                         class="rounded border-gray-300 text-emerald-600">
                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $label }}</span>

@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Pos;
 
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class HoldList extends Component
 {
     public array $holds = [];

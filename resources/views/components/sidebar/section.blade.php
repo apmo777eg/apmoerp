@@ -36,13 +36,13 @@
 @if($canView)
 <div x-data="{ 
     open: (() => {
-        const stored = localStorage.getItem('{{ $storageKey }}');
+        const stored = localStorage.getItem(@js($storageKey));
         if (stored !== null) return stored === 'true';
         return {{ $hasActiveChild ? 'true' : 'false' }};
     })(),
     hasActive: {{ $hasActiveChild ? 'true' : 'false' }}
 }" 
-x-init="$watch('open', value => localStorage.setItem('{{ $storageKey }}', value))"
+x-init="$watch('open', value => localStorage.setItem(@js($storageKey), value))"
 class="space-y-1">
     <button type="button" 
         @click="open = !open"

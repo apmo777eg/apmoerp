@@ -101,7 +101,7 @@
                                     @endif
                                     @if(!$notification['read'])
                                         <button type="button" 
-                                            wire:click="markAsRead('{{ $notification['id'] }}')"
+                                            wire:click="markAsRead(@js($notification['id']))"
                                             class="text-xs text-slate-500 hover:text-slate-700"
                                         >
                                             {{ __('Mark as read') }}

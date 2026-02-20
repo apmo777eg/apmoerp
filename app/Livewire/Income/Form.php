@@ -10,7 +10,7 @@ use App\Models\IncomeCategory;
 use App\Services\BranchAccessService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 class Form extends Component

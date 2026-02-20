@@ -5,8 +5,7 @@ namespace App\Livewire\Hrm\Reports;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Dashboard extends Component
 {
     public array $filters = [

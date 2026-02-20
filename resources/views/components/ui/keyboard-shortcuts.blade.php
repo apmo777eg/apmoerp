@@ -3,38 +3,38 @@
         open: false,
         shortcuts: [
             { 
-                category: '{{ __('Navigation') }}',
+	                category: @js(__('Navigation')),
                 items: [
-                    { keys: ['Ctrl', 'K'], description: '{{ __('Search') }}' },
-                    { keys: ['Ctrl', 'B'], description: '{{ __('Toggle Sidebar') }}' },
-                    { keys: ['Ctrl', 'H'], description: '{{ __('Go to Dashboard') }}' },
-                    { keys: ['Ctrl', 'N'], description: '{{ __('New Item') }}' },
+	                    { keys: ['Ctrl', 'K'], description: @js(__('Search')) },
+	                    { keys: ['Ctrl', 'B'], description: @js(__('Toggle Sidebar')) },
+	                    { keys: ['Ctrl', 'H'], description: @js(__('Go to Dashboard')) },
+	                    { keys: ['Ctrl', 'N'], description: @js(__('New Item')) },
                 ]
             },
             { 
-                category: '{{ __('Actions') }}',
+	                category: @js(__('Actions')),
                 items: [
-                    { keys: ['Ctrl', 'S'], description: '{{ __('Save') }}' },
-                    { keys: ['Ctrl', 'E'], description: '{{ __('Edit') }}' },
-                    { keys: ['Ctrl', 'D'], description: '{{ __('Delete') }}' },
-                    { keys: ['Esc'], description: '{{ __('Close Modal') }}' },
+	                    { keys: ['Ctrl', 'S'], description: @js(__('Save')) },
+	                    { keys: ['Ctrl', 'E'], description: @js(__('Edit')) },
+	                    { keys: ['Ctrl', 'D'], description: @js(__('Delete')) },
+	                    { keys: ['Esc'], description: @js(__('Close Modal')) },
                 ]
             },
             { 
-                category: '{{ __('POS') }}',
+	                category: @js(__('POS')),
                 items: [
-                    { keys: ['F1'], description: '{{ __('Open POS') }}' },
-                    { keys: ['F2'], description: '{{ __('Hold Sale') }}' },
-                    { keys: ['F3'], description: '{{ __('Recall Hold') }}' },
-                    { keys: ['F4'], description: '{{ __('Complete Sale') }}' },
+	                    { keys: ['F1'], description: @js(__('Open POS')) },
+	                    { keys: ['F2'], description: @js(__('Hold Sale')) },
+	                    { keys: ['F3'], description: @js(__('Recall Hold')) },
+	                    { keys: ['F4'], description: @js(__('Complete Sale')) },
                 ]
             },
             { 
-                category: '{{ __('List Operations') }}',
+	                category: @js(__('List Operations')),
                 items: [
-                    { keys: ['Ctrl', 'A'], description: '{{ __('Select All') }}' },
-                    { keys: ['Ctrl', 'F'], description: '{{ __('Filter') }}' },
-                    { keys: ['Ctrl', 'P'], description: '{{ __('Print') }}' },
+	                    { keys: ['Ctrl', 'A'], description: @js(__('Select All')) },
+	                    { keys: ['Ctrl', 'F'], description: @js(__('Filter')) },
+	                    { keys: ['Ctrl', 'P'], description: @js(__('Print')) },
                 ]
             },
         ]

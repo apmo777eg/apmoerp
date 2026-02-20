@@ -459,8 +459,8 @@ function initDashboardCharts() {
             type: 'line',
             data: {
                 labels: @json($salesChartData['labels'] ?? []),
-                datasets: [{
-                    label: '{{ __("Sales") }}',
+	                datasets: [{
+	                    label: @js(__('Sales')),
                     data: @json($salesChartData['data'] ?? []),
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -503,7 +503,7 @@ function initDashboardCharts() {
         window.__lwCharts[componentId + ':inventory'] = new Chart(inventoryCtx.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['{{ __("In Stock") }}', '{{ __("Low Stock") }}', '{{ __("Out of Stock") }}'],
+	                labels: [@js(__('In Stock')), @js(__('Low Stock')), @js(__('Out of Stock'))],
                 datasets: [{
                     data: @json($inventoryChartData['data'] ?? [0, 0, 0]),
                     backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],

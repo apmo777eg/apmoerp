@@ -7,8 +7,7 @@ namespace App\Livewire\Inventory;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class BarcodePrint extends Component
 {

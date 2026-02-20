@@ -77,12 +77,17 @@ class Store extends BaseModel
         return $this->type === self::TYPE_LARAVEL;
     }
 
-    public function generateApiToken(string $name, array $abilities = ['*']): StoreToken
+    public function generateApiToken(string $name, array $abilities = ['*'], ?\DateTimeInterface $expiresAt = null): StoreToken
     {
         return $this->tokens()->create([
+            // Store tokens are branch-owned. Always stamp the store's branch_id
+            // instead of relying on the current BranchContext (which may not exist
+            // for API-auth flows).
+            'branch_id' => $this->branch_id,
             'name' => $name,
             'token' => bin2hex(random_bytes(32)),
             'abilities' => $abilities,
+            'expires_at' => $expiresAt,
         ]);
     }
 }

@@ -9,7 +9,7 @@ use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 /**

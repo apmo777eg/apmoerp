@@ -9,7 +9,7 @@ use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 

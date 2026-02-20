@@ -6,7 +6,7 @@ namespace App\Livewire\Shared;
 
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 class DynamicForm extends Component

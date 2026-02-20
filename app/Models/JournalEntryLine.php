@@ -49,7 +49,7 @@ class JournalEntryLine extends Model
             }
 
             if ($model->journal_entry_id) {
-                $entry = JournalEntry::withoutGlobalScopes()->find($model->journal_entry_id);
+                $entry = JournalEntry::withoutBranchScope()->find($model->journal_entry_id);
                 if ($entry && $entry->branch_id) {
                     $model->branch_id = $entry->branch_id;
                 }

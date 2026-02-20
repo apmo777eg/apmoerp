@@ -298,7 +298,7 @@
                             type="button"
                             role="listitem"
                             @if($isDirectMode && isset($item['path']))
-                                wire:click="selectFile('{{ $item['path'] }}')"
+                                wire:click="selectFile(@js($item['path']))"
                             @else
                                 wire:click="selectMedia({{ $item['id'] }})"
                             @endif

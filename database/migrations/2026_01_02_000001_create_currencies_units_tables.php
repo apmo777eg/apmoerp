@@ -75,6 +75,9 @@ return new class extends Migration
             $table->unsignedTinyInteger('decimal_places')->default(2);
             $table->boolean('is_base_unit')->default(false);
             $table->boolean('is_active')->default(true);
+	        // Whether this unit should be available for inventory items/products.
+	        // Some units (e.g. time-based units) may be used in other modules and should not clutter product forms.
+	        $table->boolean('supports_products')->default(true);
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->foreignId('created_by')
                 ->nullable()
@@ -90,6 +93,7 @@ return new class extends Migration
 
             $table->unique(['symbol', 'type'], 'uq_uom_symbol_type');
             $table->index('is_active', 'idx_uom_is_active');
+	        $table->index('supports_products', 'idx_uom_supports_products');
             $table->index('type', 'idx_uom_type');
         });
     }

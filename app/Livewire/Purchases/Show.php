@@ -7,7 +7,7 @@ namespace App\Livewire\Purchases;
 use App\Models\Purchase;
 use App\Services\BranchAccessService;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 #[Layout('layouts.app')]

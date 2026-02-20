@@ -31,6 +31,7 @@ class UnitOfMeasure extends Model
         'decimal_places',
         'is_base_unit',
         'is_active',
+	    'supports_products',
         'sort_order',
         'created_by',
         'updated_by',
@@ -41,6 +42,7 @@ class UnitOfMeasure extends Model
         'decimal_places' => 'integer',
         'is_base_unit' => 'boolean',
         'is_active' => 'boolean',
+	    'supports_products' => 'boolean',
         'sort_order' => 'integer',
     ];
 
@@ -78,6 +80,11 @@ class UnitOfMeasure extends Model
     {
         return $query->where('is_base_unit', true);
     }
+
+	public function scopeForProducts(Builder $query): Builder
+	{
+		return $query->where('supports_products', true);
+	}
 
     public function getLocalizedNameAttribute(): string
     {

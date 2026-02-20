@@ -7,8 +7,7 @@ namespace App\Livewire\Admin\Settings;
 use App\Models\UserPreference;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class UserPreferences extends Component
 {
     public string $theme = 'light';

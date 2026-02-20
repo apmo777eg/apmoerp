@@ -8,7 +8,7 @@ use App\Http\Requests\Traits\HasMultilingualValidation;
 use App\Livewire\Concerns\HandlesErrors;
 use App\Models\Branch;
 use App\Models\Module;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 

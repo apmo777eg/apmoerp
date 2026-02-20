@@ -164,6 +164,8 @@ class ModulesSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => 11,
                 'category' => 'automotive',
+				// Product module (supports items/products)
+				'supports_items' => true,
             ],
             [
                 'module_key' => 'general',
@@ -178,6 +180,8 @@ class ModulesSeeder extends Seeder
                 'sort_order' => 16,
                 'category' => 'inventory',
                 'has_inventory' => true,
+				// Product module (supports items/products)
+				'supports_items' => true,
             ],
             [
                 'module_key' => 'motorcycle',
@@ -193,6 +197,8 @@ class ModulesSeeder extends Seeder
                 'category' => 'automotive',
                 'has_inventory' => true,
                 'has_serial_numbers' => true,
+				// Product module (supports items/products)
+				'supports_items' => true,
             ],
             [
                 'module_key' => 'spares',
@@ -207,6 +213,8 @@ class ModulesSeeder extends Seeder
                 'sort_order' => 18,
                 'category' => 'automotive',
                 'has_inventory' => true,
+				// Product module (supports items/products)
+				'supports_items' => true,
             ],
             [
                 'module_key' => 'wood',
@@ -221,6 +229,8 @@ class ModulesSeeder extends Seeder
                 'sort_order' => 19,
                 'category' => 'specialty',
                 'has_inventory' => true,
+				// Product module (supports items/products)
+				'supports_items' => true,
             ],
             [
                 'module_key' => 'warehouse',
@@ -304,8 +314,13 @@ class ModulesSeeder extends Seeder
             ],
         ];
 
-        foreach ($modules as $moduleData) {
-            Module::updateOrCreate(
+		foreach ($modules as $moduleData) {
+			// Default a module to "system" unless explicitly marked as product-supporting.
+			$moduleData = array_merge([
+				'supports_items' => false,
+			], $moduleData);
+
+			Module::updateOrCreate(
                 ['module_key' => $moduleData['module_key']],
                 $moduleData
             );

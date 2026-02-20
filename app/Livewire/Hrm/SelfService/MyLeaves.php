@@ -7,7 +7,7 @@ namespace App\Livewire\Hrm\SelfService;
 use App\Models\LeaveRequest;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 /**
@@ -104,7 +104,7 @@ class MyLeaves extends Component
         ]);
 
         $this->closeRequestModal();
-        session()->flash('success', __('Leave request submitted successfully.'));
+        $this->dispatch('notify', type: 'success', message: __('Leave request submitted successfully.'));
     }
 
     /**
@@ -121,7 +121,7 @@ class MyLeaves extends Component
 
         if ($request) {
             $request->update(['status' => 'cancelled']);
-            session()->flash('success', __('Leave request cancelled.'));
+            $this->dispatch('notify', type: 'success', message: __('Leave request cancelled.'));
         }
     }
 

@@ -14,8 +14,7 @@ use App\Models\User;
 use App\Rules\BranchScopedExists;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use AuthorizesWithFriendlyErrors;

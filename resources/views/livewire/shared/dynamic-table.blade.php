@@ -78,7 +78,7 @@
             </span>
             @foreach ($actions ?? [] as $action)
                 @if (($action['bulk'] ?? false))
-                    <button type="button" wire:click="executeBulkAction('{{ $action['name'] }}')" 
+                    <button type="button" wire:click="executeBulkAction(@js($action['name']))" 
                             class="text-sm font-medium {{ $action['class'] ?? 'text-emerald-600 hover:text-emerald-800' }}">
                         {{ __($action['label'] ?? $action['name']) }}
                     </button>
@@ -115,7 +115,7 @@
                             <th class="px-4 py-3 {{ $dir === 'rtl' ? 'text-right' : 'text-left' }} text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider"
                                 style="{{ $width ? 'width: ' . $width : '' }}">
                                 @if ($sortable && $colName)
-                                    <button type="button" wire:click="sortBy('{{ $colName }}')" 
+                                    <button type="button" wire:click="sortBy(@js($colName))" 
                                             class="flex items-center gap-1.5 hover:text-emerald-600 transition-colors {{ $dir === 'rtl' ? 'flex-row-reverse' : '' }}">
                                         <span>{{ __($colLabel) }}</span>
                                         <span class="flex flex-col">
@@ -251,7 +251,7 @@
                                                     $actionClass = $action['class'] ?? 'erp-btn-icon';
                                                     $actionConfirm = $action['confirm'] ?? false;
                                                 @endphp
-                                                <button type="button" wire:click="executeAction('{{ $actionName }}', '{{ $row['id'] ?? '' }}')"
+                                                <button type="button" wire:click="executeAction(@js($actionName), @js($row['id'] ?? ''))"
                                                         @if ($actionConfirm) wire:confirm="{{ __($actionConfirm) }}" @endif
                                                         class="{{ $actionClass }}"
                                                         title="{{ __($actionLabel) }}">

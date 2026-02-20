@@ -115,12 +115,12 @@
                                 <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                                     <span class="text-sm">{{ $availableColumns[$column] ?? $column }}</span>
                                     <div class="flex gap-1">
-                                        <button type="button" wire:click="moveColumnUp('{{ $column }}')" class="p-1 hover:bg-gray-200 rounded">
+                                        <button type="button" wire:click="moveColumnUp(@js($column))" class="p-1 hover:bg-gray-200 rounded">
                                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                                             </svg>
                                         </button>
-                                        <button type="button" wire:click="moveColumnDown('{{ $column }}')" class="p-1 hover:bg-gray-200 rounded">
+                                        <button type="button" wire:click="moveColumnDown(@js($column))" class="p-1 hover:bg-gray-200 rounded">
                                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                             </svg>

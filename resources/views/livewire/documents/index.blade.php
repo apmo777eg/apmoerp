@@ -166,7 +166,7 @@
                         </a>
                         <button 
                             type="button"
-                            @click="copyToClipboard('{{ route('app.documents.download', $doc->id) }}')"
+                            @click="copyToClipboard(@js(route('app.documents.download', $doc->id)))"
                             class="p-2 bg-white rounded-full shadow-lg hover:bg-blue-50"
                             title="{{ __('Copy Link') }}"
                         >

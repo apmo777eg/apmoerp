@@ -7,7 +7,7 @@ namespace App\Livewire\Admin;
 use App\Models\CurrencyRate;
 use App\Services\CurrencyService;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 

@@ -9,7 +9,7 @@ use App\Models\ProductStoreMapping;
 use App\Models\Store;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

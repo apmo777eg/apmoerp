@@ -8,8 +8,7 @@ use App\Models\Currency;
 use App\Services\CurrencyService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     public ?int $currencyId = null;

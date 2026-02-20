@@ -7,7 +7,7 @@ namespace App\Livewire\Banking\Transactions;
 use App\Models\BankTransaction;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

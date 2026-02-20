@@ -7,8 +7,7 @@ namespace App\Livewire\Reports\ScheduledReports;
 use App\Models\ReportTemplate;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     public ?int $scheduleId = null;

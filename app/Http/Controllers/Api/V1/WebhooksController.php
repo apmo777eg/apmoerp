@@ -27,7 +27,9 @@ class WebhooksController extends BaseApiController
     public function handleShopify(Request $request, int $storeId): JsonResponse
     {
         // V22-CRIT-01 FIX: Load Store without BranchScope since webhooks don't have auth user
-        $store = Store::withoutGlobalScopes()->with('integration')->find($storeId);
+        // Webhooks are unauthenticated, so we must resolve the store without BranchScope.
+        // IMPORTANT: Do NOT bypass SoftDeletes.
+        $store = Store::query()->withoutBranchScope()->with('integration')->find($storeId);
 
         if (! $store || ! $store->is_active || $store->type !== 'shopify') {
             return $this->errorResponse(__('Store not found or not active'), 404);
@@ -80,7 +82,9 @@ class WebhooksController extends BaseApiController
     public function handleWooCommerce(Request $request, int $storeId): JsonResponse
     {
         // V22-CRIT-01 FIX: Load Store without BranchScope since webhooks don't have auth user
-        $store = Store::withoutGlobalScopes()->with('integration')->find($storeId);
+        // Webhooks are unauthenticated, so we must resolve the store without BranchScope.
+        // IMPORTANT: Do NOT bypass SoftDeletes.
+        $store = Store::query()->withoutBranchScope()->with('integration')->find($storeId);
 
         if (! $store || ! $store->is_active || $store->type !== 'woocommerce') {
             return $this->errorResponse(__('Store not found or not active'), 404);
@@ -188,7 +192,9 @@ class WebhooksController extends BaseApiController
     public function handleLaravel(Request $request, int $storeId): JsonResponse
     {
         // V22-CRIT-01 FIX: Load Store without BranchScope since webhooks don't have auth user
-        $store = Store::withoutGlobalScopes()->with('integration')->find($storeId);
+        // Webhooks are unauthenticated, so we must resolve the store without BranchScope.
+        // IMPORTANT: Do NOT bypass SoftDeletes.
+        $store = Store::query()->withoutBranchScope()->with('integration')->find($storeId);
 
         if (! $store || ! $store->is_active || $store->type !== 'laravel') {
             return $this->errorResponse(__('Store not found or not active'), 404);
@@ -323,8 +329,9 @@ class WebhooksController extends BaseApiController
             return null;
         }
 
-        // First try to get the default warehouse for this branch
-        $warehouse = \App\Models\Warehouse::withoutGlobalScopes()
+        // First try to get the default warehouse for this branch.
+        // IMPORTANT: Only bypass BranchScope; keep SoftDeletes intact.
+        $warehouse = \App\Models\Warehouse::query()->withoutBranchScope()
             ->where('branch_id', $branchId)
             ->where('is_default', true)
             ->where('is_active', true)
@@ -334,8 +341,9 @@ class WebhooksController extends BaseApiController
             return $warehouse->id;
         }
 
-        // Fall back to any active warehouse in the branch
-        $warehouse = \App\Models\Warehouse::withoutGlobalScopes()
+        // Fall back to any active warehouse in the branch.
+        // IMPORTANT: Only bypass BranchScope; keep SoftDeletes intact.
+        $warehouse = \App\Models\Warehouse::query()->withoutBranchScope()
             ->where('branch_id', $branchId)
             ->where('is_active', true)
             ->first();

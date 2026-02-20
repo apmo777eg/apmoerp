@@ -9,7 +9,7 @@ use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 

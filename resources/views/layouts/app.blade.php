@@ -51,20 +51,9 @@
         .toolbar-wrap { flex-wrap: wrap; row-gap: 0.5rem; }
         button, input, select, textarea { max-width: 100%; }
 
-        /* Performance optimizations */
-        /* NOTE: Avoid paint containment on `.erp-card` to prevent clipping dropdowns/tooltips (e.g. icon pickers). */
-        .sidebar-link, table {
-            contain: content;
-        }
-        .erp-card {
-            contain: layout style;
-        }
-        
-        /* Hardware acceleration for animations */
-        .sidebar-link, .erp-card, button, a {
-            transform: translateZ(0);
-            will-change: transform, opacity;
-        }
+	    /* NOTE (UI/UX): avoid creating stacking contexts (transform/contain) on layout cards.
+	       It breaks fixed-position modals and causes dropdowns/popovers to appear *under* the next sections.
+	       If performance tuning is needed later, apply it to very specific elements only. */
         
         /* Smooth transitions */
         * {
@@ -91,11 +80,17 @@
                 -webkit-overflow-scrolling: touch;
             }
         }
+
+	        /* If JS is enabled we render feedback via toasts, so hide inline flash blocks to avoid duplicates. */
+	        html.js .flash-inline { display: none; }
     </style>
 
     <script>
         // Theme initialization
         (function() {
+	            // Mark JS availability for progressive-enhancement styling
+	            document.documentElement.classList.add('js');
+
             const theme = localStorage.getItem('theme') || '{{ $userTheme }}';
             if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
@@ -185,14 +180,20 @@
                 @endif
 
                 @if (session('status'))
-                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 shadow-sm shadow-emerald-500/20">
+	                    <div class="flash-inline rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 shadow-sm shadow-emerald-500/20">
                         {{ session('status') }}
                     </div>
                 @endif
 
                 @if (session('success'))
-                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 shadow-sm shadow-emerald-500/20">
+	                    <div class="flash-inline rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 shadow-sm shadow-emerald-500/20">
                         {{ session('success') }}
+                    </div>
+                @endif
+
+                @if (session('error'))
+	                    <div class="flash-inline rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800 shadow-sm">
+                        {{ session('error') }}
                     </div>
                 @endif
 
@@ -318,9 +319,54 @@
             const ERROR_RESET_MS = 30000; // Reset counter after 30 seconds
             let lastServerErrorToastAt = 0;
             const ERROR_TOAST_THROTTLE_MS = 8000; // Avoid spamming the user
-            
-            Livewire.hook('commit', ({ fail }) => {
-                fail(({ status, preventDefault }) => {
+	            
+	            // Global loading indicator for ANY Livewire request (not only navigation)
+	            let pendingCommits = 0;
+	            let loaderTimer = null;
+	            const LOADER_DELAY_MS = 150; // avoid flicker for very fast actions
+	            const showLoader = () => {
+	                if (window.__lwIsNavigating) return;
+	                const loader = document.getElementById('page-loading');
+	                if (!loader) return;
+	                loader.style.display = 'block';
+	                loader.style.transform = 'scaleX(0.35)';
+	            };
+	            const hideLoader = () => {
+	                if (window.__lwIsNavigating) return;
+	                const loader = document.getElementById('page-loading');
+	                if (!loader) return;
+	                loader.style.transform = 'scaleX(1)';
+	                setTimeout(() => {
+	                    // Only hide if nothing else started in the meantime
+	                    if (pendingCommits === 0 && !window.__lwIsNavigating) {
+	                        loader.style.display = 'none';
+	                        loader.style.transform = 'scaleX(0)';
+	                    }
+	                }, 200);
+	            };
+	            const commitDone = () => {
+	                pendingCommits = Math.max(0, pendingCommits - 1);
+	                if (pendingCommits === 0) {
+	                    if (loaderTimer) {
+	                        clearTimeout(loaderTimer);
+	                        loaderTimer = null;
+	                    }
+	                    hideLoader();
+	                }
+	            };
+	            
+	            Livewire.hook('commit', ({ succeed, fail }) => {
+	                pendingCommits++;
+	                if (pendingCommits === 1) {
+	                    loaderTimer = setTimeout(showLoader, LOADER_DELAY_MS);
+	                }
+	
+	                succeed(() => {
+	                    commitDone();
+	                });
+
+	                fail(({ status, preventDefault }) => {
+	                    commitDone();
                     if (status === 419 || status === 401) {
                         preventDefault();
                         window.erpHandleSessionExpired(status);
@@ -329,7 +375,7 @@
                     if (status === 403) {
                         preventDefault();
                         if (window.erpShowNotification) {
-                            window.erpShowNotification('{{ __("You do not have permission to perform this action.") }}', 'error');
+	                            window.erpShowNotification(@json(__('You do not have permission to perform this action.')), 'error');
                         }
                         // Redirect to dashboard after a short delay
                         setTimeout(() => {
@@ -352,9 +398,9 @@
                         if (now - lastServerErrorToastAt > ERROR_TOAST_THROTTLE_MS) {
                             lastServerErrorToastAt = now;
                             if (window.erpShowNotification) {
-                                window.erpShowNotification('{{ __("Server error. Please try again.") }}', 'error');
+	                                window.erpShowNotification(@json(__('Server error. Please try again.')), 'error');
                             } else if (window.erpShowToast) {
-                                window.erpShowToast('{{ __("Server error. Please try again.") }}', { type: 'error' });
+	                                window.erpShowToast(@json(__('Server error. Please try again.')), { type: 'error' });
                             }
                         }
 
@@ -365,15 +411,14 @@
                         } else {
                             // After repeated failures, suggest a full reload.
                             if (window.erpShowNotification) {
-                                window.erpShowNotification('{{ __("Multiple server errors detected. Please reload the page.") }}', 'error');
+	                                window.erpShowNotification(@json(__('Multiple server errors detected. Please reload the page.')), 'error');
                             } else if (window.erpShowToast) {
-                                window.erpShowToast('{{ __("Multiple server errors detected. Please reload the page.") }}', { type: 'error' });
+	                                window.erpShowToast(@json(__('Multiple server errors detected. Please reload the page.')), { type: 'error' });
                             }
                             @if(config('app.debug'))
                             console.error('[ERP] Too many server errors. Stopping automatic retries.');
                             @endif
                         }
-                    }
                     }
                 });
             });
@@ -535,6 +580,7 @@
     
     // Livewire Navigate loading indicator
     document.addEventListener('livewire:navigating', () => {
+	        window.__lwIsNavigating = true;
         const loader = document.getElementById('page-loading');
         if (loader) {
             loader.style.display = 'block';
@@ -543,6 +589,7 @@
     });
     
     document.addEventListener('livewire:navigated', () => {
+	        window.__lwIsNavigating = false;
         const loader = document.getElementById('page-loading');
         if (loader) {
             loader.style.transform = 'scaleX(1)';
@@ -557,6 +604,20 @@
             window.erpApplyTheme();
         }
     });
+
+	    // Server-side flash -> toast (for full page loads / redirects)
+	    document.addEventListener('DOMContentLoaded', () => {
+	        if (!window.erpShowNotification) return;
+	        @if (session('success'))
+	            window.erpShowNotification(@json(session('success')), 'success');
+	        @endif
+	        @if (session('status'))
+	            window.erpShowNotification(@json(session('status')), 'success');
+	        @endif
+	        @if (session('error'))
+	            window.erpShowNotification(@json(session('error')), 'error');
+	        @endif
+	    });
 </script>
     
 </body>

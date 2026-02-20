@@ -8,8 +8,7 @@ use App\Models\BankAccount;
 use App\Models\Currency;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Form extends Component
 {

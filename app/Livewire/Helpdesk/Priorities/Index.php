@@ -7,7 +7,7 @@ namespace App\Livewire\Helpdesk\Priorities;
 use App\Models\TicketPriority;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

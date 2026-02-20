@@ -10,7 +10,7 @@ use App\Traits\HasExport;
 use App\Traits\HasSortableColumns;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class Index extends Component

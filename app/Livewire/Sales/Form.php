@@ -17,8 +17,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 // Financial calculation precision constants
 const BCMATH_CALCULATION_SCALE = 4;  // Scale for intermediate calculations
 const BCMATH_TAX_RATE_SCALE = 6;     // Higher precision for tax rate division

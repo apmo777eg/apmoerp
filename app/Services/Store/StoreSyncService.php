@@ -928,7 +928,7 @@ class StoreSyncService
         }
 
         // First try to get the default warehouse for this branch
-        $warehouse = \App\Models\Warehouse::withoutGlobalScopes()
+        $warehouse = \App\Models\Warehouse::withoutBranchScope()
             ->where('branch_id', $branchId)
             ->where('is_default', true)
             ->where('is_active', true)
@@ -939,7 +939,7 @@ class StoreSyncService
         }
 
         // Fall back to any active warehouse in the branch
-        $warehouse = \App\Models\Warehouse::withoutGlobalScopes()
+        $warehouse = \App\Models\Warehouse::withoutBranchScope()
             ->where('branch_id', $branchId)
             ->where('is_active', true)
             ->first();
@@ -965,7 +965,7 @@ class StoreSyncService
             now()->addHours(24),
             function () {
                 // Try to find existing integration user
-                $user = User::withoutGlobalScopes()
+                $user = User::query()
                     ->where('email', 'system-integration@apmoerp.local')
                     ->first();
                 
@@ -1001,7 +1001,7 @@ class StoreSyncService
      */
     protected function getProductCostPrice(int $productId): ?float
     {
-        $product = Product::withoutGlobalScopes()->find($productId);
+        $product = Product::withoutBranchScope()->find($productId);
         
         if (!$product) {
             return null;

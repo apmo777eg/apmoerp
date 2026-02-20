@@ -6,7 +6,7 @@ namespace App\Livewire\Admin\Roles;
 
 use App\Services\RoleTemplateService;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;

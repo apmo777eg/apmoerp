@@ -7,12 +7,13 @@ namespace App\Livewire\Admin\Store;
 use App\Models\Branch;
 use App\Models\Store;
 use App\Models\StoreIntegration;
+use App\Models\StoreToken;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     public ?int $storeId = null;
@@ -50,6 +51,24 @@ class Form extends Component
 
     public array $branches = [];
 
+    /**
+     * Store API Tokens (ERP Store API)
+     */
+    public array $tokens = [];
+
+    public bool $showTokenModal = false;
+
+    public string $token_name = '';
+
+    public array $token_abilities = [];
+
+    public ?string $token_expires_at = null;
+
+    /**
+     * Plain token shown once after creation
+     */
+    public ?string $generated_token = null;
+
     protected array $storeTypes = [
         'shopify' => 'Shopify',
         'woocommerce' => 'WooCommerce',
@@ -63,7 +82,7 @@ class Form extends Component
             'name' => 'required|string|max:255',
             'type' => 'required|in:shopify,woocommerce,laravel,custom',
             'url' => 'required|url|max:500',
-            'branch_id' => 'nullable|exists:branches,id',
+            'branch_id' => 'required|exists:branches,id',
             'is_active' => 'boolean',
             'api_key' => 'nullable|string|max:500',
             'api_secret' => 'nullable|string|max:500',
@@ -90,6 +109,11 @@ class Form extends Component
             ->get($columns)
             ->toArray();
 
+        // Default branch for new stores (store API is branch-scoped)
+        if (! $store && $user && $user->branch_id) {
+            $this->branch_id = (int) $user->branch_id;
+        }
+
         if ($store) {
             $this->storeId = $store;
             $this->loadStore();
@@ -115,6 +139,130 @@ class Form extends Component
             $this->access_token = $store->integration->access_token ?? '';
             $this->webhook_secret = $store->integration->webhook_secret ?? '';
         }
+
+        $this->loadTokens();
+    }
+
+    protected function loadTokens(): void
+    {
+        if (! $this->storeId) {
+            $this->tokens = [];
+            return;
+        }
+
+        $this->tokens = StoreToken::query()
+            ->where('store_id', $this->storeId)
+            ->orderByDesc('created_at')
+            ->get(['id', 'name', 'abilities', 'last_used_at', 'expires_at', 'created_at'])
+            ->map(fn (StoreToken $t) => [
+                'id' => $t->id,
+                'name' => $t->name,
+                'abilities' => $t->abilities ?? [],
+                'last_used_at' => $t->last_used_at?->toDateTimeString(),
+                'expires_at' => $t->expires_at?->toDateTimeString(),
+                'created_at' => $t->created_at?->toDateTimeString(),
+                'is_expired' => $t->isExpired(),
+            ])
+            ->toArray();
+    }
+
+    protected function tokenAbilityOptions(): array
+    {
+        return [
+            '*' => __('Full access (all abilities)'),
+            'products.read' => __('Products: Read'),
+            'products.write' => __('Products: Write'),
+            'inventory.read' => __('Inventory: Read'),
+            'inventory.write' => __('Inventory: Write'),
+            'orders.read' => __('Orders: Read'),
+            'orders.write' => __('Orders: Write'),
+            'customers.read' => __('Customers: Read'),
+            'customers.write' => __('Customers: Write'),
+        ];
+    }
+
+    public function openTokenModal(): void
+    {
+        $this->resetErrorBag();
+        $this->generated_token = null;
+        $this->token_name = '';
+        $this->token_abilities = [];
+        $this->token_expires_at = null;
+        $this->showTokenModal = true;
+    }
+
+    public function closeTokenModal(): void
+    {
+        $this->showTokenModal = false;
+        $this->generated_token = null;
+    }
+
+    public function createToken(): void
+    {
+        $user = Auth::user();
+        if (! $user || ! $user->can('stores.manage')) {
+            abort(403);
+        }
+
+        if (! $this->storeId) {
+            $this->dispatch('notify', type: 'error', message: __('Please save the store first.'));
+            return;
+        }
+
+        $this->validate([
+            'token_name' => 'required|string|max:100',
+            'token_abilities' => 'array',
+            'token_abilities.*' => 'string',
+            'token_expires_at' => 'nullable|date',
+        ]);
+
+        $expiresAt = null;
+        if ($this->token_expires_at) {
+            $expiresAt = Carbon::parse($this->token_expires_at)->endOfDay();
+            if ($expiresAt->isPast()) {
+                $this->addError('token_expires_at', __('Expiry date must be in the future.'));
+                $this->dispatch('notify', type: 'error', message: __('Please correct the expiry date.'));
+                return;
+            }
+        }
+
+        $abilities = array_values(array_unique(array_filter($this->token_abilities ?? [], fn ($a) => $a !== null && $a !== '')));
+        if (empty($abilities)) {
+            $abilities = ['*'];
+        }
+        if (in_array('*', $abilities, true)) {
+            $abilities = ['*'];
+        }
+
+        $store = Store::findOrFail($this->storeId);
+        $token = $store->generateApiToken($this->token_name, $abilities, $expiresAt);
+
+        // Show the plain token ONCE (copy it now)
+        $this->generated_token = $token->token;
+        $this->dispatch('notify', type: 'success', message: __('Token generated. Copy it now - it will not be shown again.'));
+
+        $this->loadTokens();
+    }
+
+    public function revokeToken(int $tokenId): void
+    {
+        $user = Auth::user();
+        if (! $user || ! $user->can('stores.manage')) {
+            abort(403);
+        }
+
+        if (! $this->storeId) {
+            return;
+        }
+
+        $token = StoreToken::query()
+            ->where('id', $tokenId)
+            ->where('store_id', $this->storeId)
+            ->firstOrFail();
+
+        $token->delete();
+        $this->dispatch('notify', type: 'success', message: __('Token revoked successfully.'));
+        $this->loadTokens();
     }
 
     protected function sanitizeSyncSettings(): void
@@ -180,9 +328,11 @@ class Form extends Component
                 $integrationData['webhook_secret'] = $this->webhook_secret;
             }
 
-            StoreIntegration::updateOrCreate(
+            // Ensure integration is stored under the SAME branch as the store.
+            // Do not rely on BranchContextManager here (Super Admin may have no explicit branch context).
+            StoreIntegration::withoutBranchScope()->updateOrCreate(
                 ['store_id' => $store->id],
-                $integrationData
+                array_merge($integrationData, ['branch_id' => $store->branch_id])
             );
 
             DB::commit();
@@ -222,6 +372,7 @@ class Form extends Component
         return view('livewire.admin.store.form', [
             'storeTypes' => $this->storeTypes,
             'modules' => $modules,
+            'tokenAbilityOptions' => $this->tokenAbilityOptions(),
         ]);
     }
 }

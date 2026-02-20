@@ -51,8 +51,9 @@ class Module extends Model
         'module_type' => 'data',
         'supports_reporting' => true,
         'supports_custom_fields' => true,
-        'supports_items' => true,
-        'has_inventory' => true,
+		// Default to a "system" module unless explicitly enabled in seeds/admin.
+		'supports_items' => false,
+		'has_inventory' => false,
     ];
 
     protected $casts = [

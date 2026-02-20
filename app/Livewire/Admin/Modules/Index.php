@@ -8,7 +8,7 @@ use App\Models\Module;
 use App\Services\ModuleRegistrationService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 

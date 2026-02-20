@@ -5,8 +5,7 @@ namespace App\Livewire\Admin\Modules;
 use App\Models\Module;
 use App\Models\RentalPeriod;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class RentalPeriods extends Component
 {
     use AuthorizesRequests;

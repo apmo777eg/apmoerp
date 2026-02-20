@@ -215,6 +215,61 @@ document.addEventListener('livewire:navigated', () => {
     window.erpApplyTheme && window.erpApplyTheme();
 });
 
+// -----------------------------------------------------------------------------
+// Livewire UX helpers
+// -----------------------------------------------------------------------------
+
+// Global support for `wire:confirm="..."`.
+// Many components use this attribute but Livewire core doesn't provide it.
+// We implement it centrally using SweetAlert (window.erpConfirm).
+document.addEventListener(
+    'click',
+    async (event) => {
+        const el = event.target?.closest?.('[wire\\:confirm]');
+        if (!el) return;
+
+        // If the element is disabled, do nothing.
+        if (el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true') {
+            return;
+        }
+
+        // Second click after confirmation: allow it to pass through to Livewire.
+        if (el.dataset.wireConfirmBypassed === '1') {
+            delete el.dataset.wireConfirmBypassed;
+            return;
+        }
+
+        const message = el.getAttribute('wire:confirm') || 'Are you sure?';
+
+        // Stop Livewire from handling this click until user confirms.
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        try {
+            const result = await window.erpConfirm({
+                text: message,
+                icon: 'warning',
+                confirmButtonText: window.translations?.yes || 'Yes',
+                cancelButtonText: window.translations?.cancel || 'Cancel',
+            });
+
+            if (result?.isConfirmed) {
+                // Trigger the original click again, but bypass the confirm.
+                el.dataset.wireConfirmBypassed = '1';
+                el.click();
+            }
+        } catch (e) {
+            // If confirm fails for any reason, fall back to native confirm.
+            // eslint-disable-next-line no-alert
+            if (window.confirm(message)) {
+                el.dataset.wireConfirmBypassed = '1';
+                el.click();
+            }
+        }
+    },
+    true // capture phase to run before Livewire
+);
+
 
 // Livewire -> Frontend notifications (used across forms/components)
 document.addEventListener('livewire:init', () => {

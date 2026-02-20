@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Notifications;
 
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Dropdown extends Component
 {
     public int $unreadCount = 0;

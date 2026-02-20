@@ -40,7 +40,7 @@
                         @foreach($availableColumns as $key => $label)
                             <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                                 <input type="checkbox" 
-                                       wire:click="toggleColumn('{{ e($key) }}')"
+                                       wire:click="toggleColumn(@js($key))"
                                        @checked(in_array($key, $selectedColumns))
                                        class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500">
                                 <span class="text-sm text-slate-700">{{ __($label) }}</span>

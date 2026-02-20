@@ -12,7 +12,7 @@
 
     {{-- Flash Messages --}}
     @if(session()->has('success'))
-        <div class="rounded-md bg-green-50 p-4 dark:bg-green-900/50">
+	    <div class="flash-inline rounded-md bg-green-50 p-4 dark:bg-green-900/50">
             <p class="text-sm text-green-700 dark:text-green-200">{{ session('success') }}</p>
         </div>
     @endif
@@ -133,56 +133,100 @@
         </div>
     @endif
 
-    {{-- Leave Request Modal --}}
-    @if($showRequestModal)
-    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeRequestModal"></div>
-            <div class="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                <form wire:submit="submitRequest">
-                    <div class="bg-white px-4 pt-5 pb-4 dark:bg-gray-800 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ __('Request Leave') }}</h3>
-                        <div class="mt-4 space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Leave Type') }}</label>
-                                <select wire:model="leaveType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-700">
-                                    <option value="">{{ __('Select Type') }}</option>
-                                    @foreach($leaveTypes as $type)
-                                        <option value="{{ $type }}">{{ __(ucfirst($type)) }}</option>
-                                    @endforeach
-                                </select>
-                                @error('leaveType') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Start Date') }}</label>
-                                    <input type="date" wire:model="startDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-700">
-                                    @error('startDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('End Date') }}</label>
-                                    <input type="date" wire:model="endDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-700">
-                                    @error('endDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Reason') }}</label>
-                                <textarea wire:model="reason" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-700"></textarea>
-                                @error('reason') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 dark:bg-gray-900 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 sm:ml-3 sm:w-auto">
-                            {{ __('Submit') }}
-                        </button>
-                        <button type="button" wire:click="closeRequestModal" class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 sm:mt-0 sm:w-auto">
-                            {{ __('Cancel') }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endif
+	    {{-- Leave Request Modal (unified popup style + proper z-index + scroll-safe) --}}
+	    @if($showRequestModal)
+	        {{-- Backdrop (above navbar) --}}
+	        <div
+	            class="fixed inset-0 z-modal-backdrop bg-black/40 backdrop-blur-sm"
+	            aria-hidden="true"
+	            wire:click="closeRequestModal"
+	        ></div>
+
+	        {{-- Popup container --}}
+	        <div class="fixed inset-0 z-modal overflow-y-auto p-4 sm:p-6" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+	            <div class="min-h-full flex items-end sm:items-center justify-center">
+	                <div class="w-full max-w-2xl">
+	                    <form
+	                        wire:submit.prevent="submitRequest"
+	                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-emerald-200 dark:border-emerald-900 overflow-hidden max-h-[90vh] flex flex-col"
+	                    >
+	                        {{-- Header --}}
+	                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-emerald-50/40 dark:bg-gray-900/40 flex items-center justify-between sticky top-0">
+	                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modal-title">
+	                                {{ __('Request Leave') }}
+	                            </h3>
+	                            <button
+	                                type="button"
+	                                wire:click="closeRequestModal"
+	                                class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white p-2 -m-2 rounded-lg"
+	                            >
+	                                <span class="sr-only">{{ __('Close') }}</span>
+	                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+	                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+	                                </svg>
+	                            </button>
+	                        </div>
+
+	                        {{-- Body --}}
+	                        <div class="p-6 overflow-y-auto flex-1 space-y-4">
+	                            <div>
+	                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Leave Type') }}</label>
+	                                <select wire:model="leaveType" required class="mt-1 erp-input">
+	                                    <option value="">{{ __('Select Type') }}</option>
+	                                    @foreach($leaveTypes as $type)
+	                                        <option value="{{ $type }}">{{ __(ucfirst($type)) }}</option>
+	                                    @endforeach
+	                                </select>
+	                                @error('leaveType') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+	                            </div>
+
+	                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+	                                <div>
+	                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Start Date') }}</label>
+	                                    <input type="date" wire:model="startDate" required class="mt-1 erp-input">
+	                                    @error('startDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+	                                </div>
+	                                <div>
+	                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('End Date') }}</label>
+	                                    <input type="date" wire:model="endDate" required class="mt-1 erp-input">
+	                                    @error('endDate') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+	                                </div>
+	                            </div>
+
+	                            <div>
+	                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Reason') }}</label>
+	                                <textarea wire:model="reason" rows="3" class="mt-1 erp-input"></textarea>
+	                                @error('reason') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+	                            </div>
+	                        </div>
+
+	                        {{-- Footer --}}
+	                        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-end gap-3 sticky bottom-0">
+	                            <button
+	                                type="button"
+	                                wire:click="closeRequestModal"
+	                                class="erp-btn-secondary"
+	                                wire:loading.attr="disabled"
+	                                wire:target="submitRequest"
+	                            >
+	                                {{ __('Cancel') }}
+	                            </button>
+	                            <button
+	                                type="submit"
+	                                class="erp-btn-primary"
+	                                wire:loading.attr="disabled"
+	                                wire:target="submitRequest"
+	                            >
+	                                <span wire:loading.remove wire:target="submitRequest">{{ __('Submit') }}</span>
+	                                <span wire:loading wire:target="submitRequest" class="inline-flex items-center gap-2">
+	                                    <x-loading-indicator target="submitRequest" size="sm" />
+	                                    {{ __('Submitting...') }}
+	                                </span>
+	                            </button>
+	                        </div>
+	                    </form>
+	                </div>
+	            </div>
+	        </div>
+	    @endif
 </div>

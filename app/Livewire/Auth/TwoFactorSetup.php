@@ -6,7 +6,7 @@ namespace App\Livewire\Auth;
 
 use App\Services\TwoFactorAuthService;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TwoFactorSetup extends Component

@@ -100,7 +100,7 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         @if($isUnread)
-                            <button type="button" wire:click="markAsRead('{{ $notification->id }}')"
+                            <button type="button" wire:click="markAsRead(@js($notification->id))"
                                     type="button"
                                     class="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
                                 {{ __('Mark read') }}

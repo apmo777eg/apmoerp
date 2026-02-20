@@ -145,15 +145,13 @@ class BranchContextManager
         }
 
         // Add additional branches from relationship
-        // IMPORTANT: We use withoutGlobalScopes() to prevent recursion
+        // NOTE: Branch model is excluded from BranchScope, so normal loading is safe.
+        // We intentionally do NOT call withoutGlobalScopes() here to preserve SoftDeletes and other scopes.
         if (method_exists($user, 'branches')) {
             try {
                 // Check if branches are already loaded
                 if (! $user->relationLoaded('branches')) {
-                    // Load branches WITHOUT global scopes to prevent recursion
-                    $user->load(['branches' => function ($query) {
-                        $query->withoutGlobalScopes();
-                    }]);
+                    $user->load('branches');
                 }
 
                 // Only consider active pivot assignments when available.

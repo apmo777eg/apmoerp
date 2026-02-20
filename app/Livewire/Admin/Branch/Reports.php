@@ -13,8 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Enums\SaleStatus;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Branch Reports - Branch Admin Page
  * Allows branch admins/managers to view branch-specific reports

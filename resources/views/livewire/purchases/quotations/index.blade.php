@@ -108,7 +108,7 @@
                                             <button type="button" wire:click="accept({{ $quotation->id }})" class="text-emerald-600 hover:text-emerald-800" title="{{ __('Accept') }}">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </button>
-                                            <button type="button" wire:click="reject({{ $quotation->id }}, '{{ __('Rejected') }}')" class="text-red-600 hover:text-red-800" title="{{ __('Reject') }}">
+	                                            <button type="button" wire:click="reject({{ $quotation->id }}, @js(__('Rejected')))" class="text-red-600 hover:text-red-800" title="{{ __('Reject') }}">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"/></svg>
                                             </button>
                                         @endif

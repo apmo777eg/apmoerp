@@ -67,7 +67,7 @@ class InventoryTransit extends Model
 
             // Prefer the parent StockTransfer branch if present
             if ($model->stock_transfer_id) {
-                $transfer = StockTransfer::withoutGlobalScopes()->find($model->stock_transfer_id);
+                $transfer = StockTransfer::withoutBranchScope()->find($model->stock_transfer_id);
                 if ($transfer && $transfer->branch_id) {
                     $model->branch_id = $transfer->branch_id;
                     return;
@@ -76,7 +76,7 @@ class InventoryTransit extends Model
 
             // Fallback to the source warehouse branch
             if ($model->from_warehouse_id) {
-                $wh = Warehouse::withoutGlobalScopes()->find($model->from_warehouse_id);
+                $wh = Warehouse::withoutBranchScope()->find($model->from_warehouse_id);
                 if ($wh && $wh->branch_id) {
                     $model->branch_id = $wh->branch_id;
                 }

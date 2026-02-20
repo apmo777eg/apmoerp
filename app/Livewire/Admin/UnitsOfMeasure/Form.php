@@ -9,8 +9,7 @@ use App\Models\UnitOfMeasure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use HasMultilingualValidation;

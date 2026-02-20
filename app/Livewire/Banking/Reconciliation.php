@@ -9,8 +9,7 @@ use App\Models\BankTransaction;
 use App\Rules\BranchScopedExists;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Bank Reconciliation Wizard
  *

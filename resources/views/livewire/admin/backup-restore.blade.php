@@ -84,7 +84,7 @@
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <button type="button"
-                                        wire:click="download('{{ $backup['path'] }}')"
+                                        wire:click="download(@js($backup['path']))"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                                         title="{{ __('Download') }}"
                                     >
@@ -92,7 +92,7 @@
                                         {{ __('Download') }}
                                     </button>
                                     <button type="button"
-                                        wire:click="initiateRestore('{{ $backup['path'] }}')"
+                                        wire:click="initiateRestore(@js($backup['path']))"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
                                         title="{{ __('Restore') }}"
                                     >
@@ -100,7 +100,7 @@
                                         {{ __('Restore') }}
                                     </button>
                                     <button type="button"
-                                        wire:click="deleteBackup('{{ $backup['path'] }}')"
+                                        wire:click="deleteBackup(@js($backup['path']))"
                                         wire:confirm="{{ __('Are you sure you want to delete this backup?') }}"
                                         class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-200 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors"
                                         title="{{ __('Delete') }}"

@@ -1174,9 +1174,9 @@
                             <div>
                                 <button 
                                     type="button"
-                                    @click="toggle('{{ $itemKey }}')"
+                                    @click="toggle(@js($itemKey))"
                                     class="erp-sidebar-item w-full {{ $hasActiveChild ? 'active' : '' }}"
-                                    :aria-expanded="isExpanded('{{ $itemKey }}')"
+                                    :aria-expanded="isExpanded(@js($itemKey))"
                                 >
                                     <span class="erp-sidebar-item-icon">
                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -1186,7 +1186,7 @@
                                     <span class="flex-1 text-start">{{ $item['label'] }}</span>
                                     <svg 
                                         class="w-4 h-4 transition-transform duration-200"
-                                        :class="isExpanded('{{ $itemKey }}') ? 'rotate-180' : ''"
+                                        :class="isExpanded(@js($itemKey)) ? 'rotate-180' : ''"
                                         fill="none" 
                                         stroke="currentColor" 
                                         viewBox="0 0 24 24"
@@ -1197,7 +1197,7 @@
 
                                 {{-- Sub Items --}}
                                 <div 
-                                    x-show="isExpanded('{{ $itemKey }}')"
+                                    x-show="isExpanded(@js($itemKey))"
                                     x-transition:enter="transition ease-out duration-200"
                                     x-transition:enter-start="opacity-0 max-h-0"
                                     x-transition:enter-end="opacity-100 max-h-96"

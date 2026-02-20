@@ -19,8 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Json;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Global Search Component using Livewire 4 Json Actions
  *

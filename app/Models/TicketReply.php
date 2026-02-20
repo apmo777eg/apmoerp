@@ -46,7 +46,7 @@ class TicketReply extends Model
             }
 
             if ($model->ticket_id) {
-                $ticket = Ticket::withoutGlobalScopes()->find($model->ticket_id);
+                $ticket = Ticket::withoutBranchScope()->find($model->ticket_id);
                 if ($ticket && $ticket->branch_id) {
                     $model->branch_id = $ticket->branch_id;
                 }

@@ -8,8 +8,7 @@ use App\Models\ProductionOrder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Production Timeline Component
  *

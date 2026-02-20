@@ -7,8 +7,7 @@ namespace App\Livewire\Dashboard;
 use App\Livewire\Concerns\LoadsDashboardData;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Dashboard Index Component
  *

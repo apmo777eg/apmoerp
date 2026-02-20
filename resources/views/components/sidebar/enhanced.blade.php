@@ -165,7 +165,7 @@ document.addEventListener('keydown', function(e) {
     // Ctrl+K or Cmd+K for search
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        const searchInput = document.querySelector('input[placeholder*="Search"]');
+        const searchInput = document.querySelector('[data-search-input]');
         if (searchInput) searchInput.focus();
     }
     

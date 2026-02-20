@@ -103,7 +103,7 @@
                     @foreach($tags as $tag)
                         <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                             {{ $tag }}
-                            <button type="button" wire:click="removeTag('{{ $tag }}')" class="hover:text-blue-900">
+                            <button type="button" wire:click="removeTag(@js($tag))" class="hover:text-blue-900">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </span>

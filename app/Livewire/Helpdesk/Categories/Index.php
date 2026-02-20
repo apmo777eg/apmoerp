@@ -7,7 +7,7 @@ namespace App\Livewire\Helpdesk\Categories;
 use App\Models\TicketCategory;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

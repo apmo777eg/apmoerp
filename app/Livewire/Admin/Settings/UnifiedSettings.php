@@ -9,10 +9,10 @@ use App\Models\SystemSetting;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class UnifiedSettings extends Component
 {
@@ -398,6 +398,37 @@ class UnifiedSettings extends Component
         $this->settings->clearCache();
     }
 
+    /**
+     * Standardized save wrapper for settings tabs.
+     *
+     * - Success: toast success
+     * - Validation errors: toast error + keep field-level error messages
+     * - Unexpected errors: toast error + report()
+     */
+    protected function persistSettings(array $rules, callable $persist, string $successMessage): void
+    {
+        $this->resetErrorBag();
+
+        try {
+            if (! empty($rules)) {
+                $this->validate($rules);
+            }
+
+            $persist();
+            $this->clearSettingsCaches();
+
+            $this->dispatch('notify', type: 'success', message: $successMessage);
+        } catch (ValidationException $e) {
+            $first = collect($e->validator->errors()->all())->first()
+                ?? __('Please correct the highlighted fields.');
+            $this->dispatch('notify', type: 'error', message: $first);
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('notify', type: 'error', message: __('Failed to save settings. Please try again.'));
+        }
+    }
+
     public function switchTab(string $tab): void
     {
         if (array_key_exists($tab, $this->tabs)) {
@@ -414,36 +445,27 @@ class UnifiedSettings extends Component
         return $this->redirectRoute('admin.settings', ['tab' => $tab], navigate: true);
     }
 
-    public function saveGeneral(): mixed
+    public function saveGeneral(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'company_name' => 'required|string|max:255',
             'company_email' => 'nullable|email|max:255',
             'company_phone' => 'nullable|string|max:50',
             'timezone' => 'required|string',
             'date_format' => 'required|string',
+            // ISO 4217 (3 letters): EGP, USD, ...
             'default_currency' => 'required|string|size:3',
-        ]);
+        ], function (): void {
+            // Use canonical key names from config/settings.php
+            $this->setSetting('general.company_name', $this->company_name, 'general');
+            $this->setSetting('general.company_email', $this->company_email, 'general');
+            $this->setSetting('general.company_phone', $this->company_phone, 'general');
 
-        // Use canonical key names from config/settings.php
-        $this->setSetting('general.company_name', $this->company_name, 'general');
-        $this->setSetting('general.company_email', $this->company_email, 'general');
-        $this->setSetting('general.company_phone', $this->company_phone, 'general');
-        $this->setSetting('branding.timezone', $this->timezone, 'branding');
-        $this->setSetting('branding.date_format', $this->date_format, 'branding');
-        $this->setSetting('general.default_currency', $this->default_currency, 'general');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('General settings saved successfully'));
-
-        return $this->redirectToTab('general');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+            // Legacy key kept for backward compatibility
+            $this->setSetting('branding.timezone', $this->timezone, 'branding');
+            $this->setSetting('branding.date_format', $this->date_format, 'branding');
+            $this->setSetting('general.default_currency', $this->default_currency, 'general');
+        }, __('General settings saved successfully'));
     }
 
     #[On('media-selected')]
@@ -470,223 +492,130 @@ class UnifiedSettings extends Component
         }
     }
 
-    public function saveBranding(): mixed
+    public function saveBranding(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'branding_primary_color' => 'required|string|max:7',
             'branding_secondary_color' => 'required|string|max:7',
             'branding_tagline' => 'nullable|string|max:255',
-        ]);
+        ], function (): void {
+            // Save media IDs (preferred) and also URLs for backward compatibility
+            $this->setSetting('branding.logo_id', $this->branding_logo_id, 'branding');
+            $this->setSetting('branding.favicon_id', $this->branding_favicon_id, 'branding');
 
-        // Save media IDs (preferred) and also URLs for backward compatibility
-        $this->setSetting('branding.logo_id', $this->branding_logo_id, 'branding');
-        $this->setSetting('branding.favicon_id', $this->branding_favicon_id, 'branding');
+            // Get URLs from media if IDs are set, otherwise use the legacy URL values
+            $logoUrl = $this->branding_logo;
+            $faviconUrl = $this->branding_favicon;
 
-        // Get URLs from media if IDs are set, otherwise use the legacy URL values
-        $logoUrl = $this->branding_logo;
-        $faviconUrl = $this->branding_favicon;
+            if ($this->branding_logo_id) {
+                $logoMedia = Media::find($this->branding_logo_id);
+                $logoUrl = $logoMedia?->url ?? $this->branding_logo;
+            }
 
-        if ($this->branding_logo_id) {
-            $logoMedia = Media::find($this->branding_logo_id);
-            $logoUrl = $logoMedia?->url ?? $this->branding_logo;
-        }
+            if ($this->branding_favicon_id) {
+                $faviconMedia = Media::find($this->branding_favicon_id);
+                $faviconUrl = $faviconMedia?->url ?? $this->branding_favicon;
+            }
 
-        if ($this->branding_favicon_id) {
-            $faviconMedia = Media::find($this->branding_favicon_id);
-            $faviconUrl = $faviconMedia?->url ?? $this->branding_favicon;
-        }
-
-        $this->setSetting('branding.logo', $logoUrl, 'branding');
-        $this->setSetting('branding.favicon', $faviconUrl, 'branding');
-        $this->setSetting('branding.primary_color', $this->branding_primary_color, 'branding');
-        $this->setSetting('branding.secondary_color', $this->branding_secondary_color, 'branding');
-        $this->setSetting('branding.tagline', $this->branding_tagline, 'branding');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Branding settings saved successfully'));
-
-        return $this->redirectToTab('branding');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+            $this->setSetting('branding.logo', $logoUrl, 'branding');
+            $this->setSetting('branding.favicon', $faviconUrl, 'branding');
+            $this->setSetting('branding.primary_color', $this->branding_primary_color, 'branding');
+            $this->setSetting('branding.secondary_color', $this->branding_secondary_color, 'branding');
+            $this->setSetting('branding.tagline', $this->branding_tagline, 'branding');
+        }, __('Branding settings saved successfully'));
     }
 
-    public function saveBranch(): mixed
+    public function saveBranch(): void
     {
-        try {
-        $this->setSetting('system.multi_branch', $this->multi_branch, 'branch', 'boolean');
-        $this->setSetting('system.require_branch_selection', $this->require_branch_selection, 'branch', 'boolean');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Branch settings saved successfully'));
-
-        return $this->redirectToTab('branch');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        $this->persistSettings([], function (): void {
+            $this->setSetting('system.multi_branch', $this->multi_branch, 'branch', 'boolean');
+            $this->setSetting('system.require_branch_selection', $this->require_branch_selection, 'branch', 'boolean');
+        }, __('Branch settings saved successfully'));
     }
 
-    public function saveSecurity(): mixed
+    public function saveSecurity(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'session_timeout' => 'required|integer|min:5|max:1440',
-        ]);
-
-        // Normalize to the current key and remove the legacy one to avoid drift
-        SystemSetting::where('setting_key', 'security.require_2fa')->delete();
-        $this->setSetting('security.2fa_required', $this->require_2fa, 'security', 'boolean');
-        $this->setSetting('security.session_timeout', $this->session_timeout, 'security', 'integer');
-        $this->setSetting('security.enable_audit_log', $this->enable_audit_log, 'security', 'boolean');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Security settings saved successfully'));
-
-        return $this->redirectToTab('security');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            // Normalize to the current key and remove the legacy one to avoid drift
+            SystemSetting::where('setting_key', 'security.require_2fa')->delete();
+            $this->setSetting('security.2fa_required', $this->require_2fa, 'security', 'boolean');
+            $this->setSetting('security.session_timeout', $this->session_timeout, 'security', 'integer');
+            $this->setSetting('security.enable_audit_log', $this->enable_audit_log, 'security', 'boolean');
+        }, __('Security settings saved successfully'));
     }
 
-    public function saveAdvanced(): mixed
+    public function saveAdvanced(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'cache_ttl' => 'required|integer|min:60|max:86400',
-        ]);
+        ], function (): void {
+            $this->setSetting('advanced.enable_api', $this->enable_api, 'advanced', 'boolean');
+            $this->setSetting('advanced.enable_webhooks', $this->enable_webhooks, 'advanced', 'boolean');
+            $this->setSetting('advanced.cache_ttl', $this->cache_ttl, 'advanced', 'integer');
 
-        $this->setSetting('advanced.enable_api', $this->enable_api, 'advanced', 'boolean');
-        $this->setSetting('advanced.enable_webhooks', $this->enable_webhooks, 'advanced', 'boolean');
-        $this->setSetting('advanced.cache_ttl', $this->cache_ttl, 'advanced', 'integer');
-
-        $this->clearSettingsCaches();
-        Cache::forget('api_enabled_setting'); // Clear API enabled cache for middleware
-        session()->flash('success', __('Advanced settings saved successfully'));
-
-        return $this->redirectToTab('advanced');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+            // Clear API enabled cache for middleware
+            Cache::forget('api_enabled_setting');
+        }, __('Advanced settings saved successfully'));
     }
 
-    public function saveBackup(): mixed
+    public function saveBackup(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'backup_retention_days' => 'required|integer|min:1|max:365',
             'backup_frequency' => 'required|in:daily,weekly,monthly',
             'backup_storage' => 'required|in:local,s3,ftp',
-        ]);
-
-        $this->setSetting('backup.auto_backup', $this->auto_backup, 'backup', 'boolean');
-        $this->setSetting('backup.frequency', $this->backup_frequency, 'backup');
-        $this->setSetting('backup.retention_days', $this->backup_retention_days, 'backup', 'integer');
-        $this->setSetting('backup.storage', $this->backup_storage, 'backup');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Backup settings saved successfully'));
-
-        return $this->redirectToTab('backup');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            $this->setSetting('backup.auto_backup', $this->auto_backup, 'backup', 'boolean');
+            $this->setSetting('backup.frequency', $this->backup_frequency, 'backup');
+            $this->setSetting('backup.retention_days', $this->backup_retention_days, 'backup', 'integer');
+            $this->setSetting('backup.storage', $this->backup_storage, 'backup');
+        }, __('Backup settings saved successfully'));
     }
 
-    public function saveInventory(): mixed
+    public function saveInventory(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'inventory_costing_method' => 'required|in:FIFO,LIFO,AVG',
             'stock_alert_threshold' => 'required|integer|min:0',
-        ]);
-
-        // Use canonical key inventory.default_costing_method as per config/settings.php
-        $this->setSetting('inventory.default_costing_method', $this->inventory_costing_method, 'inventory');
-        $this->setSetting('inventory.stock_alert_threshold', $this->stock_alert_threshold, 'inventory', 'integer');
-        $this->setSetting('inventory.use_per_product_threshold', $this->use_per_product_threshold, 'inventory', 'boolean');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Inventory settings saved successfully'));
-
-        return $this->redirectToTab('inventory');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            // Use canonical key inventory.default_costing_method as per config/settings.php
+            $this->setSetting('inventory.default_costing_method', $this->inventory_costing_method, 'inventory');
+            $this->setSetting('inventory.stock_alert_threshold', $this->stock_alert_threshold, 'inventory', 'integer');
+            $this->setSetting('inventory.use_per_product_threshold', $this->use_per_product_threshold, 'inventory', 'boolean');
+        }, __('Inventory settings saved successfully'));
     }
 
-    public function savePos(): mixed
+    public function savePos(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'pos_max_discount_percent' => 'required|integer|min:0|max:100',
             'pos_rounding_rule' => 'required|in:none,0.05,0.10,0.25,0.50,1.00',
-        ]);
-
-        // Save to both pos.allow_negative_stock and inventory.allow_negative_stock
-        // to ensure consistency between POS UI setting and inventory services
-        $this->setSetting('pos.allow_negative_stock', $this->pos_allow_negative_stock, 'pos', 'boolean');
-        $this->setSetting('inventory.allow_negative_stock', $this->pos_allow_negative_stock, 'inventory', 'boolean');
-        $this->setSetting('pos.max_discount_percent', $this->pos_max_discount_percent, 'pos', 'integer');
-        $this->setSetting('pos.auto_print_receipt', $this->pos_auto_print_receipt, 'pos', 'boolean');
-        $this->setSetting('pos.rounding_rule', $this->pos_rounding_rule, 'pos');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('POS settings saved successfully'));
-
-        return $this->redirectToTab('pos');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            // Save to both pos.allow_negative_stock and inventory.allow_negative_stock
+            // to ensure consistency between POS UI setting and inventory services
+            $this->setSetting('pos.allow_negative_stock', $this->pos_allow_negative_stock, 'pos', 'boolean');
+            $this->setSetting('inventory.allow_negative_stock', $this->pos_allow_negative_stock, 'inventory', 'boolean');
+            $this->setSetting('pos.max_discount_percent', $this->pos_max_discount_percent, 'pos', 'integer');
+            $this->setSetting('pos.auto_print_receipt', $this->pos_auto_print_receipt, 'pos', 'boolean');
+            $this->setSetting('pos.rounding_rule', $this->pos_rounding_rule, 'pos');
+        }, __('POS settings saved successfully'));
     }
 
-    public function saveAccounting(): mixed
+    public function saveAccounting(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'accounting_coa_template' => 'required|in:standard,retail,service',
-        ]);
-
-        // Use canonical key accounting.default_coa_template as per config/settings.php
-        $this->setSetting('accounting.default_coa_template', $this->accounting_coa_template, 'accounting');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Accounting settings saved successfully'));
-
-        return $this->redirectToTab('accounting');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            // Use canonical key accounting.default_coa_template as per config/settings.php
+            $this->setSetting('accounting.default_coa_template', $this->accounting_coa_template, 'accounting');
+        }, __('Accounting settings saved successfully'));
     }
 
-    public function saveHrm(): mixed
+    public function saveHrm(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'hrm_working_days_per_week' => 'required|integer|min:1|max:7',
             'hrm_working_hours_per_day' => 'required|numeric|min:1|max:24',
             'hrm_late_arrival_threshold' => 'required|integer|min:0',
@@ -696,99 +625,54 @@ class UnifiedSettings extends Component
             'hrm_housing_allowance_value' => 'required|numeric|min:0',
             'hrm_meal_allowance' => 'required|numeric|min:0',
             'hrm_health_insurance_deduction' => 'required|numeric|min:0',
-        ]);
-
-        $this->setSetting('hrm.working_days_per_week', $this->hrm_working_days_per_week, 'hrm', 'integer');
-        $this->setSetting('hrm.working_hours_per_day', $this->hrm_working_hours_per_day, 'hrm', 'number');
-        $this->setSetting('hrm.late_arrival_threshold', $this->hrm_late_arrival_threshold, 'hrm', 'integer');
-        $this->setSetting('hrm.transport_allowance_type', $this->hrm_transport_allowance_type, 'hrm');
-        $this->setSetting('hrm.transport_allowance_value', $this->hrm_transport_allowance_value, 'hrm', 'number');
-        $this->setSetting('hrm.housing_allowance_type', $this->hrm_housing_allowance_type, 'hrm');
-        $this->setSetting('hrm.housing_allowance_value', $this->hrm_housing_allowance_value, 'hrm', 'number');
-        $this->setSetting('hrm.meal_allowance', $this->hrm_meal_allowance, 'hrm', 'number');
-        $this->setSetting('hrm.health_insurance_deduction', $this->hrm_health_insurance_deduction, 'hrm', 'number');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('HRM settings saved successfully'));
-
-        return $this->redirectToTab('hrm');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            $this->setSetting('hrm.working_days_per_week', $this->hrm_working_days_per_week, 'hrm', 'integer');
+            $this->setSetting('hrm.working_hours_per_day', $this->hrm_working_hours_per_day, 'hrm', 'number');
+            $this->setSetting('hrm.late_arrival_threshold', $this->hrm_late_arrival_threshold, 'hrm', 'integer');
+            $this->setSetting('hrm.transport_allowance_type', $this->hrm_transport_allowance_type, 'hrm');
+            $this->setSetting('hrm.transport_allowance_value', $this->hrm_transport_allowance_value, 'hrm', 'number');
+            $this->setSetting('hrm.housing_allowance_type', $this->hrm_housing_allowance_type, 'hrm');
+            $this->setSetting('hrm.housing_allowance_value', $this->hrm_housing_allowance_value, 'hrm', 'number');
+            $this->setSetting('hrm.meal_allowance', $this->hrm_meal_allowance, 'hrm', 'number');
+            $this->setSetting('hrm.health_insurance_deduction', $this->hrm_health_insurance_deduction, 'hrm', 'number');
+        }, __('HRM settings saved successfully'));
     }
 
-    public function saveRental(): mixed
+    public function saveRental(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'rental_grace_period_days' => 'required|integer|min:0',
             'rental_penalty_type' => 'required|in:percentage,fixed',
             'rental_penalty_value' => 'required|numeric|min:0',
-        ]);
-
-        $this->setSetting('rental.grace_period_days', $this->rental_grace_period_days, 'rental', 'integer');
-        $this->setSetting('rental.penalty_type', $this->rental_penalty_type, 'rental');
-        $this->setSetting('rental.penalty_value', $this->rental_penalty_value, 'rental', 'number');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Rental settings saved successfully'));
-
-        return $this->redirectToTab('rental');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            $this->setSetting('rental.grace_period_days', $this->rental_grace_period_days, 'rental', 'integer');
+            $this->setSetting('rental.penalty_type', $this->rental_penalty_type, 'rental');
+            $this->setSetting('rental.penalty_value', $this->rental_penalty_value, 'rental', 'number');
+        }, __('Rental settings saved successfully'));
     }
 
-    public function saveSales(): mixed
+    public function saveSales(): void
     {
-        try {
-        $this->validate([
+        $this->persistSettings([
             'sales_payment_terms_days' => 'required|integer|min:0',
             'sales_invoice_prefix' => 'required|string|max:10',
             'sales_invoice_starting_number' => 'required|integer|min:1',
-        ]);
-
-        // Use canonical key sales.default_payment_terms as per config/settings.php
-        $this->setSetting('sales.default_payment_terms', $this->sales_payment_terms_days, 'sales', 'integer');
-        $this->setSetting('sales.invoice_prefix', $this->sales_invoice_prefix, 'sales');
-        $this->setSetting('sales.invoice_starting_number', $this->sales_invoice_starting_number, 'sales', 'integer');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Sales settings saved successfully'));
-
-        return $this->redirectToTab('sales');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        ], function (): void {
+            // Use canonical key sales.default_payment_terms as per config/settings.php
+            $this->setSetting('sales.default_payment_terms', $this->sales_payment_terms_days, 'sales', 'integer');
+            $this->setSetting('sales.invoice_prefix', $this->sales_invoice_prefix, 'sales');
+            $this->setSetting('sales.invoice_starting_number', $this->sales_invoice_starting_number, 'sales', 'integer');
+        }, __('Sales settings saved successfully'));
     }
 
-    public function saveNotifications(): mixed
+    public function saveNotifications(): void
     {
-        try {
-        // Use canonical key names with _enabled suffix as per config/settings.php
-        $this->setSetting('notifications.low_stock_enabled', $this->notifications_low_stock, 'notifications', 'boolean');
-        $this->setSetting('notifications.payment_due_enabled', $this->notifications_payment_due, 'notifications', 'boolean');
-        $this->setSetting('notifications.new_order_enabled', $this->notifications_new_order, 'notifications', 'boolean');
-
-        $this->clearSettingsCaches();
-        session()->flash('success', __('Notification settings saved successfully'));
-
-        return $this->redirectToTab('notifications');
-        } catch (\Throwable $e) {
-            report($e);
-            session()->flash('error', __('Failed to save settings. Please try again.'));
-            return null;
-        }
-
+        $this->persistSettings([], function (): void {
+            // Use canonical key names with _enabled suffix as per config/settings.php
+            $this->setSetting('notifications.low_stock_enabled', $this->notifications_low_stock, 'notifications', 'boolean');
+            $this->setSetting('notifications.payment_due_enabled', $this->notifications_payment_due, 'notifications', 'boolean');
+            $this->setSetting('notifications.new_order_enabled', $this->notifications_new_order, 'notifications', 'boolean');
+        }, __('Notification settings saved successfully'));
     }
 
     public function restoreDefaults(string $group): mixed

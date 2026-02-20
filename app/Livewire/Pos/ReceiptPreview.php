@@ -6,8 +6,7 @@ namespace App\Livewire\Pos;
 
 use App\Models\Sale;
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class ReceiptPreview extends Component
 {
     public ?int $saleId = null;

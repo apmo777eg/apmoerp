@@ -9,8 +9,7 @@ use App\Models\BranchModule;
 use App\Services\BranchContextManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * Branch Switcher Component
  *

@@ -33,10 +33,11 @@ class ProposePurchaseOrder implements ShouldQueue
                 'wh' => $warehouse?->name ?? 'N/A',
             ]);
 
-            // V23-CRIT-04 FIX: Use withoutGlobalScopes() to bypass BranchScope
-            // since queue workers have no authenticated user context
+            // Queue jobs run without an authenticated user.
+            // User model is excluded from BranchScope, so we do NOT need withoutGlobalScopes().
+            // Keep SoftDeletes + default scopes intact.
             $notifiables = \App\Models\User::query()
-                ->withoutGlobalScopes()
+                ->where('is_active', true)
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->whereHas('roles', fn ($q) => $q->where('name', 'Branch Manager'))
                 ->get();

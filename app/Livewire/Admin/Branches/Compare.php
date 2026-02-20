@@ -7,7 +7,7 @@ namespace App\Livewire\Admin\Branches;
 use App\Models\Branch;
 use App\Models\BranchModule;
 use App\Models\Module;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Compare extends Component

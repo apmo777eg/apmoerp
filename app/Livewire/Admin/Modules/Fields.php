@@ -6,8 +6,7 @@ use App\Models\Module;
 use App\Models\ModuleProductField;
 use App\Services\ModuleProductService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Fields extends Component
 {
     use AuthorizesRequests;

@@ -8,8 +8,7 @@ use App\Http\Requests\Traits\HasMultilingualValidation;
 use App\Models\Module;
 use App\Models\ModuleProductField;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use HasMultilingualValidation;

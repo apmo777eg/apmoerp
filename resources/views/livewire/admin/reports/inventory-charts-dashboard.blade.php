@@ -64,7 +64,7 @@ function initInventoryChart(data = {}) {
         data: {
             labels: low.labels,
             datasets: [{
-                label: '{{ __('Stock') }}',
+	            label: @js(__('Stock')),
                 data: low.values,
             }],
         },

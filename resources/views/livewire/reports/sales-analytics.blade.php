@@ -167,8 +167,8 @@ function initSalesAnalyticsCharts() {
             type: 'line',
             data: {
                 labels: @json($salesTrend['labels'] ?? []),
-                datasets: [{
-                    label: '{{ __("Revenue") }}',
+	                datasets: [{
+	                    label: @js(__('Revenue')),
                     data: @json($salesTrend['revenue'] ?? []),
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -213,8 +213,8 @@ function initSalesAnalyticsCharts() {
             type: 'bar',
             data: {
                 labels: @json($hourlyDistribution['labels'] ?? []),
-                datasets: [{
-                    label: '{{ __("Orders") }}',
+	                datasets: [{
+	                    label: @js(__('Orders')),
                     data: @json($hourlyDistribution['data'] ?? []),
                     backgroundColor: 'rgba(16, 185, 129, 0.6)',
                     borderRadius: 4,
@@ -238,8 +238,8 @@ function initSalesAnalyticsCharts() {
             type: 'bar',
             data: {
                 labels: @json($categoryPerformance['labels'] ?? []),
-                datasets: [{
-                    label: '{{ __("Revenue") }}',
+	                datasets: [{
+	                    label: @js(__('Revenue')),
                     data: @json($categoryPerformance['revenues'] ?? []),
                     backgroundColor: 'rgba(59, 130, 246, 0.6)',
                     borderRadius: 4,

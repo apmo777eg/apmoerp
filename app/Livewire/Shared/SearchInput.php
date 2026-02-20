@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Shared;
 
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class SearchInput extends Component
 {
     public ?string $query = null;

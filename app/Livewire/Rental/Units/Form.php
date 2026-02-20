@@ -11,8 +11,7 @@ use App\Services\Contracts\ModuleFieldServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use HasMultilingualValidation;

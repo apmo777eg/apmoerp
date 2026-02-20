@@ -6,8 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Services\BackupService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 /**
  * BackupRestore - One-click backup and restore management
  *

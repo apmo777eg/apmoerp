@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin\Analytics;
 
 use App\Services\Analytics\AdvancedAnalyticsService;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class AdvancedDashboard extends Component
 {
     public ?int $branchId = null;

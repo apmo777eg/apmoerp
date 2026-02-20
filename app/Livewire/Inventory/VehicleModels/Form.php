@@ -7,8 +7,7 @@ namespace App\Livewire\Inventory\VehicleModels;
 use App\Models\VehicleModel;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use AuthorizesRequests;

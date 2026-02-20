@@ -8,8 +8,7 @@ use App\Models\BillOfMaterial;
 use App\Models\Product;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use \App\Http\Requests\Traits\HasMultilingualValidation;

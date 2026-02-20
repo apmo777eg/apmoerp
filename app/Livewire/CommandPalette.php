@@ -8,8 +8,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Supplier;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class CommandPalette extends Component
 {
     public string $query = '';

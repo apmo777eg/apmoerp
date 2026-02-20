@@ -8,7 +8,7 @@ use App\Models\ReportTemplate;
 use App\Services\ScheduledReportService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 

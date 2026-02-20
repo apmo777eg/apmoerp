@@ -107,7 +107,7 @@ function initPosCharts(data = {}) {
         data: {
             labels: byDay.labels,
             datasets: [{
-                label: '{{ __('Revenue') }}',
+	            label: @js(__('Revenue')),
                 data: byDay.values,
                 tension: 0.3,
             }],
@@ -127,7 +127,7 @@ function initPosCharts(data = {}) {
         data: {
             labels: byBranch.labels,
             datasets: [{
-                label: '{{ __('Revenue') }}',
+	            label: @js(__('Revenue')),
                 data: byBranch.values,
             }],
         },

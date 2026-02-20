@@ -15,7 +15,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     @if($notification['link'])
-                        <a href="{{ $notification['link'] }}" wire:click="markAsRead('{{ $notification['id'] }}')" class="text-sm text-slate-900 dark:text-slate-100 hover:text-emerald-600">
+                        <a href="{{ $notification['link'] }}" wire:click="markAsRead(@js($notification['id']))" class="text-sm text-slate-900 dark:text-slate-100 hover:text-emerald-600">
                             {{ $notification['message'] }}
                         </a>
                     @else
@@ -23,7 +23,7 @@
                     @endif
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ $notification['created_at'] }}</p>
                 </div>
-                <button type="button" wire:click="markAsRead('{{ $notification['id'] }}')" class="flex-shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" title="{{ __('Mark as read') }}">
+                <button type="button" wire:click="markAsRead(@js($notification['id']))" class="flex-shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" title="{{ __('Mark as read') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>

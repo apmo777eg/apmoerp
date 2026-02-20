@@ -16,7 +16,7 @@ use App\Services\HelpdeskService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\Features\SupportRedirects\Redirector;
 
 #[Layout('layouts.app')]

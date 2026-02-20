@@ -6,7 +6,7 @@ namespace App\Livewire\Inventory\Products;
 
 use App\Models\Product;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 #[Layout('layouts.app')]

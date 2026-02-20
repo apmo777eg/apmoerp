@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Shared;
 
 use Livewire\Attributes\Url;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class DynamicTable extends Component

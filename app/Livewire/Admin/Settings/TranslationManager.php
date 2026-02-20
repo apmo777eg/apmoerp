@@ -7,7 +7,7 @@ namespace App\Livewire\Admin\Settings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

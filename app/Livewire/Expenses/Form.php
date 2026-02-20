@@ -10,7 +10,7 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 class Form extends Component

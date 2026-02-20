@@ -8,8 +8,7 @@ use App\Models\PurchaseRequisition;
 use App\Models\SupplierQuotation;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Compare extends Component
 {

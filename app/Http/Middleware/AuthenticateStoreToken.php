@@ -52,10 +52,13 @@ class AuthenticateStoreToken
             ], 401);
         }
 
-        // V22-CRIT-01 FIX: Load StoreToken without BranchScope since there's no auth user
-        // StoreToken table doesn't have branch_id, but the relationship to Store needs
-        // to bypass BranchScope to load properly without authentication
-        $storeToken = StoreToken::withoutGlobalScopes()->where('token', $token)->first();
+        // Resolve StoreToken before a branch context exists.
+        // IMPORTANT: ONLY bypass BranchScope here; do NOT bypass SoftDeletes.
+        // This ensures revoked (soft-deleted) tokens can never authenticate.
+        $storeToken = StoreToken::query()
+            ->withoutBranchScope()
+            ->where('token', $token)
+            ->first();
 
         if (! $storeToken) {
             return response()->json([
@@ -71,9 +74,10 @@ class AuthenticateStoreToken
             ], 401);
         }
 
-        // V22-CRIT-01 FIX: Load Store without BranchScope since we're authenticating via token, not user
-        // After loading, we'll set the branch context from the store's branch_id
-        $store = Store::withoutGlobalScopes()
+        // Load Store without BranchScope since we're authenticating via token, not user.
+        // Keep SoftDeletes and other global scopes intact.
+        $store = Store::query()
+            ->withoutBranchScope()
             ->where('id', $storeToken->store_id)
             ->first();
 

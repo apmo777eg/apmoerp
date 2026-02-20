@@ -8,7 +8,7 @@ use App\Models\StoreOrder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class OrdersDashboard extends Component

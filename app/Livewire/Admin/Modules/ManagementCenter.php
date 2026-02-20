@@ -10,8 +10,7 @@ use App\Models\Module;
 use App\Services\ModuleNavigationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class ManagementCenter extends Component
 {

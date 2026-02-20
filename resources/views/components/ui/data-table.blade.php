@@ -137,13 +137,13 @@
                     <th 
                         scope="col" 
                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider {{ $sortable ? 'cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800' : '' }}"
-                        @if($sortable) @click="toggleSort('{{ $key }}')" @endif
+                        @if($sortable) @click="toggleSort(@js($key))" @endif
                     >
                         <div class="flex items-center space-x-1 rtl:space-x-reverse">
                             <span>{{ $header }}</span>
                             @if($sortable)
                             <svg 
-                                x-show="sortColumn === '{{ $key }}' && sortDirection === 'asc'"
+                                x-show="sortColumn === @js($key) && sortDirection === 'asc'"
                                 class="w-4 h-4"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
@@ -151,7 +151,7 @@
                                 <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"/>
                             </svg>
                             <svg 
-                                x-show="sortColumn === '{{ $key }}' && sortDirection === 'desc'"
+                                x-show="sortColumn === @js($key) && sortDirection === 'desc'"
                                 class="w-4 h-4"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"

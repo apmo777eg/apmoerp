@@ -272,5 +272,9 @@ class UnitsOfMeasureSeeder extends Seeder
                 $unitData
             );
         }
+
+	    // Default behavior: time-based units are not shown in Product forms.
+	    // (They can still be used by other modules, and can be enabled later if needed.)
+	    UnitOfMeasure::where('type', 'time')->update(['supports_products' => false]);
     }
 }

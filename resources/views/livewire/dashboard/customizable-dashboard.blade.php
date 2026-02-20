@@ -144,7 +144,7 @@
         <div class="flex flex-wrap gap-2">
             @foreach($widgets as $widget)
             <button type="button" 
-                wire:click="toggleWidget('{{ $widget['key'] }}')"
+                wire:click="toggleWidget(@js($widget['key']))"
                 class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors {{ $widget['visible'] ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}"
             >
                 @if($widget['visible'])
@@ -234,7 +234,7 @@
                                 </div>
 
                                 <button type="button"
-                                        wire:click="toggleWidget('{{ $widget['key'] }}')"
+                                        wire:click="toggleWidget(@js($widget['key']))"
                                         class="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors">
                                     {{ __('Show') }}
                                 </button>
@@ -321,8 +321,8 @@ function initDashboardCharts() {
             type: 'line',
             data: {
                 labels: @json($salesChartData['labels'] ?? []),
-                datasets: [{
-                    label: '{{ __("Sales") }}',
+	                datasets: [{
+	                    label: @js(__('Sales')),
                     data: @json($salesChartData['data'] ?? []),
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -353,7 +353,7 @@ function initDashboardCharts() {
         window.__lwCharts[componentId + ':inventory'] = new Chart(inventoryCtx.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['{{ __("In Stock") }}', '{{ __("Low Stock") }}', '{{ __("Out of Stock") }}'],
+	                labels: [@js(__('In Stock')), @js(__('Low Stock')), @js(__('Out of Stock'))],
                 datasets: [{
                     data: @json($inventoryChartData['data'] ?? [0, 0, 0]),
                     backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],

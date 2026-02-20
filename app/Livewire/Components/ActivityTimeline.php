@@ -6,8 +6,7 @@ namespace App\Livewire\Components;
 
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class ActivityTimeline extends Component
 {
     public array $activities = [];

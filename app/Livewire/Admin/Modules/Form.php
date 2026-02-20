@@ -8,8 +8,7 @@ use App\Livewire\Concerns\HandlesErrors;
 use App\Models\Module;
 use App\Models\ModuleCustomField;
 use Illuminate\Validation\Rule;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     use HandlesErrors;

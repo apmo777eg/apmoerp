@@ -7,7 +7,7 @@ namespace App\Livewire\Helpdesk\SLAPolicies;
 use App\Models\TicketSLAPolicy;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]

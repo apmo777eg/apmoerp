@@ -6,8 +6,7 @@ namespace App\Livewire\Components;
 
 use App\Services\GlobalSearchService;
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class GlobalSearch extends Component
 {
     public string $query = '';

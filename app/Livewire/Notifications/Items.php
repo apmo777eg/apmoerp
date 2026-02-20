@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Notifications;
 
 use Livewire\Attributes\On;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Items extends Component
 {
     public array $notifications = [];

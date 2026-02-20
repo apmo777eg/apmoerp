@@ -117,7 +117,7 @@
                     <div class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">
                         <span class="font-mono text-sm text-slate-600 dark:text-slate-400 w-24">{{ $key }}</span>
                         <span class="text-slate-700 dark:text-slate-300 flex-1">{{ $value }}</span>
-                        <button type="button" wire:click="removeOption('{{ $key }}')" class="text-red-500 hover:text-red-700">
+                        <button type="button" wire:click="removeOption(@js($key))" class="text-red-500 hover:text-red-700">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>

@@ -62,7 +62,7 @@
             <nav class="flex -mb-px overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
                 @foreach($tabs as $tabKey => $tabLabel)
                     <button type="button"
-                        wire:click="switchTab('{{ $tabKey }}')"
+                        wire:click="switchTab(@js($tabKey))"
                         data-tab-key="{{ $tabKey }}"
                         class="group flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
                             {{ $activeTab === $tabKey
@@ -163,20 +163,29 @@
                                 class="mt-1 erp-input">
                                 <option value="">{{ __('Select Currency') }}</option>
                                 @foreach($currencies as $currency)
-                                    <option value="{{ $currency->reference_number }}">
-                                        {{ $currency->reference_number }} - {{ $currency->name }} ({{ $currency->symbol }})
-                                    </option>
+									{{-- Save ISO currency code (e.g., EGP, USD) --}}
+									<option value="{{ $currency->code }}">
+										{{ $currency->code }} - {{ $currency->name }} ({{ $currency->symbol }})
+									</option>
                                 @endforeach
                             </select>
                             @error('default_currency') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveGeneral"
+							>
+								<span wire:loading.remove wire:target="saveGeneral">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveGeneral" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveGeneral" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -259,13 +268,21 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="px-4 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                                style="background: {{ $branding_primary_color }};">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="px-4 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+								style="background: {{ $branding_primary_color }};"
+								wire:loading.attr="disabled"
+								wire:target="saveBranding"
+							>
+								<span wire:loading.remove wire:target="saveBranding">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveBranding" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveBranding" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -288,12 +305,20 @@
                             </label>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveBranch"
+							>
+								<span wire:loading.remove wire:target="saveBranch">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveBranch" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveBranch" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -406,12 +431,20 @@
                             </label>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveSecurity"
+							>
+								<span wire:loading.remove wire:target="saveSecurity">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveSecurity" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveSecurity" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -461,12 +494,20 @@
                             @error('backup_storage') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveBackup"
+							>
+								<span wire:loading.remove wire:target="saveBackup">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveBackup" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveBackup" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -503,12 +544,20 @@
                             </label>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveInventory"
+							>
+								<span wire:loading.remove wire:target="saveInventory">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveInventory" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveInventory" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -556,12 +605,20 @@
                             @error('pos_rounding_rule') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="savePos"
+							>
+								<span wire:loading.remove wire:target="savePos">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="savePos" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="savePos" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -581,12 +638,20 @@
                             @error('accounting_coa_template') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveAccounting"
+							>
+								<span wire:loading.remove wire:target="saveAccounting">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveAccounting" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveAccounting" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -744,12 +809,20 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveHrm"
+							>
+								<span wire:loading.remove wire:target="saveHrm">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveHrm" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveHrm" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -787,12 +860,20 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveRental"
+							>
+								<span wire:loading.remove wire:target="saveRental">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveRental" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveRental" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -857,12 +938,20 @@
                             @error('sales_invoice_starting_number') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveSales"
+							>
+								<span wire:loading.remove wire:target="saveSales">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveSales" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveSales" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -943,12 +1032,20 @@
                             </label>
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveNotifications"
+							>
+								<span wire:loading.remove wire:target="saveNotifications">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveNotifications" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveNotifications" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
 
@@ -980,12 +1077,20 @@
                             @error('cache_ttl') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                class="erp-btn-primary">
-                                {{ __('Save Changes') }}
-                            </button>
-                        </div>
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="erp-btn-primary"
+								wire:loading.attr="disabled"
+								wire:target="saveAdvanced"
+							>
+								<span wire:loading.remove wire:target="saveAdvanced">{{ __('Save Changes') }}</span>
+								<span wire:loading wire:target="saveAdvanced" class="inline-flex items-center gap-2">
+									<x-loading-indicator target="saveAdvanced" size="sm" />
+									{{ __('Saving...') }}
+								</span>
+							</button>
+						</div>
                     </div>
                 </form>
             @endif

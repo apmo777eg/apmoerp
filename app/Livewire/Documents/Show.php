@@ -9,8 +9,7 @@ use App\Models\User;
 use App\Services\DocumentService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Show extends Component
 {

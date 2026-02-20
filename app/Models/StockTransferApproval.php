@@ -39,7 +39,7 @@ class StockTransferApproval extends Model
             }
 
             if ($model->stock_transfer_id) {
-                $parent = StockTransfer::withoutGlobalScopes()->find($model->stock_transfer_id);
+                $parent = StockTransfer::withoutBranchScope()->find($model->stock_transfer_id);
                 if ($parent && $parent->branch_id) {
                     $model->branch_id = $parent->branch_id;
                 }

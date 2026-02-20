@@ -31,7 +31,7 @@
 <div 
     x-data="{ 
         expanded: {{ $hasChildren ? 'false' : 'true' }},
-        key: '{{ $navKey }}'
+        key: @js($navKey)
     }"
     x-init="expanded = !collapsed[key]"
 >
@@ -68,7 +68,7 @@
         @else
             <a
                 href="{{ route($route) }}"
-                @click="addToRecent('{{ $navKey }}', '{{ $displayLabel }}', '{{ route($route) }}', '{{ $icon }}')"
+                @click="addToRecent(@js($navKey), @js($displayLabel), @js(route($route)), @js($icon))"
                 class="flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors
                     {{ $isActive 
                         ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
@@ -90,12 +90,12 @@
         <!-- Favorite Toggle Button -->
         <button type="button"
             x-show="open"
-            @click.stop="toggleFavorite('{{ $navKey }}', '{{ $displayLabel }}', '{{ $route ? route($route) : '#' }}', '{{ $icon }}')"
+            @click.stop="toggleFavorite(@js($navKey), @js($displayLabel), @js($route ? route($route) : '#'), @js($icon))"
             class="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity
                 {{ app()->getLocale() === 'ar' ? 'right-auto left-1' : '' }}"
-            :class="{ 'text-yellow-500': isFavorite('{{ $navKey }}'), 'text-gray-400 hover:text-yellow-500': !isFavorite('{{ $navKey }}') }"
+            :class="{ 'text-yellow-500': isFavorite(@js($navKey)), 'text-gray-400 hover:text-yellow-500': !isFavorite(@js($navKey)) }"
         >
-            <svg class="w-4 h-4" :fill="isFavorite('{{ $navKey }}') ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" :fill="isFavorite(@js($navKey)) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
             </svg>
         </button>
@@ -115,6 +115,7 @@
     >
         @foreach($children as $child)
             @php
+                $childDisplayLabel = app()->getLocale() === 'ar' && isset($child['label_ar']) ? $child['label_ar'] : $child['label'];
                 $childHasPermission = empty($child['permissions'] ?? []);
                 if (!empty($child['permissions'] ?? [])) {
                     foreach ($child['permissions'] as $perm) {
@@ -129,7 +130,7 @@
             @if($childHasPermission)
             <a
                 href="{{ route($child['route']) }}"
-                @click="addToRecent('{{ $child['key'] }}', '{{ $child['label'] }}', '{{ route($child['route']) }}', '{{ $child['icon'] ?? '📄' }}')"
+                @click="addToRecent(@js($child['key']), @js($childDisplayLabel), @js(route($child['route'])), @js($child['icon'] ?? '📄'))"
                 class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors
                     {{ request()->routeIs($child['route'] . '*') 
                         ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 

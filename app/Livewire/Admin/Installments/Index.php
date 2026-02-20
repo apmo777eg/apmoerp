@@ -9,7 +9,7 @@ use App\Models\InstallmentPlan;
 use App\Services\InstallmentService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 
 class Index extends Component

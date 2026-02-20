@@ -9,8 +9,7 @@ use App\Services\BranchAccessService;
 use App\Services\ExportService;
 use App\Services\ReportService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Index extends Component
 {
     use AuthorizesRequests;

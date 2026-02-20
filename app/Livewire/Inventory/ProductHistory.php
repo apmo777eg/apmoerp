@@ -9,7 +9,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithPagination;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 

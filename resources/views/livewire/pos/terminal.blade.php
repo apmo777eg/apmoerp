@@ -57,7 +57,7 @@
         <div class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20 px-2 py-0.5"
              x-show="offlineQueue && offlineQueue.length">
             <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-            <span x-text="offlineQueue.length + ' {{ __('pending offline orders') }}'"></span>
+	            <span x-text="offlineQueue.length + ' ' + @js(__('pending offline orders'))"></span>
         </div>
         <button type="button"
                 x-on:click="syncOfflineQueue && syncOfflineQueue()"
@@ -69,7 +69,7 @@
               :class="offline ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200'">
             <span class="h-2 w-2 rounded-full"
                   :class="offline ? 'bg-amber-500' : 'bg-emerald-500'"></span>
-            <span x-text="offline ? '{{ __('Offline mode') }}' : '{{ __('Online') }}'"></span>
+	            <span x-text="offline ? @js(__('Offline mode')) : @js(__('Online'))"></span>
         </span>
     </div>
 
@@ -350,7 +350,7 @@
          class="z-modal fixed inset-0 flex items-center justify-center bg-black/50"
          x-transition>
         <div class="w-full max-w-md mx-4 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6" x-on:click.outside="showSessionModal = false">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4" x-text="currentSession ? '{{ __('Close Session') }}' : '{{ __('Open Session') }}'"></h3>
+	            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4" x-text="currentSession ? @js(__('Close Session')) : @js(__('Open Session'))"></h3>
             
             {{-- Open Session Form --}}
             <div x-show="!currentSession">

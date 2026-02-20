@@ -124,7 +124,7 @@
                         </a>
                         <button 
                             type="button"
-                            @click="copyToClipboard('{{ $item->url }}')"
+                            @click="copyToClipboard(@js($item->url))"
                             class="p-2 bg-white rounded-full hover:bg-slate-100"
                             title="{{ __('Copy Link') }}"
                         >
@@ -282,7 +282,7 @@
                                 </a>
                                 <button 
                                     type="button"
-                                    @click="copyToClipboard('{{ $previewImage['url'] }}')"
+                                    @click="copyToClipboard(@js($previewImage['url']))"
                                     class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

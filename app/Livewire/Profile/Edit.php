@@ -11,7 +11,7 @@ use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]

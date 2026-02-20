@@ -12,8 +12,7 @@ use App\Services\BranchContextManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class DashboardWidgets extends Component
 {
     public array $widgets = [];

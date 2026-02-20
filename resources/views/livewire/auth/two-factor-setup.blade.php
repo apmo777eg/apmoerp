@@ -41,7 +41,8 @@
                     {{ __('Regenerate Recovery Codes') }}
                 </button>
                 <button type="button" wire:click="disable" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
-                    onclick="return confirm('{{ __('Are you sure you want to disable 2FA?') }}')">
+	                    onclick="return confirm(@js(__('Are you sure you want to disable 2FA?')))"
+	                >
                     {{ __('Disable 2FA') }}
                 </button>
             </div>

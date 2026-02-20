@@ -45,7 +45,8 @@ return new class extends Migration
             $table->boolean('is_service')->default(false);
             $table->boolean('supports_reporting')->default(true);
             $table->boolean('supports_custom_fields')->default(true);
-            $table->boolean('supports_items')->default(true);
+			// By default, a module is a "system" module unless explicitly flagged as product-supporting.
+			$table->boolean('supports_items')->default(false);
             $table->json('operation_config')->nullable();
             $table->json('integration_hooks')->nullable();
             $table->timestamps();

@@ -9,8 +9,7 @@ use App\Models\BranchModule;
 use App\Models\Module;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 #[Layout('layouts.app')]
 class Modules extends Component
 {

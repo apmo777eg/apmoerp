@@ -7,8 +7,7 @@ namespace App\Livewire\Admin\CurrencyRate;
 use App\Models\CurrencyRate;
 use App\Services\CurrencyService;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Form extends Component
 {
     public ?int $rateId = null;

@@ -6,7 +6,7 @@ namespace App\Livewire\Admin;
 
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
+use App\Livewire\BaseComponent as Component;
 use Spatie\Activitylog\Models\Activity;
 
 #[Layout('layouts.app')]

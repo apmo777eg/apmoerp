@@ -45,7 +45,7 @@ class WorkflowAuditLog extends Model
             }
 
             if ($model->workflow_instance_id) {
-                $instance = WorkflowInstance::withoutGlobalScopes()->find($model->workflow_instance_id);
+                $instance = WorkflowInstance::withoutBranchScope()->find($model->workflow_instance_id);
                 if ($instance && $instance->branch_id) {
                     $model->branch_id = $instance->branch_id;
                 }

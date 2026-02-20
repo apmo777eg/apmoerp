@@ -38,7 +38,7 @@
                 </button>
                 @foreach($this->availableModules as $module)
                     <button type="button" 
-                        wire:click="$set('selectedModule', '{{ $module }}')"
+                        wire:click="$set('selectedModule', @js($module))"
                         class="px-3 py-1 text-sm rounded-full {{ $selectedModule === $module ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}"
                     >
                         {{ __(ucfirst($module)) }}

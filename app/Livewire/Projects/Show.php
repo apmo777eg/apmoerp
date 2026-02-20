@@ -7,8 +7,7 @@ namespace App\Livewire\Projects;
 use App\Models\Project;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
-use Livewire\Component;
-
+use App\Livewire\BaseComponent as Component;
 class Show extends Component
 {
     use AuthorizesRequests;

@@ -23,11 +23,9 @@ class SendDueReminder implements ShouldQueue
         }
 
         try {
-            // V23-CRIT-04 FIX: Use withoutGlobalScopes() to bypass BranchScope when loading tenant
-            // since queue workers have no authenticated user context
-            $tenant = $contract->tenant()
-                ->withoutGlobalScopes()
-                ->first();
+            // Queue jobs run without an authenticated user.
+            // We already set an explicit branch context, so tenant relationship can load safely.
+            $tenant = $contract->tenant()->first();
 
             $title = __('Rent due soon');
             $body = __('Your rent is due on :date for unit :unit', [
