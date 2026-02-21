@@ -78,7 +78,7 @@
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-slate-100">
                             {{ $row->employee?->name ?? __('Unknown') }}
                             <span class="text-slate-400 text-[11px] ml-1">
-                                {{ $row->employee?->reference_number }}
+                                {{ $row->employee?->code }}
                             </span>
                         </td>
                         {{-- V43-FINANCE-01 FIX: Use decimal_float() for proper BCMath-based rounding --}}

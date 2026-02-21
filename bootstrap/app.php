@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,6 +46,11 @@ return Application::configure(basePath: dirname(__DIR__))
         }
 
         $middleware->trustProxies(at: $trustedProxies);
+
+        // Enable Sanctum SPA (cookie/session) auth for same-origin API calls (e.g. POS)
+        $middleware->api(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
 
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,

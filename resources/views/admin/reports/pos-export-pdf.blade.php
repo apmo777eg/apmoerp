@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>{{ $title ?? 'POS Report' }}</title>
     <style>
-        table { width: 100%%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
         th { background: #f3f4f6; }
     </style>

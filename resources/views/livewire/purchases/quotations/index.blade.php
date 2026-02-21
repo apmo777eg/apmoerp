@@ -74,12 +74,12 @@
                 <tbody>
                     @forelse($quotations as $quotation)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <td class="font-medium">{{ $quotation->reference_number ?? $quotation->reference_number }}</td>
+                            <td class="font-medium">{{ $quotation->reference_number ?? $quotation->id }}</td>
                             <td>{{ $quotation->supplier?->name ?? '-' }}</td>
-                            <td>{{ $quotation->requisition?->reference_number ?? '-' }}</td>
+                            <td>{{ $quotation->requisition?->code ?? '-' }}</td>
                             <td class="text-sm text-slate-500 dark:text-slate-400">{{ $quotation->quotation_date?->format('Y-m-d') }}</td>
                             <td class="text-sm text-slate-500 dark:text-slate-400">{{ $quotation->valid_until?->format('Y-m-d') ?? '-' }}</td>
-                            <td>{{ number_format((float) ($quotation->total_amount ?? $quotation->total_amount ?? 0), 2) }}</td>
+                            <td>{{ number_format((float) ($quotation->total_amount ?? 0), 2) }}</td>
                             <td>
                                 <span class="px-2 py-1 text-xs rounded-full
                                     @if($quotation->status === 'accepted') bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300

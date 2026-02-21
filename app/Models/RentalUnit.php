@@ -28,13 +28,19 @@ class RentalUnit extends BaseModel
         'type',
         'floor',
         'area_sqm',
+        // Legacy alias
+        'area',
         'bedrooms',
         'bathrooms',
         'daily_rate',
         'weekly_rate',
         'monthly_rate',
+        // Legacy aliases
+        'rent',
         'yearly_rate',
         'deposit_amount',
+        // Legacy aliases
+        'deposit',
         'utilities_included',
         'electricity_meter',
         'water_meter',
@@ -59,6 +65,8 @@ class RentalUnit extends BaseModel
         'amenities' => 'array',
         'images' => 'array',
     ];
+
+    protected $appends = ['rent', 'deposit', 'area'];
 
     public function branch(): BelongsTo
     {
@@ -94,6 +102,17 @@ class RentalUnit extends BaseModel
     public function setDepositAttribute($value): void
     {
         $this->attributes['deposit_amount'] = $value;
+    }
+
+
+    public function getAreaAttribute()
+    {
+        return $this->area_sqm;
+    }
+
+    public function setAreaAttribute($value): void
+    {
+        $this->attributes['area_sqm'] = $value;
     }
 
     public function scopeForBranch(Builder $query, $branch): Builder

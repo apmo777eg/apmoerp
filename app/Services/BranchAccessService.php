@@ -17,11 +17,29 @@ class BranchAccessService
     {
         return $this->handleServiceOperation(
             callback: function () use ($user) {
-                if ($this->isSuperAdmin($user)) {
+                // Super Admin / view-all can see all branches.
+                if ($this->isSuperAdmin($user) || BranchContextManager::canViewAllBranches($user)) {
                     return Branch::active()->get();
                 }
 
-                return $user->branches()->wherePivot('is_active', true)->get();
+                // Regular users: union of (primary branch_id) + (active pivot assignments)
+                $ids = $user->branches()
+                    ->wherePivot('is_active', true)
+                    ->pluck('branches.id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
+                if (isset($user->branch_id) && $user->branch_id !== null) {
+                    $ids[] = (int) $user->branch_id;
+                }
+
+                $ids = array_values(array_unique(array_filter($ids, fn ($v) => (int) $v > 0)));
+
+                if (empty($ids)) {
+                    return new Collection();
+                }
+
+                return Branch::active()->whereIn('id', $ids)->get();
             },
             operation: 'getUserBranches',
             context: ['user_id' => $user->id]
@@ -46,12 +64,19 @@ class BranchAccessService
     {
         return $this->handleServiceOperation(
             callback: function () use ($user, $branchId) {
-                if ($this->isSuperAdmin($user)) {
+                // Super Admin / view-all bypass
+                if ($this->isSuperAdmin($user) || BranchContextManager::canViewAllBranches($user)) {
+                    return true;
+                }
+
+                // Primary branch_id shortcut
+                if (isset($user->branch_id) && (int) $user->branch_id === (int) $branchId) {
                     return true;
                 }
 
                 return $user->branches()
                     ->where('branches.id', $branchId)
+                    ->wherePivot('is_active', true)
                     ->exists();
             },
             operation: 'canAccessBranch',

@@ -34,6 +34,7 @@ class BranchModule extends Pivot
         'permission_overrides',
         'inherit_settings',
         'activated_at',
+        'is_enabled',
     ];
 
     protected $casts = [

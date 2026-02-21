@@ -355,18 +355,26 @@ class StoreSyncService
             ->where('branch_id', $store->branch_id)
             ->first();
 
-        if ($existingOrder) {
-            $oldStatus = $existingOrder->status;
-            $newStatus = $this->mapShopifyOrderStatus($data['financial_status'] ?? 'pending');
+                if ($existingOrder) {
+            DB::transaction(function () use ($existingOrder, $data) {
+                $oldStatus = $existingOrder->status;
+                $newStatus = $this->mapShopifyOrderStatus($data['financial_status'] ?? 'pending');
 
-            $existingOrder->update([
-                'status' => $newStatus,
-            ]);
+                // CRITICAL (V60-STOCK-04): When an external order becomes completed, record stock movements in the same transaction.
+                if ($oldStatus !== 'completed' && $newStatus === 'completed' && $existingOrder->warehouse_id) {
+                    $existingOrder->load(['items.product', 'items.unit']);
+                    app(\App\Services\SaleStockMovementService::class)->createForSale($existingOrder, $this->getIntegrationUserId());
+                }
 
-            // V25-HIGH-03 FIX: Dispatch SaleCompleted event when status transitions to completed
-            if ($oldStatus !== 'completed' && $newStatus === 'completed' && $existingOrder->warehouse_id) {
-                event(new \App\Events\SaleCompleted($existingOrder->fresh('items')));
-            }
+                $existingOrder->update([
+                    'status' => $newStatus,
+                ]);
+
+                // V25-HIGH-03 FIX: Dispatch SaleCompleted event when status transitions to completed
+                if ($oldStatus !== 'completed' && $newStatus === 'completed' && $existingOrder->warehouse_id) {
+                    event(new \App\Events\SaleCompleted($existingOrder->fresh('items')));
+                }
+            });
 
             return;
         }
@@ -466,7 +474,11 @@ class StoreSyncService
             }
 
             // V25-HIGH-03 FIX: Dispatch SaleCompleted event for completed orders to trigger inventory updates
+            // CRITICAL (V60-STOCK-05): Record stock movements in the same transaction for completed imports.
             if ($status === 'completed' && $warehouseId) {
+                $sale->load(['items.product', 'items.unit']);
+                app(\App\Services\SaleStockMovementService::class)->createForSale($sale, $this->getIntegrationUserId());
+
                 event(new \App\Events\SaleCompleted($sale->fresh('items')));
             }
         });
@@ -526,18 +538,26 @@ class StoreSyncService
             ->where('branch_id', $store->branch_id)
             ->first();
 
-        if ($existingOrder) {
-            $oldStatus = $existingOrder->status;
-            $newStatus = $this->mapWooOrderStatus($data['status'] ?? 'pending');
+                if ($existingOrder) {
+            DB::transaction(function () use ($existingOrder, $data) {
+                $oldStatus = $existingOrder->status;
+                $newStatus = $this->mapWooOrderStatus($data['status'] ?? 'pending');
 
-            $existingOrder->update([
-                'status' => $newStatus,
-            ]);
+                // CRITICAL (V60-STOCK-06): When an external order becomes completed, record stock movements in the same transaction.
+                if ($oldStatus !== 'completed' && $newStatus === 'completed' && $existingOrder->warehouse_id) {
+                    $existingOrder->load(['items.product', 'items.unit']);
+                    app(\App\Services\SaleStockMovementService::class)->createForSale($existingOrder, $this->getIntegrationUserId());
+                }
 
-            // V25-HIGH-03 FIX: Dispatch SaleCompleted event when status transitions to completed
-            if ($oldStatus !== 'completed' && $newStatus === 'completed' && $existingOrder->warehouse_id) {
-                event(new \App\Events\SaleCompleted($existingOrder->fresh('items')));
-            }
+                $existingOrder->update([
+                    'status' => $newStatus,
+                ]);
+
+                // V25-HIGH-03 FIX: Dispatch SaleCompleted event when status transitions to completed
+                if ($oldStatus !== 'completed' && $newStatus === 'completed' && $existingOrder->warehouse_id) {
+                    event(new \App\Events\SaleCompleted($existingOrder->fresh('items')));
+                }
+            });
 
             return;
         }
@@ -638,7 +658,11 @@ class StoreSyncService
             }
 
             // V25-HIGH-03 FIX: Dispatch SaleCompleted event for completed orders
+            // CRITICAL (V60-STOCK-07): Record stock movements in the same transaction for completed imports.
             if ($status === 'completed' && $warehouseId) {
+                $sale->load(['items.product', 'items.unit']);
+                app(\App\Services\SaleStockMovementService::class)->createForSale($sale, $this->getIntegrationUserId());
+
                 event(new \App\Events\SaleCompleted($sale->fresh('items')));
             }
         });

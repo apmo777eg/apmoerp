@@ -345,6 +345,9 @@ class SalesAnalytics extends Component
             ->selectRaw('COUNT(*) as count')
             ->selectRaw('SUM(sale_payments.amount) as total')
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_payments.deleted_at')
+            // V60-FIN-01 FIX: Only count actually posted/paid payments (exclude pending/failed/refunded)
+            ->whereIn('sale_payments.status', ['completed', 'paid', 'posted'])
             ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->whereBetween('sales.sale_date', [$this->dateFrom, $this->dateTo]);
 

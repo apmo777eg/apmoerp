@@ -7,6 +7,7 @@ namespace App\Listeners;
 use App\Events\SaleCompleted;
 use App\Models\StockMovement;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Services\BranchContextManager;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -21,6 +22,50 @@ class UpdateStockOnSale implements ShouldQueue
     {
         $sale = $event->sale;
         $warehouseId = $sale->warehouse_id;
+
+        if (! $warehouseId) {
+            Log::warning('SaleCompleted received without warehouse_id; skipping stock update', [
+                'sale_id' => $sale->getKey(),
+                'branch_id' => $sale->branch_id,
+            ]);
+
+            return;
+        }
+
+
+        // CRIT-BRANCH-QUEUE-01 FIX:
+        // This listener is queued. In a queue worker (console) there is no HTTP request and no
+        // authenticated user/session context. Our BranchScope fails closed in that case, which
+        // can make $sale->items, StockMovement checks, etc. return empty/false.
+        //
+        // We must set an explicit branch context for the duration of this job.
+        // Only do this when running in console to avoid interfering with the normal request
+        // lifecycle (web/API middleware already manages branch context).
+        $didSetBranchContext = false;
+        if (app()->runningInConsole() && $sale->branch_id) {
+            BranchContextManager::setBranchContext((int) $sale->branch_id);
+            $didSetBranchContext = true;
+        }
+
+        try {
+            // LEGACY GUARD:
+            // Some older POS versions recorded stock movements with reference_type='sale' (per sale),
+            // not reference_type='sale_item' (per line item). If those movements exist, we MUST NOT
+            // create per-sale-item movements to avoid double deduction.
+            $hasSaleLevelMovements = StockMovement::where('movement_type', 'sale')
+                ->where('reference_type', 'sale')
+                ->where('reference_id', $sale->getKey())
+                ->exists();
+
+            if ($hasSaleLevelMovements) {
+                Log::info('Skipping UpdateStockOnSale because sale-level movements already exist', [
+                    'sale_id' => $sale->getKey(),
+                    'warehouse_id' => $warehouseId,
+                ]);
+
+                return;
+            }
+
 
         foreach ($sale->items as $item) {
             // BUG FIX #2: Apply unit of measure conversion factor
@@ -103,9 +148,19 @@ class UpdateStockOnSale implements ShouldQueue
                 'reference_id' => $saleItemId,
                 'qty' => abs($baseQuantity),
                 'direction' => 'out',
+                // stock_movements.unit_cost is NOT NULL (default 0.0000)
+                // Use the item's cost_price when available; otherwise fall back to 0.
+                'unit_cost' => decimal_float($item->cost_price ?? 0, 4),
                 'notes' => sprintf('Sale #%s completed (UoM: %s, Factor: %s)', $sale->reference_number ?? $sale->getKey(), $item->unit?->name ?? 'base', $conversionFactor),
                 'created_by' => $sale->created_by,
             ]);
+        }
+
+        } finally {
+            // Prevent branch context leakage between queued jobs in long-running workers.
+            if ($didSetBranchContext) {
+                BranchContextManager::clearBranchContext();
+            }
         }
     }
 }

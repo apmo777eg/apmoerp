@@ -148,6 +148,7 @@ class Form extends Component
             // Check if account has transactions before updating balance
             $hasTransactions = \DB::table('bank_transactions')
                 ->where('bank_account_id', $this->account->id)
+                ->whereNull('deleted_at')
                 ->exists();
 
             $this->account->update($data);

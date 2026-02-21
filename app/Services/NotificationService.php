@@ -244,6 +244,7 @@ class NotificationService implements NotificationServiceInterface
                 DB::table('notifications')
                     ->where('id', $notificationId)
                     ->where('notifiable_id', $userId)
+                    ->whereNull('deleted_at')
                     ->update(['read_at' => now()]);
                 event(new NotificationRead($userId, $notificationId));
                 event(new UpdateNotificationCounters($userId));
@@ -260,6 +261,7 @@ class NotificationService implements NotificationServiceInterface
                 $count = DB::table('notifications')
                     ->whereIn('id', $ids)
                     ->where('notifiable_id', $userId)
+                    ->whereNull('deleted_at')
                     ->update(['read_at' => now()]);
                 event(new NotificationsMarkedAsRead($userId, $ids));
                 event(new UpdateNotificationCounters($userId));

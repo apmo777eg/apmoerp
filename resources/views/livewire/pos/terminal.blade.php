@@ -50,7 +50,7 @@
             <span class="text-blue-600 dark:text-blue-300">{{ __('View in') }}:</span>
             <select x-model="displayCurrency" class="bg-transparent border-0 text-xs text-blue-700 dark:text-blue-200 font-medium focus:ring-0 py-0 pr-5 cursor-pointer">
                 @foreach($currencies as $currency)
-                    <option value="{{ $currency->reference_number }}">{{ $currency->reference_number }}@if($currency->is_base) ({{ __('Base') }})@endif</option>
+                    <option value="{{ $currency->code }}">{{ $currency->code }}@if($currency->is_base) ({{ __('Base') }})@endif</option>
                 @endforeach
             </select>
         </div>
@@ -293,7 +293,7 @@
                         {{-- Bank Transfer Details --}}
                         <div x-show="payment.method === 'transfer'" class="mt-2 grid grid-cols-2 gap-2">
                             <input type="text" x-model="payment.bank_name" placeholder="{{ __('Bank Name') }}" class="erp-input text-sm">
-                            <input type="text" x-model="payment.reference_no" placeholder="{{ __('Reference No.') }}" class="erp-input text-sm">
+                            <input type="text" x-model="payment.reference_number" placeholder="{{ __('Reference No.') }}" class="erp-input text-sm">
                         </div>
                         
                         {{-- Cheque Details --}}

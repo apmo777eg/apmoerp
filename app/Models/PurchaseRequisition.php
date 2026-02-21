@@ -40,6 +40,8 @@ class PurchaseRequisition extends BaseModel
         'extra_attributes',
         'created_by',
         'updated_by',
+        'requisition_code',
+        'required_by',
     ];
 
     protected $casts = [

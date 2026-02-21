@@ -23,7 +23,7 @@
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse ($orders as $order)
                         <tr>
-                            <td class="py-2 text-slate-900 dark:text-slate-100">{{ $order->reference_number ?? $order->reference_number ?? $order->id }}</td>
+                            <td class="py-2 text-slate-900 dark:text-slate-100">{{ $order->reference_number ?? $order->id }}</td>
                             <td class="py-2 text-slate-700 dark:text-slate-200">{{ optional($order->sale_date)->format('Y-m-d') ?? optional($order->created_at)->format('Y-m-d') }}</td>
                             <td class="py-2">
                                 <span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">

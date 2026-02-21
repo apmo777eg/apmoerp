@@ -42,6 +42,28 @@ class PosCheckoutRequest extends FormRequest
             'payments' => ['sometimes', 'array'],
             'payments.*.amount' => ['required', 'numeric', 'gt:0'],
             'payments.*.method' => ['required', 'string', 'in:cash,card,transfer,cheque'],
+            // Optional payment metadata (flat)
+            'payments.*.currency' => ['sometimes', 'string', 'max:3'],
+            'payments.*.payment_date' => ['sometimes', 'date'],
+            'payments.*.reference_number' => ['nullable', 'string', 'max:191'],
+            // Backward compatibility (legacy clients)
+            'payments.*.reference_no' => ['nullable', 'string', 'max:191'],
+            'payments.*.bank_name' => ['nullable', 'string', 'max:191'],
+            'payments.*.card_last_four' => ['nullable', 'string', 'max:4'],
+            'payments.*.cheque_number' => ['nullable', 'string', 'max:191'],
+            'payments.*.cheque_date' => ['nullable', 'date'],
+            'payments.*.notes' => ['nullable', 'string', 'max:1000'],
+
+            // Backward-compatible nested meta object from older POS clients
+            'payments.*.meta' => ['sometimes', 'array'],
+            'payments.*.meta.reference_number' => ['nullable', 'string', 'max:191'],
+            'payments.*.meta.reference_no' => ['nullable', 'string', 'max:191'],
+            'payments.*.meta.bank_name' => ['nullable', 'string', 'max:191'],
+            'payments.*.meta.card_last_four' => ['nullable', 'string', 'max:4'],
+            'payments.*.meta.cheque_number' => ['nullable', 'string', 'max:191'],
+            'payments.*.meta.cheque_date' => ['nullable', 'date'],
+            'payments.*.meta.notes' => ['nullable', 'string', 'max:1000'],
+            'payments.*.meta.card_type' => ['nullable', 'string', 'max:50'],
         ];
     }
 

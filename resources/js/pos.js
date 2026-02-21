@@ -97,6 +97,7 @@ export function erpPosTerminal(config = {}) {
         // ---------- State ----------
         search: '',
         isSearching: false,
+        isCheckingOut: false,
         products: [],
 
         cart: [],
@@ -447,7 +448,7 @@ export function erpPosTerminal(config = {}) {
                         card_last_four: p.card_last_four || null,
                         // transfer
                         bank_name: p.bank_name || null,
-                        reference_no: p.reference_no || null,
+                        reference_number: p.reference_number || p.reference_no || null,
                         // cheque
                         cheque_number: p.cheque_number || null,
                         cheque_date: p.cheque_date || null,

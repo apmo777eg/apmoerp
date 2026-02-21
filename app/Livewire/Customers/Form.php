@@ -116,6 +116,25 @@ class Form extends Component
 
         $validated['branch_id'] = $branchId;
 
+        
+
+        // Map semantic payment_terms to payment_terms_days so it persists in DB.
+        if (! empty($validated['payment_terms'])) {
+            $map = [
+                'immediate' => 0,
+                'net15' => 15,
+                'net30' => 30,
+                'net60' => 60,
+                'net90' => 90,
+            ];
+
+            if (! isset($validated['payment_terms_days']) || $validated['payment_terms_days'] === null || $validated['payment_terms_days'] === '') {
+                $validated['payment_terms_days'] = $map[$validated['payment_terms']] ?? 0;
+            }
+        }
+
+        unset($validated['payment_terms']);
+
         // Only set created_by for new records
         if (! $this->editMode) {
             // V33-CRIT-02 FIX: Use actual_user_id() for proper audit attribution during impersonation

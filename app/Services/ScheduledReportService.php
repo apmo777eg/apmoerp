@@ -562,7 +562,7 @@ Ghanem ERP', [
 
     public function runNow(int $scheduleId): array
     {
-        $schedule = DB::table('report_schedules')->where('id', $scheduleId)->first();
+        $schedule = DB::table('report_schedules')->where('id', $scheduleId)->whereNull('deleted_at')->first();
 
         if (! $schedule) {
             return ['success' => false, 'error' => __('Schedule not found')];
@@ -587,6 +587,7 @@ Ghanem ERP', [
         if ($result['success']) {
             DB::table('report_schedules')
                 ->where('id', $scheduleId)
+                ->whereNull('deleted_at')
                 ->update(['last_run_at' => now(), 'updated_at' => now()]);
         }
 

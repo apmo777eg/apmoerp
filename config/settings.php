@@ -528,6 +528,116 @@ return [
      *
      * Notification preferences
      */
+
+'mail' => [
+    'label' => 'Email (SMTP)',
+    'description' => 'Outgoing email server configuration',
+    'settings' => [
+        'smtp_host' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'SMTP Host',
+            'description' => 'SMTP server host',
+        ],
+        'smtp_port' => [
+            'type' => 'integer',
+            'default' => 587,
+            'label' => 'SMTP Port',
+            'description' => 'SMTP server port',
+        ],
+        'smtp_username' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'SMTP Username',
+            'description' => 'SMTP account username',
+        ],
+        'smtp_password' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'SMTP Password',
+            'description' => 'SMTP account password',
+            'encrypted' => true,
+        ],
+        'smtp_encryption' => [
+            'type' => 'string',
+            'default' => 'tls',
+            'label' => 'Encryption',
+            'description' => 'TLS/SSL/None',
+            'options' => [
+                'none' => 'None',
+                'tls' => 'TLS',
+                'ssl' => 'SSL',
+            ],
+        ],
+        'from_address' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'From Address',
+            'description' => 'Default sender email address',
+        ],
+        'from_name' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'From Name',
+            'description' => 'Default sender name',
+        ],
+    ],
+],
+
+'whatsapp' => [
+    'label' => 'WhatsApp',
+    'description' => 'WhatsApp integration configuration',
+    'settings' => [
+        'enabled' => [
+            'type' => 'boolean',
+            'default' => false,
+            'label' => 'Enabled',
+            'description' => 'Enable WhatsApp integration',
+        ],
+        'provider' => [
+            'type' => 'string',
+            'default' => 'link',
+            'label' => 'Provider',
+            'description' => 'Choose how WhatsApp is used in the system',
+            'options' => [
+                'link' => 'WhatsApp Link (wa.me)',
+                'cloud' => 'WhatsApp Cloud API',
+            ],
+        ],
+        'default_country_code' => [
+            'type' => 'string',
+            'default' => '20',
+            'label' => 'Default Country Code',
+            'description' => 'Used when generating WhatsApp links/messages',
+        ],
+        'business_number' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'Business Number',
+            'description' => 'Business phone number (without country code)',
+        ],
+        'cloud.phone_number_id' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'Phone Number ID',
+            'description' => 'WhatsApp Cloud API Phone Number ID',
+        ],
+        'cloud.access_token' => [
+            'type' => 'string',
+            'default' => '',
+            'label' => 'Access Token',
+            'description' => 'WhatsApp Cloud API access token',
+            'encrypted' => true,
+        ],
+        'cloud.api_version' => [
+            'type' => 'string',
+            'default' => 'v19.0',
+            'label' => 'API Version',
+            'description' => 'Graph API version (example: v19.0)',
+        ],
+    ],
+],
+
     'notifications' => [
         'low_stock_enabled' => [
             'label' => 'Low Stock Alerts',

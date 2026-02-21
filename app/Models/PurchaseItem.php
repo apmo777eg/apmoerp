@@ -36,6 +36,8 @@ class PurchaseItem extends BaseModel
         'expiry_date',
         'batch_number',
         'notes',
+        'qty',
+        'unit_cost',
     ];
 
     protected $casts = [

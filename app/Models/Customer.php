@@ -25,6 +25,8 @@ class Customer extends BaseModel
     protected $fillable = [
         'branch_id',
         'code',
+        // Virtual UUID stored in extra_attributes for API compatibility
+        'uuid',
         'name',
         'name_ar',
         'type',
@@ -52,8 +54,13 @@ class Customer extends BaseModel
         'credit_limit',
         'balance',
         'payment_terms_days',
+        // Legacy aliases
+        'payment_terms',
+        'payment_due_days',
         'discount_percent',
         'currency',
+        // Legacy alias
+        'preferred_currency',
         // Loyalty
         'loyalty_points',
         'loyalty_tier',
@@ -92,6 +99,17 @@ class Customer extends BaseModel
 
     protected $hidden = [
         'portal_password',
+    ];
+
+    /**
+     * Append computed/legacy attributes in JSON responses.
+     */
+    protected $appends = [
+        'uuid',
+        'payment_terms',
+        'payment_due_days',
+        'preferred_currency',
+        'total_purchases',
     ];
 
     public function branch(): BelongsTo
@@ -245,6 +263,113 @@ class Customer extends BaseModel
         $newBalance = bcsub((string) ($this->balance ?? '0'), $amount, 4);
         $this->update(['balance' => $newBalance]);
     }
+
+
+    /**
+     * Store a virtual UUID in extra_attributes (customers table doesn't have a uuid column).
+     */
+    public function getUuidAttribute(): ?string
+    {
+        $attrs = $this->extra_attributes;
+
+        return is_array($attrs) ? ($attrs['uuid'] ?? null) : null;
+    }
+
+    public function setUuidAttribute($value): void
+    {
+        $attrs = $this->extra_attributes;
+        if (! is_array($attrs)) {
+            $attrs = [];
+        }
+
+        if ($value === null || $value === '') {
+            unset($attrs['uuid']);
+        } else {
+            $attrs['uuid'] = (string) $value;
+        }
+
+        $this->extra_attributes = $attrs;
+    }
+
+    protected function mapPaymentTermsToDays(?string $terms): ?int
+    {
+        return match ($terms) {
+            'immediate' => 0,
+            'net15' => 15,
+            'net30' => 30,
+            'net60' => 60,
+            'net90' => 90,
+            default => null,
+        };
+    }
+
+    protected function mapDaysToPaymentTerms(?int $days): ?string
+    {
+        if ($days === null) {
+            return null;
+        }
+
+        return match ((int) $days) {
+            0 => 'immediate',
+            15 => 'net15',
+            30 => 'net30',
+            60 => 'net60',
+            90 => 'net90',
+            default => null,
+        };
+    }
+
+    public function getPaymentTermsAttribute(): ?string
+    {
+        return $this->mapDaysToPaymentTerms($this->payment_terms_days);
+    }
+
+    public function setPaymentTermsAttribute($value): void
+    {
+        $days = $this->mapPaymentTermsToDays(is_string($value) ? $value : (string) $value);
+        if ($days !== null) {
+            $this->attributes['payment_terms_days'] = $days;
+        }
+    }
+
+    public function setPaymentDueDaysAttribute($value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $this->attributes['payment_terms_days'] = (int) $value;
+    }
+
+    public function getPreferredCurrencyAttribute(): ?string
+    {
+        return $this->currency;
+    }
+
+    public function setPreferredCurrencyAttribute($value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $this->attributes['currency'] = (string) $value;
+    }
+
+    public function getTotalPurchasesAttribute(): ?float
+    {
+        // If selected as an alias, prefer it.
+        if (array_key_exists('total_purchases', $this->attributes)) {
+            return decimal_float($this->attributes['total_purchases']);
+        }
+
+        // If sales are eager-loaded, compute without extra queries.
+        if ($this->relationLoaded('sales') && $this->sales) {
+            return decimal_float($this->sales->sum('total_amount'));
+        }
+
+        return null;
+    }
+
 
     // Backward compatibility accessors
     public function getStatusAttribute(): string

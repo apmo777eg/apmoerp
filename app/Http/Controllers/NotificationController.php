@@ -20,6 +20,7 @@ class NotificationController extends Controller
         $rows = DB::table('notifications')
             ->where('notifiable_id', $user->getKey())
             ->where('notifiable_type', get_class($user))
+            ->whereNull('deleted_at')
             ->orderByDesc('created_at')
             ->paginate($perPage);
 
@@ -32,6 +33,7 @@ class NotificationController extends Controller
         $count = DB::table('notifications')
             ->where('notifiable_id', $user->getKey())
             ->where('notifiable_type', get_class($user))
+            ->whereNull('deleted_at')
             ->whereNull('read_at')
             ->count();
 
@@ -60,6 +62,7 @@ class NotificationController extends Controller
         $ids = DB::table('notifications')
             ->where('notifiable_id', $userId)
             ->where('notifiable_type', get_class($user))
+            ->whereNull('deleted_at')
             ->pluck('id')
             ->all();
         $count = $this->notify->markManyRead($userId, $ids);

@@ -415,12 +415,15 @@ class StockService
         // - Positive values = stock added (in)
         // - Negative values = stock removed (out)
         // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
-        $totalStock = decimal_float(StockMovement::where('product_id', $productId)
+        $totalStock = decimal_float((string) DB::table('stock_movements')
+            ->where('product_id', $productId)
+            ->whereNull('deleted_at')
             ->sum('quantity'), 4);
 
         // Update the product's stock_quantity field (cached/denormalized value)
         DB::table('products')
             ->where('id', $productId)
+            ->whereNull('deleted_at')
             ->update([
                 'stock_quantity' => $totalStock,
                 'updated_at' => now(),

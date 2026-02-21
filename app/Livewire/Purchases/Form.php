@@ -30,7 +30,7 @@ class Form extends Component
 
     public string $warehouse_id = '';
 
-    public string $reference_no = '';
+    public string $reference_number = '';
 
     public string $status = 'draft';
 
@@ -108,7 +108,7 @@ class Form extends Component
                     }
                 },
             ],
-            'reference_no' => 'nullable|string|max:100',
+            'reference_number' => 'nullable|string|max:100',
             'status' => ['required', Rule::in(PurchaseStatus::values())],
             'currency' => 'nullable|string|max:3',
             'notes' => 'nullable|string',
@@ -149,7 +149,7 @@ class Form extends Component
             $this->editMode = true;
             $this->supplier_id = (string) ($purchase->supplier_id ?? '');
             $this->warehouse_id = (string) ($purchase->warehouse_id ?? '');
-            $this->reference_no = $purchase->reference_number ?? '';
+            $this->reference_number = $purchase->reference_number ?? '';
             $this->status = $purchase->status ?? 'draft';
             $this->currency = $purchase->currency ?? 'EGP';
             $this->notes = $purchase->notes ?? '';
@@ -306,7 +306,7 @@ class Form extends Component
                             'branch_id' => $branchId,
                             'supplier_id' => $this->supplier_id,
                             'warehouse_id' => $this->warehouse_id,
-                            'reference_number' => $this->reference_no ?: null,
+                            'reference_number' => $this->reference_number ?: null,
                             'status' => $this->status,
                             'currency' => $this->currency,
                             'notes' => $this->notes,

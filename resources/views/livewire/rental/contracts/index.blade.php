@@ -80,7 +80,7 @@
                             </span>
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-700 dark:text-slate-200">
-                            {{ $row->unit?->reference_number ?? __('N/A') }}
+                            {{ $row->unit?->code ?? __('N/A') }}
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap text-xs text-slate-700 dark:text-slate-200">
                             {{ $row->unit?->property?->name ?? __('N/A') }}

@@ -13,8 +13,8 @@ class SaleResource extends JsonResource
     {
                 return [
             'id' => $this->id,
-            // Compatibility keys (DB-first identifier is reference_number)
-            'code' => $this->reference_number,
+            'reference_number' => $this->reference_number,
+            // Backward compatibility alias
             'reference_no' => $this->reference_number,
 
             'branch_id' => $this->branch_id,

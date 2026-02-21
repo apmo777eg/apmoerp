@@ -258,9 +258,12 @@ class SetupWizard extends Component
 
     public function skipSetup()
     {
+        // FIX V8-SETTINGS-01: system_settings uses `setting_key` column (not `key`).
+        // Using the wrong column breaks the "Skip" flow and can throw SQL errors.
         SystemSetting::updateOrCreate(
-            ['key' => 'setup_wizard_complete'],
-            ['value' => 'true']
+            ['setting_key' => 'setup_wizard_complete'],
+            // system_settings schema uses `setting_group` (not `group`).
+            ['value' => 'true', 'type' => 'boolean', 'setting_group' => 'system']
         );
 
         return redirect()->route('dashboard');

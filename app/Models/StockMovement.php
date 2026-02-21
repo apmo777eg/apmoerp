@@ -40,6 +40,8 @@ class StockMovement extends BaseModel
         'stock_after',
         'notes',
         'created_by',
+        'qty',
+        'type',
     ];
 
     protected $casts = [

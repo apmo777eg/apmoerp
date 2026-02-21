@@ -239,7 +239,7 @@
                         @forelse($soon as $contract)
                             <tr class="erp-pos-row">
                                 <td class="py-2 pr-4">
-                                    {{ optional($contract->unit)->reference_number ?? '—' }}
+                                    {{ optional($contract->unit)->code ?? '—' }}
                                 </td>
                                 <td class="py-2 pr-4">
                                     {{ optional($contract->tenant)->name ?? '—' }}

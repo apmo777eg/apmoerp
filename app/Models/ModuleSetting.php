@@ -30,6 +30,7 @@ class ModuleSetting extends Model
         'inherited_from_setting_id',
         'is_system',
         'priority',
+        'typed_value',
     ];
 
     public function module(): BelongsTo

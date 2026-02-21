@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -109,10 +110,11 @@ class GeneralNotification extends Notification implements ShouldQueue
     /**
      * القناة الخاصة لكل مستخدم.
      */
-    public function broadcastOn(): array
+    public function broadcastOn($notifiable): array
     {
         return [
-            new \Illuminate\Notifications\Channels\BroadcastChannel('private-App.Models.User.'.$this->notifiable->id),
+            // Laravel will prefix the channel with "private-" when using PrivateChannel.
+            new PrivateChannel('App.Models.User.'.$notifiable->id),
         ];
     }
 }

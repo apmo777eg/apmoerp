@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SalePayment;
+use App\Repositories\Contracts\StockMovementRepositoryInterface;
 use App\Models\Tax;
 use App\Models\User;
 use App\Rules\ValidPriceOverride;
@@ -32,7 +33,8 @@ class POSService implements POSServiceInterface
     use HandlesServiceErrors;
 
     public function __construct(
-        protected DiscountService $discounts
+        protected DiscountService $discounts,
+        protected StockMovementRepositoryInterface $stockMovements
     ) {}
 
     public function checkout(array $payload): Sale
@@ -120,6 +122,14 @@ class POSService implements POSServiceInterface
                     ->get()
                     ->keyBy('id');
 
+                // Normalize and validate cart items first (prevents partial processing and enables aggregate stock checks).
+                // NOTE: StockMovementRepository remains the source of truth for stock enforcement (it locks and re-checks),
+                // so this aggregate check is a user-friendly early validation only.
+                $allowNegativeStock = (bool) setting('inventory.allow_negative_stock', false);
+
+                $normalizedItems = [];
+                $requiredQtyByProduct = []; // product_id => qty (string, scale 4)
+
                 foreach ($items as $it) {
                     // Validate quantity is positive (prevent negative quantity exploit)
                     // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling
@@ -142,20 +152,7 @@ class POSService implements POSServiceInterface
                     // V51-CRIT-04 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
                     $price = isset($it['price']) ? decimal_float($it['price'], 4) : decimal_float($product->default_price ?? 0, 4);
 
-                    // Check stock availability for physical products (not services)
-                    // Respect the allow_negative_stock setting from system configuration
-                    $allowNegativeStock = (bool) setting('pos.allow_negative_stock', false);
-                    if (! $allowNegativeStock && $product->type !== 'service' && $product->product_type !== 'service') {
-                        $warehouseId = $payload['warehouse_id'] ?? null;
-                        $availableStock = StockService::getCurrentStock($product->getKey(), $warehouseId);
-                        if ($availableStock < $qty) {
-                            abort(422, __('Insufficient stock for :product. Available: :available, Requested: :requested', [
-                                'product' => $product->name,
-                                'available' => number_format($availableStock, 2),
-                                'requested' => number_format($qty, 2),
-                            ]));
-                        }
-                    }
+                    $isService = ($product->type === 'service' || $product->product_type === 'service');
 
                     // V51-CRIT-04 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for prices
                     if ($user && ! $user->can_modify_price && abs($price - decimal_float($product->default_price ?? 0, 4)) > 0.001) {
@@ -180,6 +177,51 @@ class POSService implements POSServiceInterface
                         abort(422, __('Discount exceeds your maximum allowed discount of :max%', ['max' => $user->max_discount_percent]));
                     }
 
+                    // Aggregate stock validation (handles duplicate products in cart)
+                    if (! $allowNegativeStock && ! $isService) {
+                        $pid = (int) $product->getKey();
+                        $qtyStr = number_format($qty, 4, '.', '');
+                        $requiredQtyByProduct[$pid] = isset($requiredQtyByProduct[$pid])
+                            ? bcadd((string) $requiredQtyByProduct[$pid], (string) $qtyStr, 4)
+                            : $qtyStr;
+                    }
+
+                    $normalizedItems[] = [
+                        'raw' => $it,
+                        'qty' => $qty,
+                        'price' => $price,
+                        'discount_percent' => $itemDiscountPercent,
+                        'product' => $product,
+                        'is_service' => $isService,
+                    ];
+                }
+
+                if (! $allowNegativeStock && ! empty($requiredQtyByProduct)) {
+                    $availableByProduct = StockService::getBulkCurrentStock(array_keys($requiredQtyByProduct), $warehouseId);
+
+                    foreach ($requiredQtyByProduct as $pid => $reqQtyStr) {
+                        $requiredQty = decimal_float((string) $reqQtyStr, 4);
+                        $availableStock = decimal_float((string) ($availableByProduct[$pid] ?? 0), 4);
+
+                        if ($availableStock < $requiredQty) {
+                            $product = $products->get((int) $pid);
+                            abort(422, __('Insufficient stock for :product. Available: :available, Requested: :requested', [
+                                'product' => $product?->name ?? ('#'.$pid),
+                                'available' => number_format($availableStock, 2),
+                                'requested' => number_format($requiredQty, 2),
+                            ]));
+                        }
+                    }
+                }
+
+                foreach ($normalizedItems as $row) {
+                    $it = $row['raw'];
+                    $qty = $row['qty'];
+                    $price = $row['price'];
+                    /** @var \App\Models\Product $product */
+                    $product = $row['product'];
+                    $itemDiscountPercent = $row['discount_percent'];
+
                     $lineDisc = $this->discounts->lineTotal($qty, $price, $itemDiscountPercent, (bool) ($it['percent'] ?? true));
 
                     if ($user && $user->daily_discount_limit !== null && $lineDisc > 0) {
@@ -192,6 +234,7 @@ class POSService implements POSServiceInterface
                             ]));
                         }
                     }
+
                     // Use bcmath for precise line calculations
                     $lineSub = bcmul((string) $qty, (string) $price, 4);
                     $lineTax = '0';
@@ -243,6 +286,15 @@ class POSService implements POSServiceInterface
                 $sale->tax_amount = decimal_float(bcround((string) $taxTotal, 2));
                 $sale->total_amount = decimal_float(bcround($grandTotal, 2));
 
+                                // CRITICAL (V60-STOCK-01): Create sale_item stock movements inside the checkout transaction.
+                // This prevents race conditions and keeps downstream flows consistent (void/returns rely on sale_item movements).
+                try {
+                    $sale->load(['items.product', 'items.unit']);
+                    app(\App\Services\SaleStockMovementService::class)->createForSale($sale, $user?->id);
+                } catch (\DomainException $e) {
+                    abort(422, $e->getMessage());
+                }
+
                 $payments = $payload['payments'] ?? [];
                 $paidTotal = '0';
                 // V38-MED-01 FIX: Allow payment_date from payload for offline/backdated scenarios
@@ -257,19 +309,36 @@ class POSService implements POSServiceInterface
                             continue;
                         }
 
+                        // Accept both flat and nested (meta) payment details for backward compatibility
+                        $meta = is_array($payment['meta'] ?? null) ? $payment['meta'] : [];
+                        $referenceNumber = $payment['reference_number']
+                            ?? $payment['reference_no']
+                            ?? ($meta['reference_number'] ?? $meta['reference_no'] ?? null);
+                        $bankName = $payment['bank_name'] ?? ($meta['bank_name'] ?? null);
+                        $cardLastFour = $payment['card_last_four'] ?? ($meta['card_last_four'] ?? null);
+                        $chequeNumber = $payment['cheque_number'] ?? ($meta['cheque_number'] ?? null);
+                        $chequeDate = $payment['cheque_date'] ?? ($meta['cheque_date'] ?? null);
+                        $notes = $payment['notes'] ?? ($meta['notes'] ?? null);
+                        $cardType = $payment['card_type'] ?? ($meta['card_type'] ?? null);
+                        if ($cardType) {
+                            $notes = trim((string) $notes);
+                            $notes = $notes ? ($notes . PHP_EOL . 'Card Type: ' . $cardType) : ('Card Type: ' . $cardType);
+                        }
+
                         SalePayment::create([
                             'sale_id' => $sale->getKey(),
+                            'received_by' => $user?->id,
                             'payment_method' => $payment['method'] ?? 'cash',
                             'amount' => $amount,
                             // V38-MED-01 FIX: Use payment-level date, payload-level date, or default
                             'payment_date' => $payment['payment_date'] ?? $defaultPaymentDate,
                             'currency' => $payment['currency'] ?? 'EGP',
-                            'reference_number' => $payment['reference_no'] ?? null,
-                            'card_last_four' => $payment['card_last_four'] ?? null,
-                            'bank_name' => $payment['bank_name'] ?? null,
-                            'cheque_number' => $payment['cheque_number'] ?? null,
-                            'cheque_date' => $payment['cheque_date'] ?? null,
-                            'notes' => $payment['notes'] ?? null,
+                            'reference_number' => $referenceNumber,
+                            'card_last_four' => $cardLastFour,
+                            'bank_name' => $bankName,
+                            'cheque_number' => $chequeNumber,
+                            'cheque_date' => $chequeDate,
+                            'notes' => $notes,
                             'status' => 'completed',
                         ]);
 
@@ -278,6 +347,7 @@ class POSService implements POSServiceInterface
                 } else {
                     SalePayment::create([
                         'sale_id' => $sale->getKey(),
+                        'received_by' => $user?->id,
                         'payment_method' => 'cash',
                         // V30-MED-08 FIX: Use bcround() instead of bcdiv truncation
                         // V38-FINANCE-01 FIX: Use decimal_float() for proper precision handling

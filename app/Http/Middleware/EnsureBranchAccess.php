@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\Branch;
+use App\Services\BranchContextManager;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,8 +23,24 @@ class EnsureBranchAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        /** @var Branch|null $branch */
-        $branch = $request->attributes->get('branch') ?? null;
+        /** @var Branch|int|string|null $branch */
+        $branch = $request->attributes->get('branch') ?? $request->route('branch');
+
+        // Some routes bind {branch} as an ID (int) and some as a Branch model.
+        // Normalize to a Branch model when possible.
+        if ($branch && ! $branch instanceof Branch) {
+            $branchId = (int) $branch;
+            if ($branchId > 0) {
+                $branch = Branch::query()->find($branchId);
+            }
+        }
+
+        // If a branch route parameter was provided as an ID but wasn't found,
+        // fail fast with 404 (instead of silently treating it as "not branch-scoped").
+        $rawBranchParam = $request->route('branch');
+        if ($rawBranchParam && ! $branch instanceof Branch && is_numeric((string) $rawBranchParam)) {
+            return $this->error('Branch not found.', 404);
+        }
 
         if (! $user) {
             return $this->error('Unauthenticated.', 401);
@@ -33,21 +50,9 @@ class EnsureBranchAccess
             return $next($request);
         }
 
-        // Super admin shortcut
-        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'super-admin'])) {
+        // Super admin / view-all shortcut
+        if (BranchContextManager::canViewAllBranches($user)) {
             return $next($request);
-        }
-
-        // Permission-based bypass (e.g., specific access-all permission)
-        // V35-SAFE-PERM FIX: Wrap hasPermissionTo in try-catch to avoid exception when permission doesn't exist in DB
-        if (method_exists($user, 'hasPermissionTo')) {
-            try {
-                if ($user->hasPermissionTo('access-all-branches')) {
-                    return $next($request);
-                }
-            } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
-                // Permission doesn't exist in DB, continue to other checks
-            }
         }
 
         // Generic relationship checks (adjust to your schema)
@@ -58,9 +63,18 @@ class EnsureBranchAccess
             $can = true;
         }
 
-        // 2) fallback: check user->branches relation or pivot
+        // 2) primary branch_id shortcut (common in this project)
+        if (! $can && isset($user->branch_id) && (int) $user->branch_id === (int) $branch->getKey()) {
+            $can = true;
+        }
+
+        // 3) fallback: check user->branches relation (pivot)
+        // SECURITY: Respect pivot is_active flag to avoid granting access to inactive branch assignments.
         if (! $can && method_exists($user, 'branches')) {
-            $can = $user->branches()->whereKey($branch->getKey())->exists();
+            $can = $user->branches()
+                ->whereKey($branch->getKey())
+                ->wherePivot('is_active', true)
+                ->exists();
         }
 
         if (! $can) {

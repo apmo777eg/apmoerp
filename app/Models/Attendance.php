@@ -35,6 +35,9 @@ class Attendance extends BaseModel
         'approved_by',
         'approved_at',
         'extra_attributes',
+        'date',
+        'check_in',
+        'check_out',
     ];
 
     protected $casts = [

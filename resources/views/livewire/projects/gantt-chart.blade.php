@@ -37,7 +37,7 @@
                 <select wire:model.live="projectId" class="erp-input w-auto text-sm">
                     <option value="">{{ __('All Projects') }}</option>
                     @foreach($this->allProjects as $project)
-                        <option value="{{ $project->id }}">{{ $project->reference_number }} - {{ $project->name }}</option>
+                        <option value="{{ $project->id }}">{{ $project->code }} - {{ $project->name }}</option>
                     @endforeach
                 </select>
             </div>

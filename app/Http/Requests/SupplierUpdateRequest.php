@@ -30,11 +30,14 @@ class SupplierUpdateRequest extends FormRequest
             'country' => ['sometimes', 'nullable', 'string', 'max:100'],
             'tax_number' => ['sometimes', 'nullable', 'string', 'max:100'],
             'contact_person' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            // Financial fields
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],            // Financial fields
+            'minimum_order_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            // Backward-compat: accept legacy key
             'minimum_order_value' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-            // Rating fields
-            'supplier_rating' => ['sometimes', 'nullable', 'string', 'max:191'],
+            // Rating fields (0-5)
+            'rating' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:5'],
+            // Backward-compat: accept legacy key
+            'supplier_rating' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:5'],
             'quality_rating' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:5'],
             'delivery_rating' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:5'],
             'service_rating' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:5'],

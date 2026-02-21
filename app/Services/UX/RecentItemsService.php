@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\UX;
 
 use App\Models\User;
+use App\Models\SearchHistory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -196,15 +197,24 @@ class RecentItemsService
     protected function persistToDatabase(int $userId, string $type, int $itemId, ?string $label, ?string $route): void
     {
         try {
-            DB::table('search_history')->updateOrInsert(
+            $branchId = current_branch_id() ?? User::query()->whereKey($userId)->value('branch_id');
+
+            SearchHistory::updateOrCreate(
                 [
                     'user_id' => $userId,
+                    'branch_id' => $branchId,
                     'query' => "{$type}:{$itemId}",
                 ],
                 [
                     'module' => $type,
                     'results_count' => 1,
-                    'updated_at' => now(),
+                    'context' => json_encode([
+                        'type' => $type,
+                        'item_id' => $itemId,
+                        'label' => $label,
+                        'route' => $route,
+                    ], JSON_UNESCAPED_UNICODE),
+                    'last_searched_at' => now(),
                 ]
             );
         } catch (\Exception $e) {

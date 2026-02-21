@@ -29,7 +29,7 @@
                     @forelse($currencies as $currency)
                         <tr wire:key="currency-{{ $currency->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                             <td class="px-4 py-3">
-                                <span class="font-mono font-bold text-gray-900 dark:text-white">{{ $currency->reference_number }}</span>
+                                <span class="font-mono font-bold text-gray-900 dark:text-white">{{ $currency->code }}</span>
                             </td>
                             <td class="px-4 py-3 text-gray-900 dark:text-white">
                                 {{ $currency->name }}
@@ -50,7 +50,7 @@
                                     </span>
                                 @else
                                     <button type="button" wire:click="setAsBase({{ $currency->id }})" 
-                                            wire:confirm="{{ __('Set :currency as base currency?', ['currency' => $currency->reference_number]) }}"
+                                            wire:confirm="{{ __('Set :currency as base currency?', ['currency' => $currency->code]) }}"
                                             class="text-gray-400 hover:text-amber-500 text-xs">
                                         {{ __('Set as Base') }}
                                     </button>

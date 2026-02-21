@@ -83,7 +83,7 @@
                 <tbody>
                     @forelse($warehouses ?? [] as $warehouse)
                         <tr class="hover:bg-slate-50">
-                            <td class="font-mono text-sm">{{ $warehouse->reference_number }}</td>
+                            <td class="font-mono text-sm">{{ $warehouse->code }}</td>
                             <td class="font-medium">{{ $warehouse->name }}</td>
                             <td>
                                 <span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">

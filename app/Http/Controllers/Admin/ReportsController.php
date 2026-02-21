@@ -43,6 +43,7 @@ class ReportsController extends Controller
         $usageData = [
             'period' => ['from' => $from, 'to' => $to],
             'active_users' => DB::table('users')
+                ->whereNull('deleted_at')
                 ->whereNotNull('last_login_at')
                 ->whereDate('last_login_at', '>=', $from)
                 ->count(),
@@ -375,6 +376,7 @@ class ReportsController extends Controller
 
         // STILL-V14-HIGH-01 FIX: Use bank_transactions for accurate cashflow
         $query = DB::table('bank_transactions')
+            ->whereNull('deleted_at')
             ->whereDate('transaction_date', '>=', $from)
             ->whereDate('transaction_date', '<=', $to)
             ->where('status', '!=', 'cancelled'); // BUG-3 FIX: Exclude cancelled transactions

@@ -1,11 +1,29 @@
 <div class="container mx-auto px-4 py-6"
     x-data="{
         validTabs: @js(array_keys($tabs)),
+        tabsMeta: @js($tabsMeta),
+        tabGroups: @js($tabGroups),
+        search: '',
+        showAdvanced: @entangle('showAdvancedTabs'),
+        activeTab: @entangle('activeTab'),
         init() {
+            // Focus search with Ctrl/Cmd + K
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && (e.key || '').toLowerCase() === 'k') {
+                    e.preventDefault();
+                    this.$refs.settingsSearch?.focus();
+                }
+            });
+
             // Handle hash on initial load
             const hash = window.location.hash.slice(1);
             if (hash && this.isValidTab(hash)) {
                 this.switchToTab(hash);
+            }
+
+            // If current tab is advanced, auto-enable advanced navigation.
+            if (this.tabsMeta?.[this.activeTab]?.isAdvanced) {
+                this.showAdvanced = true;
             }
             
             // Handle browser back/forward
@@ -19,10 +37,57 @@
         isValidTab(tab) {
             return this.validTabs.includes(tab);
         },
+        normalize(text) {
+            return (text || '').toString().toLowerCase();
+        },
+        tabSearchText(tabKey) {
+            const t = this.tabsMeta?.[tabKey] || {};
+            return this.normalize(`${t.label || ''} ${t.description || ''} ${t.keywords || ''}`);
+        },
+        matchesSearch(tabKey) {
+            if (!this.search) return true;
+            return this.tabSearchText(tabKey).includes(this.normalize(this.search));
+        },
+        isTabAllowedByMode(tabKey) {
+            const meta = this.tabsMeta?.[tabKey] || {};
+
+            // Essentials are always allowed.
+            if (!meta.isAdvanced) return true;
+
+            // In Advanced mode, show all.
+            if (this.showAdvanced) return true;
+
+            // When searching, surface advanced results (they'll be labeled as Advanced).
+            if (this.search) return true;
+
+            // If we are already on that tab (via URL), keep it visible.
+            return tabKey === this.activeTab;
+        },
+        isTabVisible(tabKey) {
+            if (!this.isValidTab(tabKey)) return false;
+            if (!this.matchesSearch(tabKey)) return false;
+            if (!this.isTabAllowedByMode(tabKey)) return false;
+            return true;
+        },
+        groupHasVisibleTabs(group) {
+            return (group?.tabs || []).some((tabKey) => this.isTabVisible(tabKey));
+        },
+        hasAnyResults() {
+            return (this.tabGroups || []).some((g) => this.groupHasVisibleTabs(g));
+        },
+        clearSearch() {
+            this.search = '';
+            this.$refs.settingsSearch?.focus();
+        },
         switchToTab(tab) {
             // Only switch if tab exists in the available tabs
             if (this.isValidTab(tab)) {
-                @this.switchTab(tab);
+                // If the user jumps to an advanced tab, automatically enable advanced mode.
+                if (this.tabsMeta?.[tab]?.isAdvanced) {
+                    this.showAdvanced = true;
+                }
+                this.search = '';
+                $wire.switchTab(tab);
             }
         }
     }"
@@ -57,30 +122,142 @@
     @endif
 
     <div class="erp-card p-0 overflow-hidden">
-        <!-- Tabs with Icons -->
-        <div class="border-b border-slate-200 dark:border-slate-700">
-            <nav class="flex -mb-px overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
-                @foreach($tabs as $tabKey => $tabLabel)
-                    <button type="button"
-                        wire:click="switchTab(@js($tabKey))"
-                        data-tab-key="{{ $tabKey }}"
-                        class="group flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
-                            {{ $activeTab === $tabKey
-                                ? 'border-emerald-500 text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-900/20'
-                                : 'border-transparent text-slate-600 hover:text-slate-800 hover:border-slate-300 dark:text-slate-300 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
-                        @if(isset($tabIcons[$tabKey]))
-                            <svg class="w-4 h-4 {{ $activeTab === $tabKey ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $tabIcons[$tabKey] }}"/>
-                            </svg>
-                        @endif
-                        <span>{{ __($tabLabel) }}</span>
-                    </button>
-                @endforeach
-            </nav>
-        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12">
+            <!-- Sidebar Navigation -->
+            <aside class="lg:col-span-4 xl:col-span-3 border-b lg:border-b-0 lg:border-e border-slate-200 dark:border-slate-700 p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ __('Settings Navigation') }}</h2>
+                        <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{{ __('Search and open settings sections quickly.') }}</p>
+                    </div>
+                </div>
 
-        <!-- Tab Content -->
-        <div class="p-6">
+                <!-- Search -->
+                <div class="mt-4">
+                    <label class="sr-only" for="settings-search">{{ __('Search settings') }}</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.65a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            id="settings-search"
+                            type="text"
+                            x-ref="settingsSearch"
+                            x-model.debounce.200ms="search"
+                            class="erp-input ps-10"
+                            placeholder="{{ __('Search settings...') }}"
+                            autocomplete="off"
+                        />
+                        <button
+                            type="button"
+                            x-show="search"
+                            x-on:click="clearSearch()"
+                            class="absolute inset-y-0 end-0 flex items-center pe-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            aria-label="{{ __('Clear') }}"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                        {{ __('Tip: Press Ctrl + K to search') }}
+                    </p>
+
+                    <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-slate-800 dark:text-slate-100">
+                                <span x-text="showAdvanced ? @js(__('Advanced Settings')) : @js(__('Essential Settings'))"></span>
+                            </div>
+                            <div class="text-xs text-slate-600 dark:text-slate-400">{{ __('Show developer and power-user options') }}</div>
+                        </div>
+                        <input type="checkbox" class="erp-checkbox" x-model="showAdvanced" aria-label="{{ __('Advanced Settings') }}" />
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div class="mt-5 space-y-5">
+                    <template x-for="group in tabGroups" :key="group.key">
+                        <div x-show="groupHasVisibleTabs(group)" x-cloak>
+                            <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" x-text="group.label"></div>
+                            <div class="mt-2 space-y-1">
+                                <template x-for="tabKey in group.tabs" :key="tabKey">
+                                    <button
+                                        type="button"
+                                        x-show="isTabVisible(tabKey)"
+                                        x-cloak
+                                        x-on:click="switchToTab(tabKey)"
+                                        class="w-full text-start rounded-lg p-2.5 transition border"
+                                        :class="activeTab === tabKey
+                                            ? 'bg-emerald-50/70 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                                            : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'"
+                                    >
+                                        <div class="flex items-start gap-3">
+                                            <div class="mt-0.5 shrink-0">
+                                                <template x-if="tabsMeta?.[tabKey]?.icon">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" :d="tabsMeta[tabKey].icon" />
+                                                    </svg>
+                                                </template>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate" x-text="tabsMeta[tabKey].label"></span>
+                                                    <span
+                                                        x-show="tabsMeta?.[tabKey]?.isAdvanced"
+                                                        class="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200"
+                                                    >
+                                                        {{ __('Advanced') }}
+                                                    </span>
+                                                </div>
+                                                <p
+                                                    x-show="tabsMeta?.[tabKey]?.description"
+                                                    class="mt-0.5 text-xs text-slate-500 dark:text-slate-400"
+                                                    x-text="tabsMeta[tabKey].description"
+                                                ></p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="search && !hasAnyResults()" x-cloak class="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-sm text-slate-600 dark:text-slate-300">
+                        {{ __('No matching settings found.') }}
+                    </div>
+                </div>
+
+                <!-- Shortcuts (always available) -->
+                <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ __('Quick Links') }}</div>
+                    <div class="mt-2 space-y-1">
+                        <a href="{{ route('admin.currencies.index') }}" class="flex items-center justify-between rounded-lg p-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                            <span>{{ __('Manage Currencies') }}</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        <a href="{{ route('admin.currency-rates.index') }}" class="flex items-center justify-between rounded-lg p-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                            <span>{{ __('Manage Exchange Rates') }}</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        <a href="{{ route('admin.translations.index') }}" class="flex items-center justify-between rounded-lg p-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                            <span>{{ __('Open Translation Manager') }}</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Tab Content -->
+            <div class="lg:col-span-8 xl:col-span-9 p-6">
             {{-- Tab Description --}}
             @if(isset($tabDescriptions[$activeTab]))
                 <div class="mb-6 p-4 bg-emerald-50/70 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800" role="region" aria-label="{{ __('Tab information') }}">
@@ -188,6 +365,33 @@
 						</div>
                     </div>
                 </form>
+
+                <div class="mt-8 border-t border-slate-200 dark:border-slate-700 pt-6">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Quick Links') }}</h3>
+                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                        {{ __('Shortcuts to related setup pages.') }}
+                    </p>
+
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <a href="{{ route('admin.currencies.index') }}"
+                           class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                            <div class="font-medium text-slate-900 dark:text-slate-100">{{ __('Manage Currencies') }}</div>
+                            <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ __('Add or edit ISO currencies used by the system.') }}</div>
+                        </a>
+
+                        <a href="{{ route('admin.currency-rates.index') }}"
+                           class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                            <div class="font-medium text-slate-900 dark:text-slate-100">{{ __('Manage Exchange Rates') }}</div>
+                            <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ __('Configure currency exchange rates for multi-currency workflows.') }}</div>
+                        </a>
+
+                        <a href="{{ route('admin.translations.index') }}"
+                           class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                            <div class="font-medium text-slate-900 dark:text-slate-100">{{ __('Open Translation Manager') }}</div>
+                            <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ __('Review and complete Arabic/English translations.') }}</div>
+                        </a>
+                    </div>
+                </div>
 
             @elseif($activeTab === 'branding')
                 <form wire:submit.prevent="saveBranding">
@@ -1005,7 +1209,168 @@
                     </div>
                 </div>
 
-            @elseif($activeTab === 'notifications')
+            
+
+@elseif($activeTab === 'communications')
+    <form wire:submit.prevent="saveCommunications">
+        <div class="space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Email (SMTP) -->
+                <div class="erp-card p-5">
+                    <div class="mb-4">
+                        <h4 class="text-base font-semibold text-slate-800 dark:text-slate-100">{{ __('Email (SMTP)') }}</h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">{{ __('Configure outgoing email server settings.') }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="erp-label">{{ __('SMTP Host') }}</label>
+                            <input type="text" wire:model="smtp_host" class="mt-1 erp-input" placeholder="smtp.example.com">
+                            @error('smtp_host') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="erp-label">{{ __('SMTP Port') }}</label>
+                            <input type="number" wire:model="smtp_port" class="mt-1 erp-input" min="1" max="65535">
+                            @error('smtp_port') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="erp-label">{{ __('Encryption') }}</label>
+                            <select wire:model="smtp_encryption" class="mt-1 erp-input">
+                                <option value="none">{{ __('None') }}</option>
+                                <option value="tls">{{ __('TLS') }}</option>
+                                <option value="ssl">{{ __('SSL') }}</option>
+                            </select>
+                            @error('smtp_encryption') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="erp-label">{{ __('SMTP Username') }}</label>
+                            <input type="text" wire:model="smtp_username" class="mt-1 erp-input" autocomplete="off">
+                            @error('smtp_username') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="erp-label">{{ __('SMTP Password') }}</label>
+                            <input
+                                type="password"
+                                wire:model="smtp_password"
+                                class="mt-1 erp-input"
+                                autocomplete="new-password"
+                                placeholder="{{ $smtp_password_configured ? __('Saved (leave blank to keep)') : __('Enter password') }}"
+                            >
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {{ $smtp_password_configured ? __('A password is already saved. Leave blank to keep it unchanged.') : __('No password saved yet.') }}
+                            </p>
+                            @error('smtp_password') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="erp-label">{{ __('From Address') }}</label>
+                            <input type="email" wire:model="smtp_from_address" class="mt-1 erp-input" placeholder="no-reply@example.com">
+                            @error('smtp_from_address') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="erp-label">{{ __('From Name') }}</label>
+                            <input type="text" wire:model="smtp_from_name" class="mt-1 erp-input" placeholder="{{ __('Company Name') }}">
+                            @error('smtp_from_name') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WhatsApp -->
+                <div class="erp-card p-5">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h4 class="text-base font-semibold text-slate-800 dark:text-slate-100">{{ __('WhatsApp') }}</h4>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ __('Configure WhatsApp integration settings.') }}</p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input id="whatsapp_enabled" type="checkbox" wire:model="whatsapp_enabled" class="erp-checkbox">
+                            <label for="whatsapp_enabled" class="text-sm text-slate-800 dark:text-slate-100">{{ __('Enabled') }}</label>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="erp-label">{{ __('Provider') }}</label>
+                            <select wire:model="whatsapp_provider" class="mt-1 erp-input">
+                                <option value="link">{{ __('WhatsApp Link (wa.me)') }}</option>
+                                <option value="cloud">{{ __('WhatsApp Cloud API') }}</option>
+                            </select>
+                            @error('whatsapp_provider') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="erp-label">{{ __('Default Country Code') }}</label>
+                            <input type="text" wire:model="whatsapp_default_country_code" class="mt-1 erp-input" placeholder="20">
+                            @error('whatsapp_default_country_code') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="erp-label">{{ __('Business Number') }}</label>
+                            <input type="text" wire:model="whatsapp_business_number" class="mt-1 erp-input" placeholder="01000000000">
+                            @error('whatsapp_business_number') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2" x-data="{ provider: @entangle('whatsapp_provider') }">
+                            <div x-show="provider === 'cloud'" class="space-y-4">
+                                <div>
+                                    <label class="erp-label">{{ __('Phone Number ID') }}</label>
+                                    <input type="text" wire:model="whatsapp_cloud_phone_number_id" class="mt-1 erp-input">
+                                    @error('whatsapp_cloud_phone_number_id') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="erp-label">{{ __('API Version') }}</label>
+                                    <input type="text" wire:model="whatsapp_cloud_api_version" class="mt-1 erp-input" placeholder="v19.0">
+                                    @error('whatsapp_cloud_api_version') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="erp-label">{{ __('Access Token') }}</label>
+                                    <input
+                                        type="password"
+                                        wire:model="whatsapp_cloud_access_token"
+                                        class="mt-1 erp-input"
+                                        autocomplete="new-password"
+                                        placeholder="{{ $whatsapp_cloud_token_configured ? __('Saved (leave blank to keep)') : __('Enter token') }}"
+                                    >
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $whatsapp_cloud_token_configured ? __('An access token is already saved. Leave blank to keep it unchanged.') : __('No access token saved yet.') }}
+                                    </p>
+                                    @error('whatsapp_cloud_access_token') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <div x-show="provider === 'link'" class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                                {{ __('Link mode does not require API credentials. It is useful for opening WhatsApp chats via a link.') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button
+                    type="submit"
+                    class="erp-btn-primary"
+                    wire:loading.attr="disabled"
+                    wire:target="saveCommunications"
+                >
+                    <span wire:loading.remove wire:target="saveCommunications">{{ __('Save Changes') }}</span>
+                    <span wire:loading wire:target="saveCommunications" class="inline-flex items-center gap-2">
+                        <x-loading-indicator target="saveCommunications" size="sm" />
+                        {{ __('Saving...') }}
+                    </span>
+                </button>
+            </div>
+        </div>
+    </form>
+@elseif($activeTab === 'notifications')
                 <form wire:submit.prevent="saveNotifications">
                     <div class="space-y-6">
                         <div class="flex items-center">
@@ -1096,4 +1461,5 @@
             @endif
         </div>
     </div>
+</div>
 </div>

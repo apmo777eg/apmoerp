@@ -49,6 +49,12 @@ class Payroll extends BaseModel
         'notes',
         'breakdown',
         'extra_attributes',
+        'period',
+        'basic',
+        'allowances',
+        'deductions',
+        'net',
+        'paid_at',
     ];
 
     protected $casts = [

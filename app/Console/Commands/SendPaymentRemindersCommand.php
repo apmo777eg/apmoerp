@@ -112,7 +112,7 @@ class SendPaymentRemindersCommand extends Command
             $this->table(
                 ['Invoice', 'Customer', 'Amount Due', 'Days Overdue', 'Severity'],
                 array_map(fn ($a) => [
-                    $a['sale_code'],
+                    $a['sale_reference_number'],
                     $a['customer_name'],
                     number_format($a['amount_due'], 2),
                     $a['days_overdue'],
@@ -136,14 +136,14 @@ class SendPaymentRemindersCommand extends Command
                     // Get customer from sale relationship
                     $sale = Sale::with('customer')->find($alert['sale_id']);
                     if (! $sale || ! $sale->customer) {
-                        $this->warn("Skipping alert for sale {$alert['sale_code']}: customer not found");
+                        $this->warn("Skipping alert for sale {$alert['sale_reference_number']}: customer not found");
 
                         continue;
                     }
 
                     // HIGH-03 FIX: Convert array to object for notification
                     $alertObject = (object) [
-                        'reference' => $alert['sale_code'],
+                        'reference' => $alert['sale_reference_number'],
                         'amount_due' => $alert['amount_due'],
                         'due_date' => $alert['payment_due_date'],
                         'id' => $alert['sale_id'],
@@ -154,7 +154,7 @@ class SendPaymentRemindersCommand extends Command
                     $sale->customer->notify(new PaymentReminderNotification($alertObject));
                     $sent++;
                 } catch (\Exception $e) {
-                    $this->error("Failed to send reminder for {$alert['sale_code']}: {$e->getMessage()}");
+                    $this->error("Failed to send reminder for {$alert['sale_reference_number']}: {$e->getMessage()}");
                 }
             }
 

@@ -6,6 +6,7 @@ namespace App\Listeners;
 
 use App\Events\ContractOverdue;
 use App\Models\RentalInvoice;
+use App\Services\BranchContextManager;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
@@ -22,6 +23,16 @@ class ApplyLateFee implements ShouldQueue
     {
         /** @var \App\Models\RentalContract $contract */
         $contract = $event->contract;
+
+        // CRIT-BRANCH-QUEUE-01 FIX: Ensure branch context exists in queued workers.
+        // Otherwise BranchScope fails closed and the invoice lookup returns empty.
+        $didSetBranchContext = false;
+        if (app()->runningInConsole() && $contract->branch_id) {
+            BranchContextManager::setBranchContext((int) $contract->branch_id);
+            $didSetBranchContext = true;
+        }
+
+        try {
         $invoice = RentalInvoice::query()
             ->where('contract_id', $contract->getKey())
             ->where('status', 'unpaid')
@@ -42,5 +53,11 @@ class ApplyLateFee implements ShouldQueue
         $newAmount = bcadd($base, $penalty, 2);
         $invoice->amount = decimal_float($newAmount);
         $invoice->save();
+
+        } finally {
+            if ($didSetBranchContext) {
+                BranchContextManager::clearBranchContext();
+            }
+        }
     }
 }

@@ -14,7 +14,7 @@
             <select wire:model="requisition_id" class="erp-input">
                 <option value="">{{ __('Select') }}</option>
                 @foreach($requisitions as $r)
-                    <option value="{{ $r->id }}">{{ $r->reference_number }} @if($r->subject) — {{ $r->subject }} @endif</option>
+                    <option value="{{ $r->id }}">{{ $r->code }} @if($r->subject) — {{ $r->subject }} @endif</option>
                 @endforeach
             </select>
         </div>
@@ -24,7 +24,7 @@
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                     <div>
                         <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">
-                            {{ __('Requisition') }}: {{ $comparisonData['requisition']?->reference_number }}
+                            {{ __('Requisition') }}: {{ $comparisonData['requisition']?->code }}
                         </h2>
                         <p class="text-sm text-slate-500 dark:text-slate-400">{{ $comparisonData['requisition']?->subject }}</p>
                     </div>
@@ -52,7 +52,7 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="font-semibold text-slate-800 dark:text-slate-100">{{ $q->supplier?->name ?? '-' }}</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ $q->reference_number ?? $q->reference_number }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ $q->reference_number ?? $q->id }}</p>
                                 </div>
                                 <span class="px-2 py-1 text-xs rounded-full
                                     @if($q->status === 'accepted') bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300

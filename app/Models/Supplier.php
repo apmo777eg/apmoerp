@@ -66,6 +66,17 @@ class Supplier extends BaseModel
         'notes',
         'custom_fields',
         'product_categories',
+        // Legacy / virtual fields (stored in custom_fields)
+        'company_name',
+        'contact_person_phone',
+        'contact_person_email',
+        'payment_terms',
+        'payment_due_days',
+        'minimum_order_value',
+        'supplier_rating',
+        'quality_rating',
+        'delivery_rating',
+        'service_rating',
         // For BaseModel compatibility
         'extra_attributes',
         'created_by',
@@ -86,6 +97,24 @@ class Supplier extends BaseModel
         'custom_fields' => 'array',
         'product_categories' => 'array',
         'extra_attributes' => 'array',
+    ];
+
+
+    /**
+     * Append computed/legacy attributes in JSON responses.
+     */
+    protected $appends = [
+        'company_name',
+        'contact_person_phone',
+        'contact_person_email',
+        'payment_terms',
+        'payment_due_days',
+        'minimum_order_value',
+        'supplier_rating',
+        'quality_rating',
+        'delivery_rating',
+        'service_rating',
+        'last_purchase_date',
     ];
 
     public function branch(): BelongsTo
@@ -167,6 +196,197 @@ class Supplier extends BaseModel
     {
         return $this->is_active && ! $this->is_blocked;
     }
+
+
+    /**
+     * Internal helper to read/write supplier custom_fields safely.
+     */
+    protected function getCustomField(string $key, $default = null)
+    {
+        $fields = $this->custom_fields;
+        if (! is_array($fields)) {
+            $fields = [];
+        }
+
+        return $fields[$key] ?? $default;
+    }
+
+    protected function setCustomField(string $key, $value): void
+    {
+        $fields = $this->custom_fields;
+        if (! is_array($fields)) {
+            $fields = [];
+        }
+
+        if ($value === null || $value === '') {
+            unset($fields[$key]);
+        } else {
+            $fields[$key] = $value;
+        }
+
+        $this->custom_fields = $fields;
+    }
+
+    protected function mapPaymentTermsToDays(?string $terms): ?int
+    {
+        return match ($terms) {
+            'immediate' => 0,
+            'net15' => 15,
+            'net30' => 30,
+            'net60' => 60,
+            'net90' => 90,
+            default => null,
+        };
+    }
+
+    protected function mapDaysToPaymentTerms(?int $days): ?string
+    {
+        if ($days === null) {
+            return null;
+        }
+
+        return match ((int) $days) {
+            0 => 'immediate',
+            15 => 'net15',
+            30 => 'net30',
+            60 => 'net60',
+            90 => 'net90',
+            default => null,
+        };
+    }
+
+    // Virtual / legacy attributes stored in custom_fields
+    public function getCompanyNameAttribute(): ?string
+    {
+        return $this->getCustomField('company_name');
+    }
+
+    public function setCompanyNameAttribute($value): void
+    {
+        $this->setCustomField('company_name', $value);
+    }
+
+    public function getContactPersonPhoneAttribute(): ?string
+    {
+        return $this->getCustomField('contact_person_phone');
+    }
+
+    public function setContactPersonPhoneAttribute($value): void
+    {
+        $this->setCustomField('contact_person_phone', $value);
+    }
+
+    public function getContactPersonEmailAttribute(): ?string
+    {
+        return $this->getCustomField('contact_person_email');
+    }
+
+    public function setContactPersonEmailAttribute($value): void
+    {
+        $this->setCustomField('contact_person_email', $value);
+    }
+
+    public function getQualityRatingAttribute(): ?float
+    {
+        $v = $this->getCustomField('quality_rating');
+
+        return $v !== null ? decimal_float($v) : null;
+    }
+
+    public function setQualityRatingAttribute($value): void
+    {
+        $this->setCustomField('quality_rating', $value);
+    }
+
+    public function getDeliveryRatingAttribute(): ?float
+    {
+        $v = $this->getCustomField('delivery_rating');
+
+        return $v !== null ? decimal_float($v) : null;
+    }
+
+    public function setDeliveryRatingAttribute($value): void
+    {
+        $this->setCustomField('delivery_rating', $value);
+    }
+
+    public function getServiceRatingAttribute(): ?float
+    {
+        $v = $this->getCustomField('service_rating');
+
+        return $v !== null ? decimal_float($v) : null;
+    }
+
+    public function setServiceRatingAttribute($value): void
+    {
+        $this->setCustomField('service_rating', $value);
+    }
+
+    // Payment terms virtual attribute (stored as payment_terms_days)
+    public function getPaymentTermsAttribute(): ?string
+    {
+        return $this->mapDaysToPaymentTerms($this->payment_terms_days);
+    }
+
+    public function setPaymentTermsAttribute($value): void
+    {
+        $days = $this->mapPaymentTermsToDays(is_string($value) ? $value : (string) $value);
+        if ($days !== null) {
+            $this->attributes['payment_terms_days'] = $days;
+        }
+    }
+
+    // Backward-compat: accept payment_due_days as alias for payment_terms_days
+    public function setPaymentDueDaysAttribute($value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $this->attributes['payment_terms_days'] = (int) $value;
+    }
+
+    // Backward-compat: accept supplier_rating as alias for rating
+    public function getSupplierRatingAttribute(): ?int
+    {
+        return $this->rating;
+    }
+
+    public function setSupplierRatingAttribute($value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $this->attributes['rating'] = (int) $value;
+    }
+
+    public function setMinimumOrderValueAttribute($value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $this->attributes['minimum_order_amount'] = $value;
+    }
+
+    public function getLastPurchaseDateAttribute()
+    {
+        // If selected as an alias (e.g., withMax), return it.
+        if (array_key_exists('last_purchase_date', $this->attributes)) {
+            return $this->attributes['last_purchase_date'];
+        }
+
+        // If purchases are eager-loaded, compute without extra queries.
+        if ($this->relationLoaded('purchases') && $this->purchases) {
+            $row = $this->purchases->sortByDesc('purchase_date')->first();
+
+            return $row?->purchase_date;
+        }
+
+        return null;
+    }
+
 
     // Backward compatibility accessors
     public function getIsApprovedAttribute(): bool

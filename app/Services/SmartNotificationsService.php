@@ -85,6 +85,7 @@ class SmartNotificationsService
                     $alreadyNotified = DB::table('notifications')
                         ->where('notifiable_id', $user->id)
                         ->where('notifiable_type', User::class)
+                        ->whereNull('deleted_at')
                         ->whereDate('created_at', today())
                         ->where('type', GeneralNotification::class)
                         ->whereJsonContains('data->notification_type', 'low_stock_batch')
@@ -126,6 +127,7 @@ class SmartNotificationsService
                         $alreadyNotified = DB::table('notifications')
                             ->where('notifiable_id', $user->id)
                             ->where('notifiable_type', User::class)
+                        ->whereNull('deleted_at')
                             ->whereDate('created_at', today())
                             ->whereJsonContains('data->product_id', $product->id)
                             ->exists();
@@ -195,6 +197,7 @@ class SmartNotificationsService
                     $alreadyNotified = DB::table('notifications')
                         ->where('notifiable_id', $user->id)
                         ->where('notifiable_type', User::class)
+                        ->whereNull('deleted_at')
                         ->whereDate('created_at', today())
                         ->whereJsonContains('data->invoice_id', $invoice->id)
                         ->exists();

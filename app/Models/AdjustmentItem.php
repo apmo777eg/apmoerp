@@ -23,6 +23,7 @@ class AdjustmentItem extends BaseModel
         'difference',
         'unit_cost',
         'notes',
+        'qty',
     ];
 
     protected $casts = [

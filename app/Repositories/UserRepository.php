@@ -72,8 +72,21 @@ class UserRepository extends EloquentBaseRepository implements UserRepositoryInt
             $query->whereHas('roles', fn ($q) => $q->where('name', $filters['role']));
         }
 
-        $sortField = $filters['sort_field'] ?? 'created_at';
-        $sortDirection = $filters['sort_direction'] ?? 'desc';
+        // SECURITY (V59-SQLI-01): Prevent SQL injection via orderBy column/direction
+        // Also clamp per-page to avoid accidental heavy queries.
+        $perPage = min(max((int) $perPage, 1), 100);
+
+        $allowedSortFields = ['id', 'name', 'email', 'username', 'branch_id', 'is_active', 'last_login_at', 'created_at', 'updated_at'];
+        $sortField = (string) ($filters['sort_field'] ?? 'created_at');
+        if (! in_array($sortField, $allowedSortFields, true)) {
+            $sortField = 'created_at';
+        }
+
+        $sortDirection = strtolower((string) ($filters['sort_direction'] ?? 'desc'));
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'desc';
+        }
+
         $query->orderBy($sortField, $sortDirection);
 
         return $query->paginate($perPage);

@@ -21,4 +21,8 @@ return [
 
     // If true, hide extra "power user" sections in settings.
     'hide_advanced_settings' => (bool) env('ERP_HIDE_ADVANCED_SETTINGS', true),
+
+    // If true, hide "link-only" settings tabs (currencies, exchange rates, translations)
+    // and show them as quick links instead.
+    'hide_settings_link_tabs' => (bool) env('ERP_HIDE_SETTINGS_LINK_TABS', true),
 ];

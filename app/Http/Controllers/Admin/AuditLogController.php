@@ -16,7 +16,7 @@ class AuditLogController extends Controller
         $this->authorize('audit.view');
         
         $per = min(max((int) $request->integer('per_page', 20), 1), 100);
-        $q = DB::table('audit_logs')->orderByDesc('id');
+        $q = DB::table('audit_logs')->whereNull('deleted_at')->orderByDesc('id');
         if ($request->filled('user_id')) {
             $q->where('user_id', $request->integer('user_id'));
         }
@@ -41,7 +41,7 @@ class AuditLogController extends Controller
         // V57-HIGH-01 FIX: Add authorization for audit log viewing
         $this->authorize('audit.view');
         
-        $row = DB::table('audit_logs')->where('id', $id)->first();
+        $row = DB::table('audit_logs')->where('id', $id)->whereNull('deleted_at')->first();
         abort_unless($row, 404);
 
         return $this->ok($row);

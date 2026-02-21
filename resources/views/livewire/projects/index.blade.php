@@ -120,7 +120,7 @@
                     @forelse($projects as $project)
                     <tr wire:key="project-{{ $project->id }}" class="hover:bg-slate-50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                            {{ $project->reference_number }}
+                            {{ $project->code }}
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-900">
                             <div>

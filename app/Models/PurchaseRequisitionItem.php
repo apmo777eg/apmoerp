@@ -15,6 +15,9 @@ class PurchaseRequisitionItem extends BaseModel
         'estimated_price', 'specifications',
         'preferred_supplier_id',
         'extra_attributes', 'created_by', 'updated_by',
+        'qty',
+        'estimated_unit_cost',
+        'notes',
     ];
 
     protected $casts = [

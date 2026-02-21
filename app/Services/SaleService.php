@@ -396,6 +396,41 @@ class SaleService implements SaleServiceInterface
                         ]);
                     }
 
+
+                    // LEGACY SUPPORT:
+                    // Some older POS versions recorded inventory deductions at the sale level (reference_type='sale'),
+                    // not per line item (reference_type='sale_item'). To avoid leaving stock deducted forever when a
+                    // legacy sale is voided, we reverse those movements here as well.
+                    $existingSaleLevelMovements = StockMovement::where('reference_type', 'sale')
+                        ->where('reference_id', $sale->getKey())
+                        ->where('movement_type', 'sale')
+                        ->get();
+
+                    foreach ($existingSaleLevelMovements as $movement) {
+                        $reversalExists = StockMovement::where('reference_type', 'sale_void')
+                            ->where('reference_id', $sale->getKey())
+                            ->where('product_id', $movement->product_id)
+                            ->where('warehouse_id', $movement->warehouse_id)
+                            ->exists();
+
+                        if ($reversalExists) {
+                            continue;
+                        }
+
+                        $stockMovementRepo->create([
+                            'warehouse_id' => $movement->warehouse_id,
+                            'product_id' => $movement->product_id,
+                            'movement_type' => 'sale_void',
+                            'reference_type' => 'sale_void',
+                            'reference_id' => $sale->getKey(),
+                            'qty' => abs($movement->quantity),
+                            'direction' => 'in',
+                            'unit_cost' => $movement->unit_cost,
+                            'notes' => "Void reversal for Sale #{$sale->reference_number} (legacy sale-level movement)",
+                            'created_by' => actual_user_id(),
+                        ]);
+                    }
+
                     // STILL-V7-HIGH-U07 FIX: Reverse accounting entries if journal entry exists
                     if ($sale->journal_entry_id) {
                         try {

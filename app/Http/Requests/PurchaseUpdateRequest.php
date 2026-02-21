@@ -23,8 +23,7 @@ class PurchaseUpdateRequest extends FormRequest
             'shipping_method' => ['sometimes', 'nullable', 'string', 'max:191'],
             'payment_status' => ['sometimes', 'nullable', 'in:unpaid,partial,paid'],
             'due_date' => ['sometimes', 'nullable', 'date'],
-            'discount_type' => ['sometimes', 'nullable', 'in:fixed,percentage'],
-            'discount_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+'discount_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
         ];
     }
 }

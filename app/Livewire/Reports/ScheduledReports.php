@@ -49,6 +49,7 @@ class ScheduledReports extends Component
                 'report_templates.name as template_name',
                 'users.name as created_by_name',
             ])
+            ->whereNull('report_schedules.deleted_at')
             ->orderByDesc('report_schedules.created_at')
             ->paginate(15);
 
@@ -61,7 +62,14 @@ class ScheduledReports extends Component
     public function delete(int $id): void
     {
         $this->authorize('reports.manage');
-        DB::table('report_schedules')->where('id', $id)->delete();
+        DB::table('report_schedules')
+            ->where('id', $id)
+            ->whereNull('deleted_at')
+            ->update([
+                'is_active' => false,
+                'deleted_at' => now(),
+                'updated_at' => now(),
+            ]);
         $this->dispatch('notify', type: 'success', message: __('Schedule deleted successfully'));
     }
 
@@ -69,10 +77,14 @@ class ScheduledReports extends Component
     {
         $this->authorize('reports.manage');
 
-        $schedule = DB::table('report_schedules')->find($id);
+        $schedule = DB::table('report_schedules')
+            ->where('id', $id)
+            ->whereNull('deleted_at')
+            ->first();
         if ($schedule) {
             DB::table('report_schedules')
                 ->where('id', $id)
+                ->whereNull('deleted_at')
                 ->update(['is_active' => ! $schedule->is_active, 'updated_at' => now()]);
         }
     }

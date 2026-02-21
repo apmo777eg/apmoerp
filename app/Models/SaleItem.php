@@ -38,6 +38,7 @@ class SaleItem extends BaseModel
         'batch_id',
         'serial_numbers',
         'notes',
+        'qty',
     ];
 
     protected $casts = [

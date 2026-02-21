@@ -22,6 +22,7 @@ class TransferItem extends BaseModel
         'received_quantity',
         'unit_cost',
         'notes',
+        'qty',
     ];
 
     protected $casts = [

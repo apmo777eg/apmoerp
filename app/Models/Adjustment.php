@@ -31,6 +31,7 @@ class Adjustment extends BaseModel
         'approved_by',
         'approved_at',
         'created_by',
+        'note',
     ];
 
     protected $casts = [

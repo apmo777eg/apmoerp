@@ -126,6 +126,9 @@ class Form extends Component
         $validated['branch_id'] = $branchId;
         $validated['reference_number'] = $validated['reference_number'] ?? 'EXP-'.now()->format('YmdHis').'-'.uniqid();
 
+        // Recurring expenses are not supported in current schema; drop UI-only fields.
+        unset($validated['is_recurring'], $validated['recurrence_interval']);
+
         // Convert single attachment to JSON array for database storage
         if (isset($validated['attachment'])) {
             $validated['attachments'] = $validated['attachment'] ? [$validated['attachment']] : [];

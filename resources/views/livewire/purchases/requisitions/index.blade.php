@@ -71,7 +71,7 @@
                 <tbody>
                     @forelse($requisitions as $requisition)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <td class="font-medium">{{ $requisition->reference_number }}</td>
+                            <td class="font-medium">{{ $requisition->code }}</td>
                             <td>{{ $requisition->subject ?? '-' }}</td>
                             <td>{{ $requisition->requestedBy?->name ?? '-' }}</td>
                             <td>

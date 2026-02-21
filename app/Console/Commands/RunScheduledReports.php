@@ -45,6 +45,7 @@ class RunScheduledReports extends Command
         $this->info('Checking for scheduled reports to run...');
 
         $query = DB::table('report_schedules')
+            ->whereNull('deleted_at')
             ->where('is_active', true);
 
         if ($this->option('id')) {
@@ -120,6 +121,7 @@ class RunScheduledReports extends Command
 
         DB::table('report_schedules')
             ->where('id', $schedule->id)
+            ->whereNull('deleted_at')
             ->update([
                 'last_run_at' => now(),
                 'next_run_at' => $nextRun,

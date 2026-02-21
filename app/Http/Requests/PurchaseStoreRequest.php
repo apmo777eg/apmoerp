@@ -55,8 +55,7 @@ class PurchaseStoreRequest extends FormRequest
             // Payment fields
             'payment_status' => ['nullable', 'in:unpaid,partial,paid'],
             'due_date' => ['nullable', 'date'],
-            'discount_type' => ['nullable', 'in:fixed,percentage'],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+'discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

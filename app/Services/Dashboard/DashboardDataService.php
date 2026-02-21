@@ -405,6 +405,8 @@ class DashboardDataService
     {
         $query = DB::table('rental_invoices')
             ->join('rental_contracts', 'rental_invoices.contract_id', '=', 'rental_contracts.id')
+            ->whereNull('rental_invoices.deleted_at')
+            ->whereNull('rental_contracts.deleted_at')
             ->select(
                 'rental_invoices.id',
                 'rental_invoices.code',

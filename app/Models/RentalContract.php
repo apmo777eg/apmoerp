@@ -30,8 +30,12 @@ class RentalContract extends BaseModel
         'actual_end_date',
         'expiration_notified_at',
         'rent_amount',
+        // Legacy alias
+        'rent',
         'rent_frequency',
         'deposit_amount',
+        // Legacy alias
+        'deposit',
         'deposit_paid',
         'payment_day',
         'late_fee_amount',
@@ -62,6 +66,8 @@ class RentalContract extends BaseModel
         'expiration_notified_at' => 'datetime',
         'documents' => 'array',
     ];
+
+    protected $appends = ['rent', 'deposit'];
 
     public function branch(): BelongsTo
     {

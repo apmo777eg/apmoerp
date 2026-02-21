@@ -155,6 +155,7 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
             // NEW-V14-MEDIUM-04 FIX: Check if warehouse exists and throw immediately if not
             $warehouse = DB::table('warehouses')
                 ->where('id', $data['warehouse_id'])
+                ->whereNull('deleted_at')
                 ->lockForUpdate()
                 ->first();
 
@@ -197,21 +198,31 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
 
             // Then also lock any existing stock movement rows for this product+warehouse
             // This provides additional safety for the case where movements already exist
-            StockMovement::where('product_id', $data['product_id'])
+            // IMPORTANT: Use DB::table() for locking and stock calculations.
+            // This avoids BranchScope side effects in console/queue contexts where no user branch context exists.
+            DB::table('stock_movements')
+                ->where('product_id', $data['product_id'])
                 ->where('warehouse_id', $data['warehouse_id'])
+                ->whereNull('deleted_at')
                 ->orderByDesc('id')
                 ->lockForUpdate()
                 ->first();
 
-            // Calculate current stock from all movements
-            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities
-            $currentStock = decimal_float(StockMovement::where('product_id', $data['product_id'])
+            // Calculate current stock from all movements (signed quantities).
+            // V49-CRIT-01 FIX: Use precision 4 to match decimal:4 schema for stock quantities.
+            $currentStock = decimal_float(DB::table('stock_movements')
+                ->where('product_id', $data['product_id'])
                 ->where('warehouse_id', $data['warehouse_id'])
+                ->whereNull('deleted_at')
                 ->sum('quantity'), 4);
 
             $mappedData['stock_before'] = $currentStock;
             $mappedData['stock_after'] = decimal_float($currentStock + $qty, 4);
-            $mappedData['unit_cost'] = $data['unit_cost'] ?? null;
+
+            // CRIT-STOCK-01 FIX: stock_movements.unit_cost is NOT NULL (default 0.0000).
+            // Some call sites do not provide unit_cost (e.g., queued sale/purchase stock listeners).
+            // Passing NULL violates the DB constraint and breaks inventory updates.
+            $mappedData['unit_cost'] = decimal_float($data['unit_cost'] ?? 0, 4);
 
             // V56-CRITICAL-05 FIX: Enforce no-negative-stock rule AFTER acquiring lock
             // This prevents race conditions where two concurrent transactions both pass
@@ -253,7 +264,10 @@ final class StockMovementRepository extends EloquentBaseRepository implements St
         // - Negative values = stock removed (out)
         // So sum(quantity) gives the correct net stock level
         // V49-CRIT-01 FIX: Use decimal_float() with scale 4 to match decimal:4 schema for stock quantities
-        $totalStock = decimal_float(StockMovement::where('product_id', $productId)
+        // V59-STOCK-02: Use DB::table() to avoid BranchScope side effects when branch context is missing.
+        $totalStock = decimal_float((string) DB::table('stock_movements')
+            ->where('product_id', $productId)
+            ->whereNull('deleted_at')
             ->sum('quantity'), 4);
 
         // Update the product's stock_quantity field (cached/denormalized value)

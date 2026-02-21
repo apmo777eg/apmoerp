@@ -77,7 +77,7 @@
                             {{ $shift->name }}
                         </td>
                         <td class="px-3 py-2 text-slate-600 dark:text-slate-300">
-                            {{ $shift->reference_number }}
+                            {{ $shift->code }}
                         </td>
                         <td class="px-3 py-2 text-slate-600 dark:text-slate-300">
                             {{ $shift->start_time }} - {{ $shift->end_time }}

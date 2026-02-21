@@ -120,7 +120,7 @@
                 <tbody>
                     @forelse($workCenters as $workCenter)
                         <tr wire:key="work-center-{{ $workCenter->id }}">
-                            <td class="font-medium">{{ $workCenter->reference_number }}</td>
+                            <td class="font-medium">{{ $workCenter->code }}</td>
                             <td>
                                 <div class="font-medium">{{ $workCenter->name }}</div>
                                 @if($workCenter->name_ar)

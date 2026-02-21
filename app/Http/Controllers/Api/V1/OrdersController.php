@@ -319,26 +319,37 @@ class OrdersController extends BaseApiController
             return $this->errorResponse(__('Cannot complete unpaid order'), 422);
         }
 
-        DB::transaction(function () use ($order, $next, $current) {
-            $order->status = $next;
-            // V22-HIGH-04 FIX: Use the Sale::total_paid accessor which considers all valid payment statuses
-            // (completed, posted, paid) instead of hardcoding only 'completed'
-            // This ensures consistency with the Sale model's payment status logic
-            $totalPaid = $order->total_paid;
+                try {
+            DB::transaction(function () use ($order, $next, $current) {
+                // CRITICAL (V60-STOCK-03): Record stock movements inside the same transaction when completing an order.
+                // This prevents "completed" orders from being committed without inventory deduction.
+                if ($current !== 'completed' && $next === 'completed' && $order->warehouse_id) {
+                    $order->load(['items.product', 'items.unit']);
+                    app(\App\Services\SaleStockMovementService::class)->createForSale($order, actual_user_id());
+                }
 
-            $order->payment_status = $totalPaid >= $order->total_amount
-                ? 'paid'
-                : ($totalPaid > 0 ? 'partial' : 'unpaid');
-            $order->save();
+                $order->status = $next;
+                // V22-HIGH-04 FIX: Use the Sale::total_paid accessor which considers all valid payment statuses
+                // (completed, posted, paid) instead of hardcoding only 'completed'
+                // This ensures consistency with the Sale model's payment status logic
+                $totalPaid = $order->total_paid;
 
-            // V25-HIGH-05 FIX: Dispatch SaleCompleted event when transitioning to completed
-            // This triggers inventory deductions and other side effects
-            if ($current !== 'completed' && $next === 'completed' && $order->warehouse_id) {
-                event(new \App\Events\SaleCompleted($order->fresh('items')));
-            }
-        });
+                $order->payment_status = $totalPaid >= $order->total_amount
+                    ? 'paid'
+                    : ($totalPaid > 0 ? 'partial' : 'unpaid');
+                $order->save();
 
-        return $this->successResponse($order->fresh(), __('Order status updated successfully'));
+                // V25-HIGH-05 FIX: Dispatch SaleCompleted event when transitioning to completed
+                // This triggers inventory deductions and other side effects
+                if ($current !== 'completed' && $next === 'completed' && $order->warehouse_id) {
+                    event(new \App\Events\SaleCompleted($order->fresh('items')));
+                }
+            });
+        } catch (\DomainException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+return $this->successResponse($order->fresh(), __('Order status updated successfully'));
     }
 
     public function byExternalId(Request $request, string $externalId): JsonResponse

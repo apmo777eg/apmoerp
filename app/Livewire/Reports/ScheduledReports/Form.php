@@ -47,7 +47,10 @@ class Form extends Component
 
     protected function loadSchedule(): void
     {
-        $schedule = DB::table('report_schedules')->find($this->scheduleId);
+        $schedule = DB::table('report_schedules')
+            ->where('id', $this->scheduleId)
+            ->whereNull('deleted_at')
+            ->first();
 
         if ($schedule) {
             $this->templateId = $schedule->report_template_id;
@@ -101,6 +104,7 @@ class Form extends Component
         if ($this->scheduleId) {
             DB::table('report_schedules')
                 ->where('id', $this->scheduleId)
+                ->whereNull('deleted_at')
                 ->update($data);
             session()->flash('success', __('Schedule updated successfully'));
         } else {

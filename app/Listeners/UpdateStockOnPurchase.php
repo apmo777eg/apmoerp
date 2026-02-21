@@ -7,6 +7,7 @@ namespace App\Listeners;
 use App\Events\PurchaseReceived;
 use App\Models\StockMovement;
 use App\Repositories\Contracts\StockMovementRepositoryInterface;
+use App\Services\BranchContextManager;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -21,6 +22,25 @@ class UpdateStockOnPurchase implements ShouldQueue
     {
         $purchase = $event->purchase;
         $warehouseId = $purchase->warehouse_id;
+
+        if (! $warehouseId) {
+            Log::warning('PurchaseReceived received without warehouse_id; skipping stock update', [
+                'purchase_id' => $purchase->getKey(),
+                'branch_id' => $purchase->branch_id,
+            ]);
+
+            return;
+        }
+
+
+        // CRIT-BRANCH-QUEUE-01 FIX: Ensure branch context exists in queued workers.
+        $didSetBranchContext = false;
+        if (app()->runningInConsole() && $purchase->branch_id) {
+            BranchContextManager::setBranchContext((int) $purchase->branch_id);
+            $didSetBranchContext = true;
+        }
+
+        try {
 
         foreach ($purchase->items as $item) {
             // Validate quantity is positive (use quantity column)
@@ -63,10 +83,17 @@ class UpdateStockOnPurchase implements ShouldQueue
                 'reference_id' => $purchaseItemId,
                 'qty' => $itemQty,
                 'direction' => 'in',
-                'unit_cost' => $item->unit_price ?? null,
+                // stock_movements.unit_cost is NOT NULL (default 0.0000)
+                'unit_cost' => decimal_float($item->unit_price ?? 0, 4),
                 'notes' => sprintf('Purchase #%s received', $purchase->reference_number ?? $purchase->getKey()),
                 'created_by' => $purchase->created_by,
             ]);
+        }
+
+        } finally {
+            if ($didSetBranchContext) {
+                BranchContextManager::clearBranchContext();
+            }
         }
     }
 }

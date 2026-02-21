@@ -10,7 +10,7 @@
         <div>
             <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">{{ __('Order Details') }}</h2>
             <div class="text-sm text-slate-600 dark:text-slate-300">
-                {{ __('Reference: :ref', ['ref' => $order->reference_number ?? $order->reference_number ?? $order->id]) }}
+                {{ __('Reference: :ref', ['ref' => $order->reference_number ?? $order->id]) }}
             </div>
         </div>
 

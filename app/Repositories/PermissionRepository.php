@@ -78,8 +78,21 @@ class PermissionRepository extends EloquentBaseRepository implements PermissionR
             $query->where('name', 'like', "{$filters['module']}.%");
         }
 
-        $sortField = $filters['sort_field'] ?? 'name';
-        $sortDirection = $filters['sort_direction'] ?? 'asc';
+        // SECURITY (V59-SQLI-01): Prevent SQL injection via orderBy column/direction
+        // Also clamp per-page to avoid accidental heavy queries.
+        $perPage = min(max((int) $perPage, 1), 100);
+
+        $allowedSortFields = ['id', 'name', 'guard_name', 'created_at', 'updated_at'];
+        $sortField = (string) ($filters['sort_field'] ?? 'name');
+        if (! in_array($sortField, $allowedSortFields, true)) {
+            $sortField = 'name';
+        }
+
+        $sortDirection = strtolower((string) ($filters['sort_direction'] ?? 'asc'));
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'asc';
+        }
+
         $query->orderBy($sortField, $sortDirection);
 
         return $query->paginate($perPage);

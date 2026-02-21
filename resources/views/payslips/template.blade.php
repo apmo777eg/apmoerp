@@ -188,7 +188,7 @@
                 <h3>{{ __('Employee Information') }}</h3>
                 <div class="info-row">
                     <span class="info-label">{{ __('Employee Code') }}:</span>
-                    <span class="info-value">{{ $employee->reference_number }}</span>
+                    <span class="info-value">{{ $employee->code }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">{{ __('Name') }}:</span>

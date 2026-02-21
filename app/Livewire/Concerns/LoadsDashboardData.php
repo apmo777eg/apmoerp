@@ -357,6 +357,10 @@ trait LoadsDashboardData
             ->whereMonth('sales.sale_date', now()->month)
             ->when(! $this->isAdmin && $this->branchId, fn ($q) => $q->where('sales.branch_id', $this->branchId))
             ->whereNull('sales.deleted_at')
+            ->whereNull('sale_payments.deleted_at')
+            // V60-FIN-01 FIX: Only count actually posted/paid payments (exclude pending/failed/refunded)
+            ->whereIn('sale_payments.status', ['completed', 'paid', 'posted'])
+            ->whereNotIn('sales.status', SaleStatus::nonRevenueStatuses())
             ->select('sale_payments.payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(sale_payments.amount) as total'))
             ->groupBy('sale_payments.payment_method')
             ->get();
